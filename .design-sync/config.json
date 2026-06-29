@@ -1,0 +1,31 @@
+{
+  "projectId": "ef8bd760-d9c8-474d-a599-22de2a4c743a",
+  "pkg": "videotour-funnel",
+  "globalName": "Tourly",
+  "shape": "package",
+  "srcDir": "components",
+  "tsconfig": "./tsconfig.json",
+  "cssEntry": ".design-sync/.cache/tailwind.css",
+  "tokensPkg": "videotour-funnel",
+  "tokensGlob": ".design-sync/fonts/*.css",
+  "buildCmd": "npx --yes @tailwindcss/cli@4 -i app/globals.css -o .design-sync/.cache/tailwind.css",
+  "extraEntries": ["./.design-sync/process-shim.mjs"],
+  "readmeHeader": ".design-sync/conventions.md",
+  "overrides": {
+    "Hero": { "cardMode": "single", "viewport": "1200x940" },
+    "BeforeAfter": { "cardMode": "single", "viewport": "1200x1040" },
+    "HowItWorks": { "cardMode": "single", "viewport": "1200x780" },
+    "Sample": { "cardMode": "single", "viewport": "1200x760" },
+    "ValueStack": { "cardMode": "single", "viewport": "1200x680" },
+    "Guarantee": { "cardMode": "single", "viewport": "1200x520" },
+    "Pricing": { "cardMode": "single", "viewport": "1200x1040" },
+    "Faq": { "cardMode": "single", "viewport": "1000x720" },
+    "FinalCta": { "cardMode": "single", "viewport": "1200x560" },
+    "Nav": { "cardMode": "single", "viewport": "1280x140" },
+    "PromoBar": { "cardMode": "single", "viewport": "1280x90" },
+    "Footer": { "cardMode": "single", "viewport": "1280x240" },
+    "ProofStats": { "cardMode": "single", "viewport": "1000x220" },
+    "CtaButton": { "cardMode": "column" },
+    "Container": { "cardMode": "single", "viewport": "1200x300" }
+  }
+}
