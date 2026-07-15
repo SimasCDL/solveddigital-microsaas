@@ -27,25 +27,21 @@ export default function Home() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!files.length || !email || !address) {
-      setError('Please fill in all fields and upload at least one photo.');
+      setError('Please upload photos and fill in all fields.');
       return;
     }
     setError('');
     setStep('uploading');
     setLoading(true);
-
     try {
       const formData = new FormData();
       formData.append('email', email);
       formData.append('propertyAddress', address);
       files.forEach(f => formData.append('photos', f));
-
       const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
       if (!uploadRes.ok) throw new Error('Upload failed');
       const { orderId } = await uploadRes.json();
-
       setStep('redirecting');
-
       const checkoutRes = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -53,7 +49,6 @@ export default function Home() {
       });
       if (!checkoutRes.ok) throw new Error('Checkout failed');
       const { url } = await checkoutRes.json();
-
       window.location.href = url;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
@@ -63,39 +58,87 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a] text-white">
-      <div className="max-w-3xl mx-auto px-6 py-20">
-        <div className="text-center mb-14">
-          <p className="text-[#c9a96e] text-sm font-semibold tracking-[0.2em] uppercase mb-4">Solved Digital</p>
-          <h1 className="text-4xl md:text-5xl font-bold leading-tight mb-5">
-            Turn Property Photos Into<br />
-            <span className="text-[#c9a96e]">Cinematic Walkthrough Videos</span>
+    <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+      {/* Header */}
+      <header style={{
+        height: 56,
+        borderBottom: '1px solid var(--border)',
+        display: 'flex',
+        alignItems: 'center',
+        paddingInline: 24,
+        justifyContent: 'space-between',
+      }}>
+        <span style={{
+          fontFamily: '"Plus Jakarta Sans", system-ui, sans-serif',
+          fontSize: 20,
+          fontWeight: 800,
+          letterSpacing: '-0.01em',
+          color: 'var(--ink)',
+        }}>
+          Solved Digital
+        </span>
+        <span className="cap">Real estate video</span>
+      </header>
+
+      {/* Main */}
+      <main style={{ maxWidth: 560, margin: '0 auto', padding: '56px 20px 80px' }}>
+
+        {/* Hero */}
+        <div style={{ marginBottom: 40 }}>
+          <p className="cap" style={{ marginBottom: 12 }}>Powered by Kling AI</p>
+          <h1 style={{
+            fontFamily: '"Plus Jakarta Sans", system-ui, sans-serif',
+            fontSize: 32,
+            fontWeight: 800,
+            letterSpacing: '-0.02em',
+            lineHeight: 1.15,
+            color: 'var(--ink)',
+            marginBottom: 12,
+          }}>
+            Turn property photos into cinematic walkthrough videos
           </h1>
-          <p className="text-gray-400 text-lg max-w-xl mx-auto">
-            Upload your Airbnb or real estate photos. Get a professional AI-generated walkthrough video delivered to your inbox within 30 minutes.
+          <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6, maxWidth: 440 }}>
+            Upload your Airbnb or listing photos. Get a professional AI walkthrough video delivered to your inbox within 30 minutes.
           </p>
         </div>
 
-        <div className="grid grid-cols-3 gap-6 mb-14 text-center">
+        {/* Steps */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 32 }}>
           {[
-            { num: '1', label: 'Upload Photos', desc: 'Any 3–10 property images' },
-            { num: '2', label: 'We Generate', desc: 'AI creates your walkthrough' },
-            { num: '3', label: 'Delivered Fast', desc: 'Video in your inbox in ~30 min' },
-          ].map(item => (
-            <div key={item.num} className="bg-[#141414] border border-white/5 rounded-xl p-5">
-              <div className="w-8 h-8 rounded-full bg-[#c9a96e]/20 text-[#c9a96e] text-sm font-bold flex items-center justify-center mx-auto mb-3">{item.num}</div>
-              <p className="font-semibold text-sm mb-1">{item.label}</p>
-              <p className="text-gray-500 text-xs">{item.desc}</p>
+            { n: '1', label: 'Upload photos' },
+            { n: '2', label: 'We generate' },
+            { n: '3', label: 'Video delivered' },
+          ].map((s, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
+              <span className="cidx" style={{ color: 'var(--ink)' }}>{s.n}</span>
+              <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--muted)', whiteSpace: 'nowrap' }}>{s.label}</span>
+              {i < 2 && (
+                <div style={{ flex: 1, height: 1, background: 'var(--border)', marginLeft: 4 }} />
+              )}
             </div>
           ))}
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Form card */}
+        <div className="card" style={{ padding: 20, marginBottom: 32 }}>
+
+          {/* Upload zone */}
           <div
             onDrop={handleDrop}
             onDragOver={e => e.preventDefault()}
             onClick={() => fileRef.current?.click()}
-            className="border-2 border-dashed border-white/10 rounded-xl p-10 text-center cursor-pointer hover:border-[#c9a96e]/40 transition-colors"
+            style={{
+              border: '1px dashed var(--border)',
+              borderRadius: 12,
+              padding: files.length ? 12 : '28px 20px',
+              textAlign: 'center',
+              cursor: 'pointer',
+              background: 'var(--bg2)',
+              marginBottom: 16,
+              transition: 'border-color 0.15s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--hover)')}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
           >
             <input
               ref={fileRef}
@@ -107,23 +150,37 @@ export default function Home() {
             />
             {files.length === 0 ? (
               <>
-                <div className="text-4xl mb-3">📸</div>
-                <p className="text-gray-300 font-medium">Drop property photos here</p>
-                <p className="text-gray-500 text-sm mt-1">or click to browse · up to 10 photos</p>
+                <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)', marginBottom: 3 }}>
+                  Drop property photos here
+                </p>
+                <p style={{ fontSize: 12, color: 'var(--muted2)' }}>
+                  or click to browse — up to 10 photos
+                </p>
               </>
             ) : (
-              <div className="grid grid-cols-4 gap-3" onClick={e => e.stopPropagation()}>
+              <div
+                style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6 }}
+                onClick={e => e.stopPropagation()}
+              >
                 {files.map((f, i) => (
-                  <div key={i} className="relative group">
+                  <div key={i} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', aspectRatio: '1', background: 'var(--slot)' }}>
                     <img
                       src={URL.createObjectURL(f)}
                       alt=""
-                      className="w-full h-20 object-cover rounded-lg"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                     />
                     <button
                       type="button"
                       onClick={() => removeFile(i)}
-                      className="absolute top-1 right-1 w-5 h-5 bg-black/70 rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                      style={{
+                        position: 'absolute', top: 3, right: 3,
+                        width: 16, height: 16,
+                        background: 'rgba(0,0,0,0.55)',
+                        border: 'none', borderRadius: '50%',
+                        color: '#fff', fontSize: 10, cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        lineHeight: 1,
+                      }}
                     >
                       ×
                     </button>
@@ -132,7 +189,12 @@ export default function Home() {
                 {files.length < 10 && (
                   <div
                     onClick={() => fileRef.current?.click()}
-                    className="h-20 border border-dashed border-white/10 rounded-lg flex items-center justify-center text-gray-600 cursor-pointer hover:border-white/20 text-2xl"
+                    style={{
+                      aspectRatio: '1', background: 'var(--slot)', borderRadius: 8,
+                      border: '1px dashed var(--border)', display: 'flex',
+                      alignItems: 'center', justifyContent: 'center',
+                      color: 'var(--muted2)', fontSize: 18, cursor: 'pointer',
+                    }}
                   >
                     +
                   </div>
@@ -141,70 +203,63 @@ export default function Home() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Fields */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
             <div>
-              <label className="block text-xs text-gray-400 mb-1.5 font-medium">Email Address</label>
+              <label className="cap" style={{ display: 'block', marginBottom: 6 }}>Email</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full bg-[#141414] border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#c9a96e]/50"
+                className="field"
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-400 mb-1.5 font-medium">Property Address</label>
+              <label className="cap" style={{ display: 'block', marginBottom: 6 }}>Property address</label>
               <input
                 type="text"
                 required
                 value={address}
                 onChange={e => setAddress(e.target.value)}
-                placeholder="123 Main St, City, State"
-                className="w-full bg-[#141414] border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#c9a96e]/50"
+                placeholder="123 Main St, City"
+                className="field"
               />
             </div>
           </div>
 
           {error && (
-            <p className="text-red-400 text-sm text-center">{error}</p>
+            <p style={{ fontSize: 12, color: '#c0392b', marginBottom: 10 }}>{error}</p>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-[#c9a96e] hover:bg-[#b8934f] disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold py-4 rounded-xl text-base transition-colors"
-          >
-            {step === 'uploading' ? 'Uploading photos...' :
-             step === 'redirecting' ? 'Redirecting to checkout...' :
-             'Order Walkthrough Video — $97'}
+          <button type="button" onClick={handleSubmit} disabled={loading} className="btn-primary" style={{ marginBottom: 10 }}>
+            {step === 'uploading' ? 'Uploading photos…' :
+             step === 'redirecting' ? 'Opening checkout…' :
+             'Order walkthrough video — $97'}
           </button>
 
-          <p className="text-center text-gray-600 text-xs">
-            Secure checkout · 30-day money-back guarantee · Video delivered in ~30 min
+          <p style={{ fontSize: 11, color: 'var(--muted2)', textAlign: 'center' }}>
+            Secure checkout · 30-day money-back guarantee · ~30 min delivery
           </p>
-        </form>
-
-        <div className="mt-20 border-t border-white/5 pt-12">
-          <h2 className="text-xl font-bold text-center mb-8">What you get</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[
-              { icon: '🎬', title: 'Cinematic Quality', desc: 'Smooth gimbal-style camera movement through your property' },
-              { icon: '🏡', title: 'Full Walkthrough', desc: 'Exterior to every major room in one continuous tour' },
-              { icon: '⚡', title: 'Fast Delivery', desc: 'Video in your inbox within 30 minutes of payment' },
-              { icon: '📱', title: 'Listing-Ready', desc: 'Perfect for Airbnb, Zillow, Booking.com, and Instagram' },
-            ].map(item => (
-              <div key={item.title} className="flex gap-4 bg-[#141414] border border-white/5 rounded-xl p-5">
-                <span className="text-2xl">{item.icon}</span>
-                <div>
-                  <p className="font-semibold text-sm mb-1">{item.title}</p>
-                  <p className="text-gray-500 text-xs leading-relaxed">{item.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
-      </div>
-    </main>
+
+        {/* What you get */}
+        <p className="cap" style={{ marginBottom: 14 }}>What you get</p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          {[
+            { title: 'Cinematic quality', desc: 'Smooth gimbal-style camera movement, photorealistic depth' },
+            { title: 'Full walkthrough', desc: 'Exterior through every major room, one continuous tour' },
+            { title: 'Fast delivery', desc: 'Video in your inbox within 30 minutes of payment' },
+            { title: 'Listing-ready', desc: 'Perfect for Airbnb, Zillow, Booking.com, and Instagram' },
+          ].map((item, i) => (
+            <div key={i} className="card" style={{ padding: '14px 16px' }}>
+              <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 4 }}>{item.title}</p>
+              <p style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.5 }}>{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </main>
+    </div>
   );
 }

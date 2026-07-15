@@ -1,26 +1,206 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #ffffff;
+  --bg2: #fafafa;
+  --card: #ffffff;
+  --ink: #0a0a0a;
+  --muted: #666666;
+  --muted2: #999999;
+  --border: #e7e7e6;
+  --field: #ffffff;
+  --hover: #bdbdba;
+  --slot: #f3f3f1;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+.dark {
+  --bg: #0b0b0b;
+  --bg2: #0d0d0d;
+  --card: #161616;
+  --ink: #ededed;
+  --muted: #9a9a9a;
+  --muted2: #777777;
+  --border: #2a2a2a;
+  --field: #1a1a1a;
+  --hover: #444444;
+  --slot: #1a1a1a;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg: #0b0b0b;
+    --bg2: #0d0d0d;
+    --card: #161616;
+    --ink: #ededed;
+    --muted: #9a9a9a;
+    --muted2: #777777;
+    --border: #2a2a2a;
+    --field: #1a1a1a;
+    --hover: #444444;
+    --slot: #1a1a1a;
   }
 }
 
+@theme inline {
+  --font-sans: var(--font-ibm);
+  --font-heading: var(--font-jakarta);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+::selection {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: #d6d6d3;
+  border-radius: 999px;
+}
+
+.font-heading {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+.cap {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.field {
+  width: 100%;
+  background: var(--field);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 11px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.field::placeholder {
+  color: var(--muted2);
+}
+.field:hover {
+  border-color: var(--hover);
+}
+.field:focus {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px rgba(127, 127, 127, 0.12);
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ink);
+  color: var(--bg);
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  width: 100%;
+}
+.btn-primary:hover {
+  opacity: 0.88;
+}
+.btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 7px 11px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.btn-ghost:hover {
+  border-color: var(--hover);
+  background: var(--bg2);
+}
+
+.mini {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 5px 9px;
+  font-family: inherit;
+  cursor: pointer;
+  background: transparent;
+  transition: border-color 0.15s;
+}
+.mini:hover {
+  border-color: var(--hover);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.cidx {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 12px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.slot {
+  background: var(--slot);
+  border-radius: 11px;
+}
+
+.check {
+  accent-color: var(--ink);
 }

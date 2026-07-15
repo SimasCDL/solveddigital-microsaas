@@ -1,8 +1,10 @@
-import { put } from '@vercel/blob';
+import { fal } from '@fal-ai/client';
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuid } from 'uuid';
 import { createOrder } from '@/lib/orders';
 import type { Order } from '@/lib/types';
+
+fal.config({ credentials: process.env.FAL_KEY! });
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,10 +19,7 @@ export async function POST(req: NextRequest) {
 
     const photoUrls: string[] = [];
     for (const file of files.slice(0, 10)) {
-      const { url } = await put(`photos/${uuid()}-${file.name}`, file, {
-        access: 'public',
-        addRandomSuffix: false,
-      });
+      const url = await fal.storage.upload(file);
       photoUrls.push(url);
     }
 

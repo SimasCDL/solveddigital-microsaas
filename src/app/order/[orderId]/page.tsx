@@ -64,18 +64,36 @@ export default function OrderPage() {
             <div className="text-6xl mb-6">🎬</div>
             <h1 className="text-3xl font-bold mb-3">Your video is ready!</h1>
             <p className="text-gray-400 mb-8">{data.propertyAddress}</p>
-            <div className="space-y-3">
-              {data.videoUrls.map((url, i) => (
-                <a
-                  key={i}
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full bg-[#c9a96e] hover:bg-[#b8934f] text-black font-bold py-4 rounded-xl transition-colors"
-                >
-                  Download Clip {data.videoUrls.length > 1 ? `${i + 1}` : ''} →
-                </a>
-              ))}
+            <div className="space-y-4">
+              <video
+                controls
+                src={data.videoUrls[0]}
+                className="w-full rounded-xl mb-3 aspect-video bg-black"
+              />
+              <a
+                href={data.videoUrls[0]}
+                download="property-video.mp4"
+                className="block w-full bg-[#c9a96e] hover:bg-[#b8934f] text-black font-bold py-4 rounded-xl transition-colors"
+              >
+                Download the full video →
+              </a>
+              {data.videoUrls.length > 1 && (
+                <div className="text-left">
+                  <p className="text-gray-500 text-xs uppercase tracking-widest mt-6 mb-3">Individual clips</p>
+                  <div className="flex flex-wrap gap-2">
+                    {data.videoUrls.slice(1).map((url, i) => (
+                      <a
+                        key={i}
+                        href={url}
+                        download={`clip-${i + 1}.mp4`}
+                        className="px-4 py-2 rounded-lg border border-gray-700 text-gray-300 text-sm hover:border-[#c9a96e] hover:text-[#c9a96e] transition-colors"
+                      >
+                        Clip {i + 1}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             <p className="text-gray-600 text-xs mt-6">
               We also sent these links to your email · Order #{orderId}
