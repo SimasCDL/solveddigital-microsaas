@@ -1,0 +1,12 @@
+/* Tourly brand sans — Geist.
+   The Next app loads Geist via next/font/google and exposes it as the CSS var
+   --font-geist-sans, which app/globals.css maps to --font-sans (the Tailwind
+   font-sans token). The synced bundle has no Next runtime, so we load Geist
+   from Google Fonts here and define --font-geist-sans, making designs render in
+   the real brand font. If the host blocks remote fonts, it falls back to the
+   system sans below (identical to the no-font baseline). */
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap");
+
+:root {
+  --font-geist-sans: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
