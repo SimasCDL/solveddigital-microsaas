@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tourly — AI video tours for your listings, in 2 minutes</title>
+
+    <!-- Tailwind (Play CDN) + theme -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              cream: "#faf8f3",
+              paper: "#ffffff",
+              line: "#e7e1d6",
+              star: "#f5b945",
+              ink: { DEFAULT: "#15130f", soft: "#6f6a60" },
+              accent: { DEFAULT: "#0f7d6b", soft: "#e3f3ec" },
+              night: { DEFAULT: "#100d09", soft: "#221d16" },
+            },
+            fontFamily: { sans: ["Geist", "system-ui", "sans-serif"] },
+          },
+        },
+      };
+    </script>
+
+    <!-- Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      body {
+        font-family: "Geist", system-ui, -apple-system, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        background: #faf8f3;
+        color: #15130f;
+      }
+      .font-display {
+        font-weight: 700;
+        letter-spacing: -0.022em;
+      }
+      ::selection {
+        background: #15130f;
+        color: #faf8f3;
+      }
+
+      /* Shiny accent button */
+      .btn-accent {
+        background: linear-gradient(to bottom, #13a48c, #0e7d6b);
+        color: #fff;
+        box-shadow: 0 14px 34px -10px rgba(15, 125, 107, 0.65);
+      }
+      .btn-accent:hover {
+        filter: brightness(1.06);
+        box-shadow: 0 18px 44px -10px rgba(15, 125, 107, 0.75);
+      }
+
+      /* Marquee */
+      @keyframes marquee-left {
+        from {
+          transform: translateX(0);
+        }
+        to {
+          transform: translateX(-50%);
+        }
+      }
+      .animate-marquee-left {
+        animation: marquee-left 48s linear infinite;
+      }
+      .marquee-row:hover .animate-marquee-left {
+        animation-play-state: paused;
+      }
+      .marquee-mask {
+        -webkit-mask-image: linear-gradient(
+          to right,
+          transparent,
+          #000 7%,
+          #000 93%,
+          transparent
+        );
+        mask-image: linear-gradient(
+          to right,
+          transparent,
+          #000 7%,
+          #000 93%,
+          transparent
+        );
+      }
+    </style>
+  </head>
+
+  <body class="min-h-full">
+    <!-- PROMO BAR -->
+    <div class="w-full bg-ink text-cream">
+      <div
+        class="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-2 gap-y-1 px-4 py-2.5 text-center text-sm"
+      >
+        <span class="font-medium">Founding launch — lock in $47 first tours.</span>
+        <span class="text-cream/55">Ends in</span>
+        <span
+          id="promo-timer"
+          class="font-semibold tabular-nums tracking-wide"
+          style="color: #34c4a8"
+          >--:--:--</span
+        >
+      </div>
+    </div>
+
+    <!-- NAV -->
+    <header class="sticky top-3 z-50 sm:top-4">
+      <div class="mx-auto w-full max-w-6xl px-4 sm:px-6">
+        <div
+          class="flex h-16 items-center justify-between rounded-full border border-line bg-cream/85 pl-6 pr-2.5 shadow-lg shadow-black/5 backdrop-blur-md"
+        >
+          <div class="flex items-center gap-8">
+            <a href="#" class="font-display text-xl tracking-tight text-ink">Tourly</a>
+            <nav class="hidden items-center gap-7 text-sm text-ink/70 md:flex">
+              <a href="#how" class="transition-colors hover:text-ink">How it works</a>
+              <a href="#work" class="transition-colors hover:text-ink">Examples</a>
+              <a href="#pricing" class="transition-colors hover:text-ink">Pricing</a>
+              <a href="#faq" class="transition-colors hover:text-ink">FAQ</a>
+            </nav>
+          </div>
+          <a
+            href="#pricing"
+            class="btn-accent inline-flex h-10 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold ring-1 ring-white/10 transition-all active:scale-[0.99]"
+            >Make my tour →</a
+          >
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- HERO -->
+      <section class="relative overflow-hidden">
+        <div
+          class="pointer-events-none absolute inset-0"
+          style="
+            background: radial-gradient(70% 55% at 50% -10%, #e3f3ec, transparent 70%);
+          "
+        ></div>
+        <div class="relative mx-auto w-full max-w-5xl px-6 pb-16 pt-14 text-center sm:px-8 sm:pt-20">
+          <span
+            class="inline-flex items-center rounded-full bg-accent-soft px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-accent"
+            >The 2-minute listing tour</span
+          >
+
+          <h1
+            class="font-display mx-auto mt-6 max-w-4xl text-5xl leading-[1.05] text-ink sm:text-7xl"
+          >
+            Turn listing photos into stunning
+            <br class="hidden sm:block" />
+            video tours, <span class="text-accent">instantly</span>
+          </h1>
+
+          <p class="mx-auto mt-6 max-w-xl text-lg leading-8 text-ink-soft sm:text-xl">
+            Photos to a finished tour in about two minutes.
+            <br class="hidden sm:block" />
+            No videographer, no editing, no software to learn.
+          </p>
+
+          <div class="mt-9 flex flex-col items-center gap-3">
+            <a
+              href="#pricing"
+              class="btn-accent inline-flex h-16 items-center justify-center gap-2 rounded-full px-9 text-base font-semibold ring-1 ring-white/10 transition-all active:scale-[0.99]"
+              >Make my first tour →</a
+            >
+            <p class="text-sm text-ink-soft">
+              Secure checkout · Money-back guarantee · Delivered in ~2 min
+            </p>
+          </div>
+
+          <!-- Proof stats -->
+          <div
+            class="mt-10 flex flex-wrap items-start justify-center gap-x-10 gap-y-5 sm:gap-x-16"
+          >
+            <div class="text-center">
+              <div class="font-display text-3xl text-accent sm:text-4xl">~2 min</div>
+              <div class="mt-1 text-sm text-ink-soft">Photos to a finished tour</div>
+            </div>
+            <div class="text-center">
+              <div class="font-display text-3xl text-accent sm:text-4xl">$300+</div>
+              <div class="mt-1 text-sm text-ink-soft">Saved vs a videographer</div>
+            </div>
+            <div class="text-center">
+              <div class="font-display text-3xl text-accent sm:text-4xl">100%</div>
+              <div class="mt-1 text-sm text-ink-soft">Money-back guarantee</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- BEFORE / AFTER -->
+      <section class="bg-night py-24 text-cream sm:py-28">
+        <div class="mx-auto w-full max-w-4xl px-6 sm:px-8">
+          <div class="text-center">
+            <h2 class="font-display mx-auto max-w-2xl text-4xl leading-tight sm:text-5xl">
+              From flat photos to an outstanding video
+              <span style="color: #34c4a8">in one click</span>
+            </h2>
+            <p class="mt-4 text-lg text-cream/60">
+              Drag to see the difference your listing photos turn into.
+            </p>
+          </div>
+
+          <div
+            id="ba"
+            class="relative mt-10 aspect-[16/10] w-full cursor-ew-resize touch-none select-none overflow-hidden rounded-3xl border border-white/10"
+            style="box-shadow: 0 40px 100px -40px rgba(0, 0, 0, 0.8)"
+          >
+            <!-- AFTER (placeholder for the tour video) -->
+            <div
+              class="absolute inset-0"
+              style="
+                background: linear-gradient(135deg, #3a2f22, #241c14 55%, #100d09);
+              "
+            >
+              <div class="absolute inset-0 flex items-center justify-center">
+                <div
+                  class="flex h-14 w-14 items-center justify-center rounded-full bg-cream text-ink"
+                  style="font-size: 20px"
+                >
+                  ▶
+                </div>
+              </div>
+            </div>
+            <span
+              class="absolute right-3 top-3 z-20 rounded-full px-3 py-1 text-xs font-semibold text-night"
+              style="background: #34c4a8"
+              >After: AI video</span
+            >
+
+            <!-- BEFORE (clipped flat photo) -->
+            <div
+              id="ba-before"
+              class="absolute inset-0 grayscale"
+              style="
+                background: linear-gradient(135deg, #c9c4ba, #a7a298 55%, #7d786f);
+                clip-path: inset(0 50% 0 0);
+              "
+            >
+              <span
+                class="absolute left-3 top-3 rounded-full bg-black/55 px-3 py-1 text-xs font-semibold text-cream backdrop-blur"
+                >Before: static photo</span
+              >
+            </div>
+
+            <!-- Handle -->
+            <div
+              id="ba-handle"
+              class="pointer-events-none absolute inset-y-0 z-10 w-0.5 bg-cream"
+              style="left: 50%"
+            >
+              <div
+                class="absolute left-1/2 top-1/2 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-cream text-ink shadow-lg"
+              >
+                ⇄
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="mt-5 rounded-2xl border border-white/10 bg-night-soft px-5 py-4 text-sm"
+          >
+            <span class="font-semibold" style="color: #34c4a8">Transform:</span>
+            <span class="text-cream/80"
+              >Slow push-in through the living room. Soft cinematic music.</span
+            >
+          </div>
+        </div>
+      </section>
+
+      <!-- HOW IT WORKS -->
+      <section id="how" class="py-24 sm:py-32">
+        <div class="mx-auto w-full max-w-5xl px-6 sm:px-8">
+          <div class="mx-auto max-w-2xl text-center">
+            <h2 class="font-display text-4xl leading-tight sm:text-5xl">
+              Property videos, <span class="text-accent">made easy</span>
+            </h2>
+            <p class="mt-4 text-lg text-ink-soft">
+              No editing skills or software needed — built for realtors, not video
+              editors.
+            </p>
+          </div>
+
+          <div class="mt-14 grid gap-6 sm:grid-cols-3">
+            <div class="rounded-2xl border border-line bg-paper p-7">
+              <div class="flex items-center gap-3">
+                <span
+                  class="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-sm font-semibold text-cream"
+                  >1</span
+                >
+                <h3 class="text-lg font-semibold text-ink">Upload your photos</h3>
+              </div>
+              <p class="mt-4 leading-7 text-ink-soft">
+                Drop in 10–30 listing photos and set the order. That's the only work
+                you do.
+              </p>
+            </div>
+            <div class="rounded-2xl border border-line bg-paper p-7">
+              <div class="flex items-center gap-3">
+                <span
+                  class="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-sm font-semibold text-cream"
+                  >2</span
+                >
+                <h3 class="text-lg font-semibold text-ink">Wait ~2 minutes</h3>
+              </div>
+              <p class="mt-4 leading-7 text-ink-soft">
+                AI adds cinematic motion, music, captions and your branding —
+                assembled automatically. Ready to post.
+              </p>
+            </div>
+            <div class="rounded-2xl border border-line bg-paper p-7">
+              <div class="flex items-center gap-3">
+                <span
+                  class="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-sm font-semibold text-cream"
+                  >3</span
+                >
+                <h3 class="text-lg font-semibold text-ink">Post and sell</h3>
+              </div>
+              <p class="mt-4 leading-7 text-ink-soft">
+                Download for MLS, Instagram, TikTok and YouTube. Your listings get the
+                marketing sellers expect.
+              </p>
+            </div>
+          </div>
+
+          <div class="mt-12 flex flex-col items-center gap-3">
+            <a
+              href="#pricing"
+              class="btn-accent inline-flex h-14 items-center justify-center gap-2 rounded-full px-7 text-[0.95rem] font-semibold ring-1 ring-white/10 transition-all"
+              >Make my first tour →</a
+            >
+            <p class="text-sm text-ink-soft">No subscription · Money-back guarantee</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- EXAMPLES (marquee) -->
+      <section id="work" class="overflow-hidden bg-night py-24 text-cream sm:py-28">
+        <div class="mx-auto w-full max-w-5xl px-6 sm:px-8">
+          <div class="max-w-2xl">
+            <p
+              class="text-xs font-medium uppercase tracking-[0.2em] text-cream/50"
+            >
+              The work
+            </p>
+            <h2 class="font-display mt-4 text-4xl leading-tight sm:text-5xl">
+              See what two minutes gets you
+            </h2>
+            <p class="mt-4 max-w-lg text-lg text-cream/70">
+              Real listing photos in. Scroll-stopping tours out — ready to post the
+              moment they're done.
+            </p>
+          </div>
+        </div>
+
+        <div class="marquee-row mt-14">
+          <div class="marquee-mask">
+            <div class="flex w-max gap-4 animate-marquee-left" id="marquee"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VALUE STACK -->
+      <section class="py-24 sm:py-32">
+        <div class="mx-auto w-full max-w-5xl px-6 sm:px-8">
+          <div class="grid gap-14 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
+            <div class="lg:sticky lg:top-28 lg:self-start">
+              <p class="text-xs font-medium uppercase tracking-[0.2em] text-ink-soft">
+                What's included
+              </p>
+              <h2 class="font-display mt-4 text-4xl leading-tight sm:text-5xl">
+                A studio-grade tour, every time
+              </h2>
+              <p class="mt-5 max-w-md text-lg leading-8 text-ink-soft">
+                Everything a videographer would charge $300–$1,000 for — minus the
+                scheduling, the wait, and the invoice. One flat price, no subscription.
+              </p>
+              <a
+                href="#pricing"
+                class="btn-accent mt-8 inline-flex h-14 items-center justify-center gap-2 rounded-full px-7 text-[0.95rem] font-semibold ring-1 ring-white/10 transition-all"
+                >Make my first tour →</a
+              >
+            </div>
+
+            <ul id="value-list" class="divide-y divide-line border-y border-line"></ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- GUARANTEE -->
+      <section class="bg-night py-24 text-cream sm:py-28">
+        <div class="mx-auto w-full max-w-3xl px-6 text-center sm:px-8">
+          <p class="text-xs font-medium uppercase tracking-[0.2em] text-cream/50">
+            Zero-risk guarantee
+          </p>
+          <h2 class="font-display mt-5 text-4xl leading-tight sm:text-6xl">
+            Love your tour, or it's free.
+          </h2>
+          <p class="mx-auto mt-6 max-w-xl text-lg leading-8 text-cream/70">
+            Make your first tour. If you don't love it, you don't pay — and you keep it
+            anyway. No forms, no hoops. Just email us and we refund every cent. The risk
+            is entirely on us.
+          </p>
+        </div>
+      </section>
+
+      <!-- PRICING -->
+      <section id="pricing" class="py-24 sm:py-32">
+        <div class="mx-auto w-full max-w-3xl px-6 sm:px-8">
+          <div class="text-center">
+            <p class="text-xs font-medium uppercase tracking-[0.2em] text-ink-soft">
+              Pricing
+            </p>
+            <h2 class="font-display mt-4 text-4xl leading-tight sm:text-5xl">
+              One-time pricing. No subscription.
+            </h2>
+            <p class="mt-4 text-lg text-ink-soft">
+              A videographer charges $300+ for a single listing video. Pick a pack and
+              keep your margin.
+            </p>
+          </div>
+
+          <div class="mt-14 grid gap-6 sm:grid-cols-2">
+            <!-- Single -->
+            <div class="relative flex flex-col rounded-3xl border border-line bg-paper p-8 text-ink sm:p-9">
+              <p class="text-sm font-medium text-ink-soft">1 video</p>
+              <div class="mt-3 flex items-baseline gap-2">
+                <span class="font-display text-6xl leading-none">$47</span>
+                <span class="text-sm text-ink-soft">one-time</span>
+              </div>
+              <p class="mt-2 text-sm text-ink-soft">One tour, up to 1 minute</p>
+              <ul class="mt-7 flex-1 space-y-3 text-[0.95rem]">
+                <li class="flex items-center gap-3"><span class="text-accent">✓</span> One video tour from your photos</li>
+                <li class="flex items-center gap-3"><span class="text-accent">✓</span> Vertical + horizontal versions</li>
+                <li class="flex items-center gap-3"><span class="text-accent">✓</span> Your branding, music &amp; captions</li>
+                <li class="flex items-center gap-3"><span class="text-accent">✓</span> Delivered in ~2 minutes</li>
+                <li class="flex items-center gap-3"><span class="text-accent">✓</span> Love it or it's free</li>
+              </ul>
+              <a href="#" class="mt-8 inline-flex h-13 items-center justify-center gap-2 rounded-full bg-ink px-6 py-3.5 font-semibold text-cream transition-all hover:bg-ink/90">Make my tour →</a>
+            </div>
+
+            <!-- Trio (highlighted) -->
+            <div class="relative flex flex-col rounded-3xl bg-night p-8 text-cream sm:p-9" style="box-shadow: 0 30px 80px -40px rgba(0,0,0,0.6)">
+              <span class="absolute -top-3 left-8 rounded-full bg-cream px-3 py-1 text-xs font-semibold text-ink shadow-md ring-1 ring-line">Most popular</span>
+              <p class="text-sm font-medium text-cream/60">3 videos</p>
+              <div class="mt-3 flex items-baseline gap-2">
+                <span class="font-display text-6xl leading-none">$94</span>
+                <span class="text-sm text-cream/50">one-time</span>
+              </div>
+              <p class="mt-2 text-sm text-cream/70">Three tours, up to 1 minute each · Just $31 per video</p>
+              <ul class="mt-7 flex-1 space-y-3 text-[0.95rem]">
+                <li class="flex items-center gap-3"><span style="color:#34c4a8">✓</span> Three video tours from your photos</li>
+                <li class="flex items-center gap-3"><span style="color:#34c4a8">✓</span> Save $47 vs buying singles</li>
+                <li class="flex items-center gap-3"><span style="color:#34c4a8">✓</span> Vertical + horizontal versions</li>
+                <li class="flex items-center gap-3"><span style="color:#34c4a8">✓</span> Your branding, music &amp; captions</li>
+                <li class="flex items-center gap-3"><span style="color:#34c4a8">✓</span> Priority rendering</li>
+              </ul>
+              <a href="#" class="mt-8 inline-flex h-13 items-center justify-center gap-2 rounded-full bg-cream px-6 py-3.5 font-semibold text-ink transition-all hover:bg-paper">Get 3 tours →</a>
+            </div>
+          </div>
+
+          <p class="mt-8 text-center text-sm text-ink-soft">
+            Secure checkout · Instant delivery · Full refund if you don't love it.
+            Listing a lot? Volume packs are coming — ask us for early access.
+          </p>
+        </div>
+      </section>
+
+      <!-- FAQ -->
+      <section id="faq" class="py-24 sm:py-32">
+        <div class="mx-auto w-full max-w-2xl px-6 sm:px-8">
+          <div class="text-center">
+            <h2 class="font-display text-4xl leading-tight sm:text-5xl">
+              Questions, answered
+            </h2>
+          </div>
+          <div id="faq-list" class="mt-10 divide-y divide-line border-y border-line"></div>
+        </div>
+      </section>
+
+      <!-- FINAL CTA -->
+      <section class="py-28 sm:py-36">
+        <div class="mx-auto w-full max-w-5xl px-6 text-center sm:px-8">
+          <h2 class="font-display mx-auto max-w-2xl text-5xl leading-[1.05] sm:text-6xl">
+            Give your next listing the marketing it deserves.
+          </h2>
+          <p class="mx-auto mt-6 max-w-lg text-lg text-ink-soft">
+            Upload your photos and have a professional video tour in the time it takes to
+            read this page.
+          </p>
+          <div class="mt-10 flex flex-col items-center gap-3">
+            <a
+              href="#pricing"
+              class="btn-accent inline-flex h-16 items-center justify-center gap-2 rounded-full px-9 text-base font-semibold ring-1 ring-white/10 transition-all"
+              >Make my first tour →</a
+            >
+            <p class="text-sm text-ink-soft">
+              Secure checkout · Money-back guarantee · Delivered in ~2 min
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-line bg-cream py-12">
+      <div
+        class="mx-auto flex w-full max-w-5xl flex-col items-center justify-between gap-6 px-6 text-sm text-ink-soft sm:flex-row sm:px-8"
+      >
+        <span class="font-display text-xl text-ink">Tourly</span>
+        <nav class="flex items-center gap-6">
+          <a href="#how" class="transition-colors hover:text-ink">How it works</a>
+          <a href="#pricing" class="transition-colors hover:text-ink">Pricing</a>
+          <a href="#faq" class="transition-colors hover:text-ink">FAQ</a>
+        </nav>
+        <span>© 2026 Tourly. AI-generated visualizations.</span>
+      </div>
+    </footer>
+
+    <script>
+      /* ---- Promo countdown (evergreen 24h) ---- */
+      (function () {
+        var KEY = "tourly_promo_end";
+        var W = 24 * 3600 * 1000;
+        var end = Number(localStorage.getItem(KEY));
+        if (!end || isNaN(end) || end < Date.now()) {
+          end = Date.now() + W;
+          try { localStorage.setItem(KEY, String(end)); } catch (e) {}
+        }
+        function pad(n) { return String(n).padStart(2, "0"); }
+        function tick() {
+          var ms = Math.max(0, end - Date.now());
+          var t = Math.floor(ms / 1000);
+          var h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60;
+          var el = document.getElementById("promo-timer");
+          if (el) el.textContent = pad(h) + ":" + pad(m) + ":" + pad(s);
+        }
+        tick();
+        setInterval(tick, 1000);
+      })();
+
+      /* ---- Before/After slider ---- */
+      (function () {
+        var ba = document.getElementById("ba");
+        var before = document.getElementById("ba-before");
+        var handle = document.getElementById("ba-handle");
+        if (!ba) return;
+        var dragging = false;
+        function setPos(clientX) {
+          var r = ba.getBoundingClientRect();
+          var pct = ((clientX - r.left) / r.width) * 100;
+          pct = Math.max(0, Math.min(100, pct));
+          before.style.clipPath = "inset(0 " + (100 - pct) + "% 0 0)";
+          handle.style.left = pct + "%";
+        }
+        ba.addEventListener("pointerdown", function (e) {
+          dragging = true;
+          if (ba.setPointerCapture) ba.setPointerCapture(e.pointerId);
+          setPos(e.clientX);
+        });
+        ba.addEventListener("pointermove", function (e) {
+          if (dragging) setPos(e.clientX);
+        });
+        ba.addEventListener("pointerup", function () { dragging = false; });
+        ba.addEventListener("pointercancel", function () { dragging = false; });
+      })();
+
+      /* ---- Examples marquee tiles ---- */
+      (function () {
+        var tours = [
+          { label: "Modern kitchen", t: "0:28", g: "#2b2620,#100d09" },
+          { label: "Primary suite", t: "0:31", g: "#26241f,#0f0d0a" },
+          { label: "Backyard & pool", t: "0:24", g: "#2a241c,#100c08" },
+          { label: "Open living", t: "0:33", g: "#23211d,#0e0c09" },
+          { label: "Twilight exterior", t: "0:29", g: "#2c261d,#0f0c08" },
+          { label: "Loft & views", t: "0:27", g: "#252019,#100d09" },
+        ];
+        var row = document.getElementById("marquee");
+        if (!row) return;
+        var all = tours.concat(tours);
+        row.innerHTML = all
+          .map(function (x) {
+            return (
+              '<div class="relative aspect-[9/16] w-[170px] shrink-0 overflow-hidden rounded-xl border border-white/10 sm:w-[210px]" style="background:linear-gradient(to bottom,' +
+              x.g +
+              ')">' +
+              '<div class="absolute inset-0 flex items-center justify-center"><div class="flex h-12 w-12 items-center justify-center rounded-full bg-cream text-ink" style="font-size:18px">▶</div></div>' +
+              '<div class="absolute inset-x-0 bottom-0 flex items-center justify-between p-3 text-xs text-cream/90" style="background:linear-gradient(to top,rgba(0,0,0,0.7),transparent)"><span class="font-medium">' +
+              x.label +
+              '</span><span class="text-cream/60">' +
+              x.t +
+              "</span></div></div>"
+            );
+          })
+          .join("");
+      })();
+
+      /* ---- Value list ---- */
+      (function () {
+        var items = [
+          "Professional video tour from your photos",
+          "Cinematic camera motion on every room",
+          "Licensed background music",
+          "Your logo, name & contact branded in",
+          "Vertical (Reels / TikTok) + horizontal (YouTube / MLS) cuts",
+          "Auto-generated captions",
+          "Delivered in ~2 minutes, not 3 days",
+        ];
+        var el = document.getElementById("value-list");
+        if (!el) return;
+        el.innerHTML = items
+          .map(function (i) {
+            return (
+              '<li class="flex items-center gap-4 py-5"><span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink text-cream">✓</span><span class="text-lg text-ink">' +
+              i +
+              "</span></li>"
+            );
+          })
+          .join("");
+      })();
+
+      /* ---- FAQ ---- */
+      (function () {
+        var faqs = [
+          ["What photos work best?", "Bright, in-focus listing photos — the same ones you'd put on the MLS. Upload 10–30 and put them in the order you want the tour to flow."],
+          ["How long does it take?", "About 2 minutes. Upload your photos, and your finished tour is ready to download right away."],
+          ["Can I use the video commercially and on the MLS?", "Yes — the tour is yours to post on the MLS, Instagram, TikTok, YouTube, Facebook, or anywhere else you market the listing."],
+          ["What formats do I get?", "Both a vertical cut for Reels and TikTok and a horizontal cut for YouTube and the MLS — branded with your logo and contact info."],
+          ["Do I need any software or editing skills?", "None. If you can upload photos, you can make a tour. There's nothing to install and nothing to edit."],
+          ["What if I don't like it?", "Then you don't pay. Email us and we refund every cent — and you keep the tour anyway. The risk is entirely on us."],
+        ];
+        var el = document.getElementById("faq-list");
+        if (!el) return;
+        el.innerHTML = faqs
+          .map(function (f) {
+            return (
+              '<details class="group py-5"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 text-lg font-medium text-ink">' +
+              f[0] +
+              '<span class="shrink-0 text-2xl text-ink-soft transition-transform group-open:rotate-45">+</span></summary><p class="mt-3 leading-7 text-ink-soft">' +
+              f[1] +
+              "</p></details>"
+            );
+          })
+          .join("");
+      })();
+    </script>
+  </body>
+</html>

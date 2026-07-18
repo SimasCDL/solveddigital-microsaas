@@ -44,3 +44,9 @@ ds-bundle/
 .design-sync/.cache/
 .design-sync/learnings/
 .design-sync/node_modules
+
+# Raw working media in repo root (not wired into the app — host/upload separately)
+/*.mov
+/*.mp4
+/*.webp
+/*.jpg
