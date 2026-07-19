@@ -1,8 +1,7 @@
-import { Container } from "@/components/site/Container";
 import { CtaButton } from "@/components/ab/CtaButton";
 import { Play, Swap, Star } from "@/components/site/icons";
 
-const COLUMNS = [
+const ROWS = [
   {
     Icon: Play,
     title: "Shot like a videographer",
@@ -22,43 +21,42 @@ const COLUMNS = [
 
 export function ValueStack() {
   return (
-    <section className="py-24 sm:py-32">
-      <Container>
-        <div className="text-center">
-          <span className="inline-flex items-center rounded-full bg-accent-soft px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-accent">
-            What’s included
-          </span>
-          <h2 className="font-display mx-auto mt-6 max-w-3xl text-4xl leading-tight sm:text-5xl">
-            A <span className="text-accent">studio-grade</span> tour, every time
-          </h2>
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-ink-soft">
-            Everything a videographer would charge $300–$1,000 for — minus the
-            scheduling, the wait, and the invoice. One flat price, no
-            subscription.
-          </p>
-        </div>
+    <section className="px-5 py-11">
+      <div className="text-center">
+        <span className="inline-block rounded-full bg-accent-soft px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-accent">
+          What’s included
+        </span>
+        <h2 className="font-display mt-4 text-[26px] font-semibold leading-[1.15] text-ink">
+          A <span className="text-accent">studio-grade</span> tour, every time
+        </h2>
+        <p className="mx-auto mt-3 max-w-[22rem] text-[14.5px] leading-[1.5] text-ink-soft">
+          A videographer charges $300–$1,000 — we skip the scheduling, wait, and
+          invoice.
+        </p>
+      </div>
 
-        <div className="mt-14 grid gap-10 sm:grid-cols-3">
-          {COLUMNS.map(({ Icon, title, body }) => (
-            <div key={title} className="text-center">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-accent-soft">
-                <Icon className="h-7 w-7 text-accent" />
-              </div>
-              <h3 className="font-display mt-6 text-xl font-semibold text-ink">
-                {title}
-              </h3>
-              {/* max-w keeps every subtitle to two rows */}
-              <p className="mx-auto mt-3 max-w-[17rem] leading-7 text-ink-soft">
-                {body}
-              </p>
-            </div>
-          ))}
+      {ROWS.map(({ Icon, title, body }) => (
+        <div
+          key={title}
+          className="mt-[18px] flex items-start gap-3.5 first:mt-[22px]"
+        >
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-accent-soft text-accent">
+            <Icon className="h-[22px] w-[22px]" />
+          </div>
+          <div>
+            <h3 className="font-display mt-0.5 text-[17px] font-semibold text-ink">
+              {title}
+            </h3>
+            <p className="mt-[5px] text-sm leading-[1.5] text-ink-soft">
+              {body}
+            </p>
+          </div>
         </div>
+      ))}
 
-        <div className="mt-14 flex justify-center">
-          <CtaButton />
-        </div>
-      </Container>
+      <div className="mt-[26px] flex justify-center">
+        <CtaButton label="Make my first tour" />
+      </div>
     </section>
   );
 }

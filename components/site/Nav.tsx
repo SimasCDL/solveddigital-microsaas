@@ -1,43 +1,71 @@
-import Link from "next/link";
-import { CtaButton } from "@/components/ab/CtaButton";
+"use client";
 
-const LINKS = [
-  { href: "#how", label: "How it works" },
-  { href: "#work", label: "Examples" },
-  { href: "#pricing", label: "Pricing" },
-  { href: "#faq", label: "FAQ" },
-];
+import { useState } from "react";
+import { Menu, Arrow } from "@/components/site/icons";
 
 export function Nav() {
-  return (
-    <header className="sticky top-3 z-50 sm:top-4">
-      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-        <div className="flex h-16 items-center justify-between rounded-full border border-line bg-cream/85 pl-6 pr-2.5 shadow-lg shadow-black/5 backdrop-blur-md">
-          {/* Left: logo + links */}
-          <div className="flex items-center gap-8">
-            <Link
-              href="/"
-              className="font-display text-xl tracking-tight text-ink"
-            >
-              Tourly
-            </Link>
-            <nav className="hidden items-center gap-7 text-sm text-ink/70 md:flex">
-              {LINKS.map((l) => (
-                <a
-                  key={l.href}
-                  href={l.href}
-                  className="transition-colors hover:text-ink"
-                >
-                  {l.label}
-                </a>
-              ))}
-            </nav>
-          </div>
+  const [menuOpen, setMenuOpen] = useState(false);
+  const close = () => setMenuOpen(false);
 
-          {/* Right: CTA */}
-          <CtaButton size="sm" label="Make my tour" />
+  return (
+    <div className="relative z-30 px-3.5 pt-3.5">
+      <nav className="flex items-center rounded-[22px] bg-paper px-[18px] py-[15px] shadow-[0_8px_24px_rgba(21,19,15,0.07)]">
+        <button
+          type="button"
+          onClick={() => setMenuOpen((v) => !v)}
+          aria-label="Menu"
+          aria-expanded={menuOpen}
+          className="flex text-ink"
+        >
+          <Menu className="h-6 w-6" />
+        </button>
+        <div className="flex flex-1 items-center justify-center gap-[13px]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/tourly-mark.png"
+            alt="Tourly"
+            className="h-[26px] w-auto shrink-0"
+          />
+          <span className="font-display text-[25px] font-bold tracking-[-0.02em] text-ink">
+            Tourly
+          </span>
         </div>
-      </div>
-    </header>
+        <div className="w-6" />
+      </nav>
+
+      {menuOpen && (
+        <div className="relative z-[29] mt-2 overflow-hidden rounded-[18px] border border-line bg-paper shadow-[0_18px_44px_-18px_rgba(21,19,15,0.3)]">
+          <a
+            href="#how"
+            onClick={close}
+            className="block border-b border-line px-5 py-[15px] text-[15px] font-semibold text-ink"
+          >
+            How it works
+          </a>
+          <a
+            href="#pricing"
+            onClick={close}
+            className="block border-b border-line px-5 py-[15px] text-[15px] font-semibold text-ink"
+          >
+            Pricing
+          </a>
+          <a
+            href="#faq"
+            onClick={close}
+            className="block px-5 py-[15px] text-[15px] font-semibold text-ink"
+          >
+            FAQ
+          </a>
+          <a
+            href="#pricing"
+            onClick={close}
+            className="m-3 flex h-12 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-[15px] font-bold text-white"
+          >
+            Make my tour
+            <Arrow className="h-[17px] w-[17px]" />
+          </a>
+        </div>
+      )}
+    </div>
   );
 }

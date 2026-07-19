@@ -157,10 +157,7 @@ body {
 }
 .legal h2 {
   color: var(--color-ink);
-  font-family:
-    var(--font-sans),
-    system-ui,
-    sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   letter-spacing: -0.022em;
   font-weight: 600;
   font-size: 1.35rem;
@@ -189,4 +186,41 @@ body {
 .legal strong {
   color: var(--color-ink);
   font-weight: 600;
+}
+
+/* ── Mobile funnel ── */
+@keyframes railMove {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+.animate-rail {
+  animation: railMove 36s linear infinite;
+}
+@keyframes tourlyFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+.animate-float {
+  animation: tourlyFloat 3s ease-in-out infinite;
+}
+.rail {
+  scrollbar-width: none;
+}
+.rail::-webkit-scrollbar {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-rail,
+  .animate-float {
+    animation: none !important;
+  }
 }
