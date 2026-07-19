@@ -10,7 +10,7 @@ import { Guarantee } from "@/components/desktop/Guarantee";
 import { Pricing } from "@/components/desktop/Pricing";
 import { Faq } from "@/components/desktop/Faq";
 
-export default function Home() {
+export function DesktopLanding() {
   return (
     <>
       <PromoBar />
