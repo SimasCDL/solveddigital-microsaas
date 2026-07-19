@@ -15,7 +15,7 @@ const FAQS = [
   },
   {
     q: "What formats do I get?",
-    a: "Both a vertical cut for Reels and TikTok and a horizontal cut for YouTube and the MLS — branded with your logo and contact info.",
+    a: "Both a vertical cut for Reels and TikTok and a horizontal cut for YouTube and the MLS.",
   },
   {
     q: "Do I need any software or editing skills?",
