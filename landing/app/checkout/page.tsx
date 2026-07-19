@@ -14,12 +14,12 @@ export default async function CheckoutPage({
   searchParams: Promise<{ pack?: string; price?: string }>;
 }) {
   const { pack, price } = await searchParams;
-  const packLabel =
-    pack === "trio"
-      ? "3 video tours"
-      : pack === "single"
-        ? "1 video tour"
-        : "Your tour";
+  const PACK_LABELS: Record<string, string> = {
+    p15: "Up to 15 photos",
+    p25: "Up to 25 photos",
+    p40: "Up to 40 photos",
+  };
+  const packLabel = (pack && PACK_LABELS[pack]) ?? "Your listing tour";
 
   return (
     <main className="flex min-h-screen items-center justify-center py-20">

@@ -28,8 +28,15 @@ function PackCard({ pack }: { pack: Pack }) {
       </p>
 
       <div className="mt-3 flex items-baseline gap-2">
-        <span className="font-display text-6xl leading-none">
+        <span className="font-display text-5xl leading-none">
           {pack.priceLabel}
+        </span>
+        <span
+          className={`text-xl line-through ${
+            highlighted ? "text-cream/45" : "text-ink-soft/70"
+          }`}
+        >
+          {pack.wasLabel}
         </span>
         <span
           className={`text-sm ${highlighted ? "text-cream/50" : "text-ink-soft"}`}
@@ -43,14 +50,17 @@ function PackCard({ pack }: { pack: Pack }) {
           highlighted ? "text-cream/70" : "text-ink-soft"
         }`}
       >
-        {pack.cadence}
-        {pack.perVideoLabel ? ` · ${pack.perVideoLabel}` : ""}
+        {pack.blurb}
       </p>
 
       <ul className="mt-7 flex-1 space-y-3">
         {pack.features.map((f) => (
           <li key={f} className="flex items-center gap-3 text-[0.95rem]">
-            <Check className="h-4 w-4 shrink-0" />
+            <Check
+              className={`h-4 w-4 shrink-0 ${
+                highlighted ? "text-[#34c4a8]" : "text-accent"
+              }`}
+            />
             <span>{f}</span>
           </li>
         ))}
@@ -64,7 +74,7 @@ function PackCard({ pack }: { pack: Pack }) {
             : "bg-ink text-cream hover:bg-ink/90"
         }`}
       >
-        {pack.videos === 1 ? "Make my tour" : "Get 3 tours"}
+        Choose {pack.priceLabel}
         <Arrow className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
       </a>
     </div>
@@ -74,7 +84,7 @@ function PackCard({ pack }: { pack: Pack }) {
 export function Pricing() {
   return (
     <section id="pricing" className="py-24 sm:py-32">
-      <Container className="max-w-3xl">
+      <Container className="max-w-5xl">
         <div className="text-center">
           <p className="eyebrow text-ink-soft">Pricing</p>
           <h2 className="font-display mt-4 text-4xl leading-tight sm:text-5xl">
@@ -86,15 +96,14 @@ export function Pricing() {
           </p>
         </div>
 
-        <div className="mt-14 grid gap-6 sm:grid-cols-2">
+        <div className="mt-16 grid gap-6 sm:grid-cols-3">
           {PACKS.map((pack) => (
             <PackCard key={pack.id} pack={pack} />
           ))}
         </div>
 
         <p className="mt-8 text-center text-sm text-ink-soft">
-          Secure checkout · Instant delivery · Full refund if you don&apos;t
-          love it. Volume packs are coming soon.
+          Secure checkout · Instant delivery · Money-back guarantee
         </p>
       </Container>
     </section>

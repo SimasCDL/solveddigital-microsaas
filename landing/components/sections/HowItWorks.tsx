@@ -55,9 +55,8 @@ export function HowItWorks() {
               Get your polished video instantly
             </h3>
             <p className="mt-3 flex-1 text-[0.95rem] leading-7 text-ink-soft">
-              AI-powered editing turns your photos into a ready-to-post tour —
-              cinematic motion, music, captions and branding, assembled
-              automatically.
+              No videographer, no editing — AI turns your photos into a
+              ready-to-post tour for you.
             </p>
 
             {/* The finished tour. Wired to the real clip; swap for /how/tour.mp4 when ready. */}

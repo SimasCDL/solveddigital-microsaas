@@ -9,7 +9,6 @@ import { ValueStack } from "@/components/sections/ValueStack";
 import { Guarantee } from "@/components/sections/Guarantee";
 import { Pricing } from "@/components/sections/Pricing";
 import { Faq } from "@/components/sections/Faq";
-import { FinalCta } from "@/components/sections/FinalCta";
 
 export default function Home() {
   return (
@@ -25,7 +24,6 @@ export default function Home() {
         <Guarantee />
         <Pricing />
         <Faq />
-        <FinalCta />
       </main>
       <Footer />
     </>

@@ -11,12 +11,12 @@ const COLUMNS = [
   {
     Icon: Swap,
     title: "Made for every feed",
-    body: "Vertical and horizontal cuts for every feed, with auto captions.",
+    body: "Vertical and horizontal cuts for every feed.",
   },
   {
     Icon: Star,
-    title: "Branded and instant",
-    body: "Your logo, name and contact baked in — ready in about two minutes.",
+    title: "Instant delivery",
+    body: "Delivered straight into your inbox in about two minutes.",
   },
 ];
 
