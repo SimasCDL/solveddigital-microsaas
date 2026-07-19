@@ -12,6 +12,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--", "-p", "3100"],
       "port": 3100
+    },
+    {
+      "name": "funnel",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "landing", "run", "dev", "--", "-p", "3001"],
+      "port": 3001
     }
   ]
 }

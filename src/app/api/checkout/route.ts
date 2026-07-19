@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
     const url = await createCheckoutSession({
       orderId,
       email: order.email,
+      photoCount: order.photoUrls.length,
       successUrl: `${appUrl}/order/${orderId}?success=1`,
       cancelUrl: `${appUrl}/?cancelled=1`,
     });

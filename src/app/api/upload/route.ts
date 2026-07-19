@@ -11,17 +11,18 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const files = formData.getAll('photos') as File[];
     const email = formData.get('email') as string;
-    const propertyAddress = formData.get('propertyAddress') as string;
+    // property address is optional — kept for support labelling if provided
+    const propertyAddress = (formData.get('propertyAddress') as string) || '';
+    const music = formData.get('music') === 'true';
 
-    if (!files.length || !email || !propertyAddress) {
+    if (!files.length || !email) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const photoUrls: string[] = [];
-    for (const file of files.slice(0, 10)) {
-      const url = await fal.storage.upload(file);
-      photoUrls.push(url);
-    }
+    // up to 40 photos (the $150 pack) — uploaded in parallel
+    const photoUrls = await Promise.all(
+      files.slice(0, 40).map(file => fal.storage.upload(file))
+    );
 
     const orderId = uuid();
     const order: Order = {
@@ -29,6 +30,7 @@ export async function POST(req: NextRequest) {
       email,
       propertyAddress,
       photoUrls,
+      music,
       status: 'pending_payment',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

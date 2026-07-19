@@ -50,3 +50,37 @@ export async function readLocalVideo(id: string): Promise<Buffer | null> {
     return null;
   }
 }
+
+/** Turn a stored Supabase video URL into a signed URL that expires.
+ *  The videos bucket is PRIVATE — the permanent object URL stored on the order
+ *  is only reachable through links signed here (email links get 7 days, order
+ *  page playback gets shorter ones). Non-Supabase URLs pass through unchanged. */
+export async function signVideoUrl(url: string, expiresInSeconds: number): Promise<string> {
+  const base = process.env.SUPABASE_URL;
+  if (!base || !url.startsWith(base)) return url;
+
+  const match = url.match(/\/storage\/v1\/object\/(?:public\/)?videos\/(.+)$/);
+  if (!match) return url;
+  const objectPath = match[1];
+
+  try {
+    const res = await fetch(`${base}/storage/v1/object/sign/videos/${objectPath}`, {
+      method: 'POST',
+      headers: {
+        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ expiresIn: expiresInSeconds }),
+    });
+    if (!res.ok) throw new Error(`sign failed: ${res.status} ${await res.text()}`);
+    const { signedURL } = (await res.json()) as { signedURL: string };
+    return `${base}/storage/v1${signedURL}`;
+  } catch (err) {
+    console.error('[videos] signing failed, returning stored URL:', err);
+    return url;
+  }
+}
+
+export const signVideoUrls = (urls: string[], expiresInSeconds: number) =>
+  Promise.all(urls.map(u => signVideoUrl(u, expiresInSeconds)));

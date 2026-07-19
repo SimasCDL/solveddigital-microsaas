@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { listHistory, saveHistoryEntry } from '@/lib/history';
+import { signVideoUrl } from '@/lib/videos';
 
 export async function GET() {
   try {
-    return NextResponse.json({ entries: await listHistory() });
+    const entries = await listHistory();
+    // videos bucket is private — sign stored URLs so the admin panel can play them
+    const signed = await Promise.all(
+      entries.map(async e => ({
+        ...e,
+        videoUrl: e.videoUrl ? await signVideoUrl(e.videoUrl, 60 * 60) : e.videoUrl,
+      }))
+    );
+    return NextResponse.json({ entries: signed });
   } catch (err) {
     console.error('[history]', err);
     return NextResponse.json({ entries: [] });

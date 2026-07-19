@@ -2,34 +2,65 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+const appUrl = () => process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+// Tourly email shell — mirrors the funnel's design tokens (cream/ink/teal),
+// inline styles only (email clients strip everything else).
+const shell = (inner: string) => `
+  <div style="background:#faf8f3;padding:32px 16px;font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;">
+    <div style="max-width:560px;margin:0 auto;">
+      <p style="font-size:22px;font-weight:700;letter-spacing:-0.02em;color:#15130f;margin:0 0 20px;">Tourly</p>
+      <div style="background:#ffffff;border:1px solid #e7e1d6;border-radius:20px;padding:36px 32px;">
+        ${inner}
+      </div>
+      <p style="color:#6f6a60;font-size:12px;text-align:center;margin:20px 0 0;">
+        Tourly · AI video tours for your listings
+      </p>
+    </div>
+  </div>`;
+
 export async function sendDeliveryEmail(params: {
   to: string;
-  propertyAddress: string;
-  videoUrls: string[];
+  propertyAddress?: string;
   orderId: string;
 }): Promise<void> {
-  const [fullVideo, ...clips] = params.videoUrls;
-  const clipLinks = clips.length
-    ? `<p style="color:#999;margin:28px 0 8px;font-size:13px;">Individual clips (one per photo):</p>
-       <p style="line-height:2;">${clips
-         .map((url, i) => `<a href="${url}" style="color:#c9a96e;text-decoration:underline;margin-right:14px;white-space:nowrap;">Clip ${i + 1}</a>`)
-         .join('')}</p>`
-    : '';
+  const orderUrl = `${appUrl()}/order/${params.orderId}`;
+  const addr = params.propertyAddress?.trim();
 
   await resend.emails.send({
     from: process.env.FROM_EMAIL!,
     to: params.to,
-    subject: `Your Property Video is Ready`,
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#111;color:#fff;padding:40px;border-radius:8px;">
-        <h1 style="color:#c9a96e;font-size:24px;margin-bottom:8px;">Your video is ready</h1>
-        <p style="color:#999;margin-bottom:32px;">${params.propertyAddress}</p>
-        <p style="margin-bottom:24px;">Your full property video, plus every individual clip:</p>
-        <p style="margin-bottom:12px;"><a href="${fullVideo}" style="display:inline-block;background:#c9a96e;color:#000;font-weight:700;padding:14px 28px;border-radius:8px;text-decoration:none;">Download the full video</a></p>
-        ${clipLinks}
-        <p style="color:#666;font-size:12px;margin-top:32px;">Order #${params.orderId}</p>
-      </div>
-    `,
+    subject: addr ? `Your video tour is ready — ${addr}` : `Your video tour is ready`,
+    html: shell(`
+      <h1 style="color:#15130f;font-size:26px;font-weight:600;letter-spacing:-0.022em;margin:0 0 ${addr ? '6px' : '28px'};">Your tour is ready</h1>
+      ${addr ? `<p style="color:#6f6a60;font-size:15px;margin:0 0 28px;">${addr}</p>` : ''}
+      <p style="color:#15130f;font-size:15px;margin:0 0 28px;">
+        Your tour is ready to watch and download — widescreen for Zillow &amp; the MLS,
+        plus two vertical cuts for Reels and TikTok. Open your page to grab them all.
+      </p>
+      <p style="margin:0 0 28px;">
+        <a href="${orderUrl}" style="display:inline-block;background:#0f7d6b;color:#ffffff;font-weight:600;font-size:15px;padding:15px 32px;border-radius:999px;text-decoration:none;">Watch &amp; download your tour &rarr;</a>
+      </p>
+      <p style="color:#6f6a60;font-size:12px;margin:28px 0 0;border-top:1px solid #e7e1d6;padding-top:16px;">
+        Order #${params.orderId} &middot; Your videos stay available on this page for 7 days.
+      </p>
+    `),
+  });
+}
+
+/** Internal ops alert — goes to ADMIN_ALERT_EMAIL, never to customers. */
+export async function sendAdminAlert(subject: string, body: string): Promise<void> {
+  const to = process.env.ADMIN_ALERT_EMAIL;
+  if (!to) {
+    console.error(`[alert] ADMIN_ALERT_EMAIL not set — dropping alert: ${subject}\n${body}`);
+    return;
+  }
+  await resend.emails.send({
+    from: process.env.FROM_EMAIL!,
+    to,
+    subject: `[Tourly ops] ${subject}`,
+    html: `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;">${body
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')}</pre>`,
   });
 }
 
@@ -40,12 +71,15 @@ export async function sendFailureEmail(params: {
   await resend.emails.send({
     from: process.env.FROM_EMAIL!,
     to: params.to,
-    subject: `Issue with your Property Walkthrough Video`,
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#111;color:#fff;padding:40px;border-radius:8px;">
-        <h1 style="color:#c9a96e;font-size:24px;">We ran into an issue</h1>
-        <p>We encountered a problem generating your video for order #${params.orderId}. Our team has been notified and you will receive a full refund within 3-5 business days.</p>
-      </div>
-    `,
+    subject: `An issue with your Tourly video`,
+    html: shell(`
+      <h1 style="color:#15130f;font-size:24px;font-weight:600;letter-spacing:-0.022em;margin:0 0 12px;">We ran into an issue</h1>
+      <p style="color:#6f6a60;font-size:15px;line-height:1.6;margin:0;">
+        Something went wrong while generating your video for order #${params.orderId}.
+        Our team has been notified${process.env.NEXT_PUBLIC_FREE_MODE === 'true'
+          ? ' and we&rsquo;ll make it right — just reply to this email and we&rsquo;ll regenerate your tour.'
+          : ' and you will receive a full refund within 3&ndash;5 business days.'}
+      </p>
+    `),
   });
 }

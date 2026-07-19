@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Sans, Plus_Jakarta_Sans } from "next/font/google";
+import { Geist, IBM_Plex_Sans, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+  display: "swap",
+});
 
 const ibmPlex = IBM_Plex_Sans({
   variable: "--font-ibm",
@@ -15,8 +21,9 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Property Walkthrough Videos | Solved Digital",
-  description: "Turn your property photos into professional AI-generated walkthrough videos. Perfect for Airbnb, real estate listings, and rental platforms.",
+  title: "Tourly — Upload your listing photos",
+  description:
+    "Turn your listing photos into a cinematic AI video tour. Upload your photos and get the finished video by email.",
 };
 
 export default function RootLayout({
@@ -25,7 +32,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${ibmPlex.variable} ${plusJakarta.variable}`}>
+    <html lang="en" className={`${geistSans.variable} ${ibmPlex.variable} ${plusJakarta.variable}`}>
       <body className="min-h-screen">{children}</body>
     </html>
   );

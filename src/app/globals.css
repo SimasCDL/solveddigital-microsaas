@@ -46,6 +46,38 @@
   --font-heading: var(--font-jakarta);
 }
 
+/* Tourly design tokens — mirrored from landing/app/globals.css so the customer
+   pages (upload, order) match the funnel exactly. Keep in sync with landing/. */
+@theme {
+  --color-cream: #faf8f3;
+  --color-paper: #ffffff;
+  --color-tink: #15130f;
+  --color-tink-soft: #6f6a60;
+  --color-line: #e7e1d6;
+  --color-night: #100d09;
+  --color-night-soft: #221d16;
+  --color-accent: #0f7d6b;
+  --color-accent-soft: #e3f3ec;
+  --color-star: #f5b945;
+}
+
+/* Tourly typography — Geist, bold, optically tightened (matches .font-display). */
+.tourly {
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+.tourly .font-display {
+  letter-spacing: -0.022em;
+  font-weight: 600;
+}
+.tourly .eyebrow {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
 *,
 *::before,
 *::after {

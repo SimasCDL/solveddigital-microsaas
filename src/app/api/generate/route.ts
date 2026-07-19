@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { fal } from '@fal-ai/client';
-import { generateTransitionClip, generateVideo, extractLastFrame, makeRunBudget } from '@/lib/fal';
+import { generateTransitionClip, generateVideo, generateReelSegment, chunkPhotos, extractLastFrame, makeRunBudget } from '@/lib/fal';
 import { planTransitions } from '@/lib/sort';
 
 fal.config({ credentials: process.env.FAL_KEY! });
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   }
 
   const formData = await req.formData();
-  const files = (formData.getAll('photos') as File[]).slice(0, 12);
+  const files = (formData.getAll('photos') as File[]).slice(0, 40);
 
   // Remote photos (e.g. from an ingested Airbnb listing) come as a JSON array of
   // public URLs — no fal storage upload needed, models accept them directly.
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   if (typeof rawUrls === 'string' && rawUrls) {
     try {
       const parsed = JSON.parse(rawUrls);
-      if (Array.isArray(parsed)) remoteUrls = parsed.filter(u => typeof u === 'string').slice(0, 12);
+      if (Array.isArray(parsed)) remoteUrls = parsed.filter(u => typeof u === 'string').slice(0, 40);
     } catch { /* treated as no remote photos */ }
   }
 
@@ -129,6 +129,43 @@ export async function POST(req: NextRequest) {
             push(controller, { type: 'error', message: 'All clips failed to generate. This is usually temporary — please try again in a minute.' });
           } else {
             push(controller, { type: 'done', videoUrls: ordered, photoUrls });
+          }
+          return;
+        }
+
+        if (process.env.VIDEO_PROVIDER === 'seedance' && process.env.REPLICATE_API_TOKEN) {
+          // Seedance reel mode: photos are auto-grouped (max 5 per segment, ~3s each);
+          // each group becomes ONE multi-shot generation, segments are stitched after.
+          const chunks = chunkPhotos(photoUrls, 5);
+          const total = chunks.length;
+          const segmentUrls: string[] = new Array(total);
+          const runBudget = makeRunBudget(total);
+
+          push(controller, { type: 'status', message: `Generating ${total} segment(s) from ${photoUrls.length} photo(s)...` });
+
+          await Promise.all(
+            chunks.map(async (chunk, i) => {
+              push(controller, { type: 'progress', clip: i + 1, total, message: `Segment ${i + 1} (${chunk.length} photos) generating...` });
+              try {
+                const url = await generateReelSegment(chunk, msg =>
+                  push(controller, { type: 'progress', clip: i + 1, total, message: `Segment ${i + 1} ${msg}` }),
+                  runBudget
+                );
+                segmentUrls[i] = url;
+                console.log(`[generate] segment ${i + 1} ready: ${url}`);
+                push(controller, { type: 'clip_ready', clip: i + 1, total, url });
+              } catch (err) {
+                console.error(`[generate] segment ${i + 1} failed:`, err);
+                push(controller, { type: 'progress', clip: i + 1, total, message: `Segment ${i + 1} failed after all attempts — skipping` });
+              }
+            })
+          );
+
+          const okSegments = segmentUrls.filter(Boolean);
+          if (!okSegments.length) {
+            push(controller, { type: 'error', message: 'All segments failed to generate. This is usually temporary — please try again in a minute.' });
+          } else {
+            push(controller, { type: 'done', videoUrls: okSegments, photoUrls });
           }
           return;
         }

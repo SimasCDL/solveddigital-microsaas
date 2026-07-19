@@ -4,11 +4,17 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2026-06-24.dahlia',
 });
 
-export const PRICE_CENTS = 9700; // $97.00
+// Pack ladder — keep in sync with PACKS in src/app/page.tsx
+export function priceForPhotoCount(n: number): number {
+  if (n <= 10) return 7000; // $70
+  if (n <= 20) return 10000; // $100
+  return 15000; // $150 — up to 40 photos
+}
 
 export async function createCheckoutSession(params: {
   orderId: string;
   email: string;
+  photoCount: number;
   successUrl: string;
   cancelUrl: string;
 }): Promise<string> {
@@ -20,11 +26,10 @@ export async function createCheckoutSession(params: {
       {
         price_data: {
           currency: 'usd',
-          unit_amount: PRICE_CENTS,
+          unit_amount: priceForPhotoCount(params.photoCount),
           product_data: {
-            name: 'Property Walkthrough Video',
-            description: 'AI-generated cinematic walkthrough from your property photos. Delivered within 30 minutes.',
-            images: ['https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600'],
+            name: `Tourly video tour — ${params.photoCount} photo${params.photoCount === 1 ? '' : 's'}`,
+            description: 'Cinematic AI video tour generated from your listing photos, delivered by email.',
           },
         },
         quantity: 1,

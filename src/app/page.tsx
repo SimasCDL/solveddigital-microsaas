@@ -1,263 +1,237 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
-export default function Home() {
+const MAX_PHOTOS = 40;
+
+// Customers arrive here from the funnel AFTER paying (Stripe checkout lives in
+// the landing funnel). With NEXT_PUBLIC_FREE_MODE=true, submitting starts
+// generation immediately via /api/fulfill — no checkout on this side. Turning
+// the flag off restores this app's own Stripe checkout as a fallback.
+const SKIP_CHECKOUT = process.env.NEXT_PUBLIC_FREE_MODE === 'true';
+
+function Arrow({ className = '' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M2 8h11m0 0L9.5 4.5M13 8l-3.5 3.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export default function UploadPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [email, setEmail] = useState('');
-  const [address, setAddress] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const [music, setMusic] = useState(true);
   const [error, setError] = useState('');
   const [step, setStep] = useState<'form' | 'uploading' | 'redirecting'>('form');
 
+  const previews = useMemo(() => files.map(f => URL.createObjectURL(f)), [files]);
+
   const handleFiles = (selected: FileList | null) => {
     if (!selected) return;
-    const valid = Array.from(selected).filter(f => f.type.startsWith('image/')).slice(0, 10);
-    setFiles(prev => [...prev, ...valid].slice(0, 10));
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    handleFiles(e.dataTransfer.files);
+    const valid = Array.from(selected).filter(f => f.type.startsWith('image/'));
+    setFiles(prev => [...prev, ...valid].slice(0, MAX_PHOTOS));
   };
 
   const removeFile = (i: number) => setFiles(f => f.filter((_, idx) => idx !== i));
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!files.length || !email || !address) {
-      setError('Please upload photos and fill in all fields.');
-      return;
-    }
+  const handleSubmit = async () => {
+    if (!files.length) return setError('Add your listing photos first.');
+    if (!email) return setError('Add your email so we can send your tour.');
     setError('');
     setStep('uploading');
-    setLoading(true);
     try {
       const formData = new FormData();
       formData.append('email', email);
-      formData.append('propertyAddress', address);
+      formData.append('music', String(music));
       files.forEach(f => formData.append('photos', f));
       const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
-      if (!uploadRes.ok) throw new Error('Upload failed');
+      if (!uploadRes.ok) throw new Error('Upload failed — please try again.');
       const { orderId } = await uploadRes.json();
       setStep('redirecting');
+
+      if (SKIP_CHECKOUT) {
+        // payment already happened in the funnel — the Stripe session id rides
+        // along on the success-URL redirect and is verified server-side
+        const sessionId = new URLSearchParams(window.location.search).get('session_id');
+        const res = await fetch('/api/fulfill', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId, sessionId }),
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => null);
+          throw new Error(body?.error || 'Could not start your tour — please try again.');
+        }
+        window.location.href = `/order/${orderId}`;
+        return;
+      }
+
       const checkoutRes = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderId }),
       });
-      if (!checkoutRes.ok) throw new Error('Checkout failed');
+      if (!checkoutRes.ok) throw new Error('Could not open checkout — please try again.');
       const { url } = await checkoutRes.json();
       window.location.href = url;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
       setStep('form');
-      setLoading(false);
     }
   };
 
+  const busy = step !== 'form';
+  const ctaLabel = busy
+    ? step === 'uploading' ? 'Uploading your photos…' : SKIP_CHECKOUT ? 'Starting your tour…' : 'Opening secure checkout…'
+    : 'Create my tour';
+
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
-      {/* Header */}
-      <header style={{
-        height: 56,
-        borderBottom: '1px solid var(--border)',
-        display: 'flex',
-        alignItems: 'center',
-        paddingInline: 24,
-        justifyContent: 'space-between',
-      }}>
-        <span style={{
-          fontFamily: '"Plus Jakarta Sans", system-ui, sans-serif',
-          fontSize: 20,
-          fontWeight: 800,
-          letterSpacing: '-0.01em',
-          color: 'var(--ink)',
-        }}>
-          Solved Digital
-        </span>
-        <span className="cap">Real estate video</span>
+    <div className="tourly flex h-screen flex-col overflow-hidden bg-cream text-tink">
+      {/* Nav — the funnel's frosted island */}
+      <header className="shrink-0 px-4 pt-3 sm:px-6 sm:pt-4">
+        <div className="mx-auto w-full max-w-2xl">
+          <div className="flex h-14 items-center justify-between rounded-full border border-line bg-cream/85 px-6 shadow-lg shadow-black/5 backdrop-blur-md">
+            <span className="font-display text-xl tracking-tight text-tink">Tourly</span>
+            <span className="hidden text-sm text-tink-soft sm:block">Delivered to your inbox</span>
+          </div>
+        </div>
       </header>
 
-      {/* Main */}
-      <main style={{ maxWidth: 560, margin: '0 auto', padding: '56px 20px 80px' }}>
+      <main className="flex min-h-0 flex-1 items-center justify-center px-4 py-4 sm:px-6">
+        <div className="w-full max-w-2xl">
+          {/* Heading */}
+          <div className="mb-4 text-center">
+            <h1 className="font-display text-2xl leading-tight text-tink sm:text-3xl">
+              Upload your listing photos
+            </h1>
+            <p className="mx-auto mt-1.5 max-w-md text-sm text-tink-soft">
+              Drop in up to {MAX_PHOTOS} photos — your cinematic tour lands in your inbox.
+            </p>
+          </div>
 
-        {/* Hero */}
-        <div style={{ marginBottom: 40 }}>
-          <p className="cap" style={{ marginBottom: 12 }}>Powered by Kling AI</p>
-          <h1 style={{
-            fontFamily: '"Plus Jakarta Sans", system-ui, sans-serif',
-            fontSize: 32,
-            fontWeight: 800,
-            letterSpacing: '-0.02em',
-            lineHeight: 1.15,
-            color: 'var(--ink)',
-            marginBottom: 12,
-          }}>
-            Turn property photos into cinematic walkthrough videos
-          </h1>
-          <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6, maxWidth: 440 }}>
-            Upload your Airbnb or listing photos. Get a professional AI walkthrough video delivered to your inbox within 30 minutes.
-          </p>
-        </div>
-
-        {/* Steps */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 32 }}>
-          {[
-            { n: '1', label: 'Upload photos' },
-            { n: '2', label: 'We generate' },
-            { n: '3', label: 'Video delivered' },
-          ].map((s, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
-              <span className="cidx" style={{ color: 'var(--ink)' }}>{s.n}</span>
-              <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--muted)', whiteSpace: 'nowrap' }}>{s.label}</span>
-              {i < 2 && (
-                <div style={{ flex: 1, height: 1, background: 'var(--border)', marginLeft: 4 }} />
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Form card */}
-        <div className="card" style={{ padding: 20, marginBottom: 32 }}>
-
-          {/* Upload zone */}
-          <div
-            onDrop={handleDrop}
-            onDragOver={e => e.preventDefault()}
-            onClick={() => fileRef.current?.click()}
-            style={{
-              border: '1px dashed var(--border)',
-              borderRadius: 12,
-              padding: files.length ? 12 : '28px 20px',
-              textAlign: 'center',
-              cursor: 'pointer',
-              background: 'var(--bg2)',
-              marginBottom: 16,
-              transition: 'border-color 0.15s',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--hover)')}
-            onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-          >
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={e => handleFiles(e.target.files)}
-            />
-            {files.length === 0 ? (
-              <>
-                <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)', marginBottom: 3 }}>
-                  Drop property photos here
-                </p>
-                <p style={{ fontSize: 12, color: 'var(--muted2)' }}>
-                  or click to browse — up to 10 photos
-                </p>
-              </>
-            ) : (
-              <div
-                style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6 }}
-                onClick={e => e.stopPropagation()}
-              >
-                {files.map((f, i) => (
-                  <div key={i} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', aspectRatio: '1', background: 'var(--slot)' }}>
-                    <img
-                      src={URL.createObjectURL(f)}
-                      alt=""
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                    />
+          {/* Upload card */}
+          <div className="rounded-2xl border border-line bg-paper p-4 shadow-xl shadow-black/5 sm:p-5">
+            {/* Drop zone */}
+            <div
+              onDrop={e => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files); }}
+              onDragOver={e => { e.preventDefault(); setDragging(true); }}
+              onDragLeave={() => setDragging(false)}
+              onClick={() => !files.length && fileRef.current?.click()}
+              className={`rounded-xl border border-dashed transition-colors ${
+                dragging ? 'border-accent bg-accent-soft/40' : 'border-line bg-cream'
+              } ${files.length ? 'p-2.5' : 'cursor-pointer p-7 text-center'}`}
+            >
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={e => handleFiles(e.target.files)}
+              />
+              {files.length === 0 ? (
+                <>
+                  <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-accent-soft text-accent">
+                    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
+                      <path d="M12 16V5m0 0L7.5 9.5M12 5l4.5 4.5M4 19h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  <p className="font-display text-base text-tink">Drop your photos here</p>
+                  <p className="mt-0.5 text-sm text-tink-soft">or click to browse — JPG or PNG, up to {MAX_PHOTOS}</p>
+                </>
+              ) : (
+                <div className="grid max-h-[34vh] grid-cols-5 gap-1.5 overflow-y-auto sm:grid-cols-8">
+                  {previews.map((src, i) => (
+                    <div key={i} className="group relative aspect-square overflow-hidden rounded-lg bg-line">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={src} alt={`Photo ${i + 1}`} className="h-full w-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removeFile(i)}
+                        aria-label={`Remove photo ${i + 1}`}
+                        className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-night/60 text-[11px] leading-none text-white opacity-0 transition-opacity group-hover:opacity-100"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                  {files.length < MAX_PHOTOS && (
                     <button
                       type="button"
-                      onClick={() => removeFile(i)}
-                      style={{
-                        position: 'absolute', top: 3, right: 3,
-                        width: 16, height: 16,
-                        background: 'rgba(0,0,0,0.55)',
-                        border: 'none', borderRadius: '50%',
-                        color: '#fff', fontSize: 10, cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        lineHeight: 1,
-                      }}
+                      onClick={() => fileRef.current?.click()}
+                      className="flex aspect-square items-center justify-center rounded-lg border border-dashed border-line text-lg text-tink-soft transition-colors hover:border-accent hover:text-accent"
                     >
-                      ×
+                      +
                     </button>
-                  </div>
-                ))}
-                {files.length < 10 && (
-                  <div
-                    onClick={() => fileRef.current?.click()}
-                    style={{
-                      aspectRatio: '1', background: 'var(--slot)', borderRadius: 8,
-                      border: '1px dashed var(--border)', display: 'flex',
-                      alignItems: 'center', justifyContent: 'center',
-                      color: 'var(--muted2)', fontSize: 18, cursor: 'pointer',
-                    }}
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Music + email row */}
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="eyebrow mb-1.5 block text-tink-soft">Soundtrack</label>
+                <div className="grid grid-cols-2 gap-1 rounded-xl border border-line bg-cream p-1">
+                  <button
+                    type="button"
+                    onClick={() => setMusic(true)}
+                    className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                      music ? 'bg-paper text-tink shadow-sm' : 'text-tink-soft hover:text-tink'
+                    }`}
                   >
-                    +
-                  </div>
-                )}
+                    🎵 Music
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMusic(false)}
+                    className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                      !music ? 'bg-paper text-tink shadow-sm' : 'text-tink-soft hover:text-tink'
+                    }`}
+                  >
+                    No music
+                  </button>
+                </div>
               </div>
-            )}
+              <div>
+                <label htmlFor="email" className="eyebrow mb-1.5 block text-tink-soft">Email</label>
+                <input
+                  id="email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className="h-11 w-full rounded-xl border border-line bg-paper px-4 text-[15px] text-tink outline-none transition-colors placeholder:text-tink-soft/60 focus:border-accent focus:ring-2 focus:ring-accent/15"
+                />
+              </div>
+            </div>
+
+            {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+
+            {/* CTA — the funnel's shiny accent button */}
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={busy}
+              className="group mt-4 inline-flex h-13 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] px-7 py-3.5 text-[0.95rem] font-semibold tracking-tight text-white shadow-[0_14px_34px_-10px_rgba(15,125,107,0.65)] ring-1 ring-white/10 transition-all hover:brightness-[1.06] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <span>{ctaLabel}</span>
+              {!busy && <Arrow className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />}
+            </button>
+
+            <p className="mt-3 text-center text-[13px] text-tink-soft">
+              Widescreen + 2 vertical cuts · Ready in ~15 minutes
+            </p>
           </div>
 
-          {/* Fields */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
-            <div>
-              <label className="cap" style={{ display: 'block', marginBottom: 6 }}>Email</label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="field"
-              />
-            </div>
-            <div>
-              <label className="cap" style={{ display: 'block', marginBottom: 6 }}>Property address</label>
-              <input
-                type="text"
-                required
-                value={address}
-                onChange={e => setAddress(e.target.value)}
-                placeholder="123 Main St, City"
-                className="field"
-              />
-            </div>
-          </div>
-
-          {error && (
-            <p style={{ fontSize: 12, color: '#c0392b', marginBottom: 10 }}>{error}</p>
-          )}
-
-          <button type="button" onClick={handleSubmit} disabled={loading} className="btn-primary" style={{ marginBottom: 10 }}>
-            {step === 'uploading' ? 'Uploading photos…' :
-             step === 'redirecting' ? 'Opening checkout…' :
-             'Order walkthrough video — $97'}
-          </button>
-
-          <p style={{ fontSize: 11, color: 'var(--muted2)', textAlign: 'center' }}>
-            Secure checkout · 30-day money-back guarantee · ~30 min delivery
+          {/* Compact trust line replaces the tall 3-step section */}
+          <p className="mt-4 text-center text-[13px] text-tink-soft">
+            Upload → we film your tour → delivered to your inbox. No editing, no software.
           </p>
-        </div>
-
-        {/* What you get */}
-        <p className="cap" style={{ marginBottom: 14 }}>What you get</p>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          {[
-            { title: 'Cinematic quality', desc: 'Smooth gimbal-style camera movement, photorealistic depth' },
-            { title: 'Full walkthrough', desc: 'Exterior through every major room, one continuous tour' },
-            { title: 'Fast delivery', desc: 'Video in your inbox within 30 minutes of payment' },
-            { title: 'Listing-ready', desc: 'Perfect for Airbnb, Zillow, Booking.com, and Instagram' },
-          ].map((item, i) => (
-            <div key={i} className="card" style={{ padding: '14px 16px' }}>
-              <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 4 }}>{item.title}</p>
-              <p style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.5 }}>{item.desc}</p>
-            </div>
-          ))}
         </div>
       </main>
     </div>

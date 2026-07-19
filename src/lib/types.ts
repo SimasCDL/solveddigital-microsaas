@@ -5,6 +5,7 @@ export interface Order {
   email: string;
   propertyAddress: string;
   photoUrls: string[];
+  music?: boolean;
   status: OrderStatus;
   stripeSessionId?: string;
   falRequestIds?: string[];

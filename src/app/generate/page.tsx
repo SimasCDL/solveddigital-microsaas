@@ -42,6 +42,7 @@ export default function Generate() {
   const [state, setState] = useState<State>('idle');
   const [statusMsg, setStatusMsg] = useState('');
   const [clipsDone, setClipsDone] = useState(0);
+  const [clipTotal, setClipTotal] = useState(0);
   const [clipUrls, setClipUrls] = useState<string[]>([]);
   const [finalVideo, setFinalVideo] = useState('');
   const [error, setError] = useState('');
@@ -132,8 +133,8 @@ export default function Generate() {
 
   const handleFiles = (list: FileList | null) => {
     if (!list) return;
-    const imgs = Array.from(list).filter(f => f.type.startsWith('image/')).slice(0, 12);
-    setFiles(prev => [...prev, ...imgs].slice(0, 12));
+    const imgs = Array.from(list).filter(f => f.type.startsWith('image/')).slice(0, 40);
+    setFiles(prev => [...prev, ...imgs].slice(0, 40));
     setRemoteUrls([]);
     setSorted([]);
     if (state === 'sorted') setState('idle');
@@ -273,6 +274,7 @@ export default function Generate() {
           const event = JSON.parse(line.slice(6));
 
           if (event.type === 'status' || event.type === 'progress') setStatusMsg(event.message);
+          if ((event.type === 'progress' || event.type === 'clip_ready') && event.total) setClipTotal(event.total);
           if (event.type === 'clip_ready') {
             clipSlots[event.clip - 1] = event.url;
             const ready = clipSlots.filter(Boolean) as string[];
@@ -310,7 +312,7 @@ export default function Generate() {
   const busy = state === 'generating' || state === 'stitching';
   const showRight = finalVideo || busy;
   const photoCount = sorted.length || files.length || remoteUrls.length;
-  const expectedClips = mode === 'walkthrough' ? Math.max(photoCount * 2 - 1, 0) : photoCount;
+  const expectedClips = clipTotal || (mode === 'walkthrough' ? Math.max(photoCount * 2 - 1, 0) : photoCount);
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
@@ -331,10 +333,10 @@ export default function Generate() {
         <div style={{ display: 'grid', gridTemplateColumns: showRight ? '1fr 1fr' : '1fr', gap: 32, marginBottom: 64 }}>
           <div>
             <h1 style={{ fontFamily: '"Plus Jakarta Sans",system-ui,sans-serif', fontSize: 22, fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--ink)', marginBottom: 6 }}>
-              Property walkthrough generator
+              Tourly video generator
             </h1>
             <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 24, lineHeight: 1.5 }}>
-              Drop your listing photos. AI sorts them into walkthrough order, then generates one continuous video.
+              Drop your listing photos. AI sorts them, then generates cinematic 1080p clips and stitches them into one video.
             </p>
 
             {(state === 'idle' || state === 'sorted') && (
@@ -377,7 +379,7 @@ export default function Generate() {
                 {files.length === 0 ? (
                   <>
                     <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)', marginBottom: 3 }}>Drop photos here</p>
-                    <p style={{ fontSize: 12, color: 'var(--muted2)' }}>jpg, png, webp — up to 12</p>
+                    <p style={{ fontSize: 12, color: 'var(--muted2)' }}>jpg, png, webp — up to 40</p>
                   </>
                 ) : (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }} onClick={e => e.stopPropagation()}>
@@ -387,7 +389,7 @@ export default function Generate() {
                         <button type="button" onClick={() => removeFile(i)} style={{ position: 'absolute', top: 3, right: 3, width: 16, height: 16, background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%', color: '#fff', fontSize: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
                       </div>
                     ))}
-                    {files.length < 12 && (
+                    {files.length < 40 && (
                       <div onClick={() => fileRef.current?.click()} style={{ aspectRatio: '1', background: 'var(--slot)', borderRadius: 8, border: '1px dashed var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted2)', fontSize: 20, cursor: 'pointer' }}>+</div>
                     )}
                   </div>
