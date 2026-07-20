@@ -1,6 +1,12 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy singleton — constructing Resend at module load throws "Missing API key"
+// during Vercel's build (env vars aren't present then). Build it on first send.
+let _resend: Resend | null = null;
+function getResend(): Resend | null {
+  if (!process.env.RESEND_API_KEY) return null;
+  return (_resend ??= new Resend(process.env.RESEND_API_KEY));
+}
 
 const appUrl = () => process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
@@ -27,6 +33,8 @@ export async function sendDeliveryEmail(params: {
   const orderUrl = `${appUrl()}/order/${params.orderId}`;
   const addr = params.propertyAddress?.trim();
 
+  const resend = getResend();
+  if (!resend) { console.error("[resend] RESEND_API_KEY not set — skipping email"); return; }
   await resend.emails.send({
     from: process.env.FROM_EMAIL!,
     to: params.to,
@@ -55,6 +63,8 @@ export async function sendAdminAlert(subject: string, body: string): Promise<voi
     console.error(`[alert] ADMIN_ALERT_EMAIL not set — dropping alert: ${subject}\n${body}`);
     return;
   }
+  const resend = getResend();
+  if (!resend) { console.error("[resend] RESEND_API_KEY not set — skipping email"); return; }
   await resend.emails.send({
     from: process.env.FROM_EMAIL!,
     to,
@@ -68,6 +78,8 @@ export async function sendFailureEmail(params: {
   to: string;
   orderId: string;
 }): Promise<void> {
+  const resend = getResend();
+  if (!resend) { console.error("[resend] RESEND_API_KEY not set — skipping email"); return; }
   await resend.emails.send({
     from: process.env.FROM_EMAIL!,
     to: params.to,

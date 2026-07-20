@@ -1,8 +1,13 @@
 import Stripe from 'stripe';
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-06-24.dahlia',
-});
+// Lazy singleton — constructing Stripe at module load throws when the secret key
+// isn't present (e.g. during Vercel's build). Build it on first use instead.
+let _stripe: Stripe | null = null;
+export function getStripe(): Stripe {
+  return (_stripe ??= new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: '2026-06-24.dahlia',
+  }));
+}
 
 // Pack ladder — keep in sync with PACKS in src/app/page.tsx
 export function priceForPhotoCount(n: number): number {
@@ -18,7 +23,7 @@ export async function createCheckoutSession(params: {
   successUrl: string;
   cancelUrl: string;
 }): Promise<string> {
-  const session = await stripe.checkout.sessions.create({
+  const session = await getStripe().checkout.sessions.create({
     mode: 'payment',
     customer_email: params.email,
     client_reference_id: params.orderId,

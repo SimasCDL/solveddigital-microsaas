@@ -1,6 +1,9 @@
 import Anthropic from '@anthropic-ai/sdk';
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+// Lazy singleton — constructing Anthropic at module load throws when the API key
+// isn't present (e.g. during Vercel's build). Build it on first use.
+let _client: Anthropic | null = null;
+const client = () => (_client ??= new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! }));
 
 export const ROOM_ORDER: Record<string, number> = {
   exterior:       0,
@@ -18,7 +21,7 @@ export const ROOM_ORDER: Record<string, number> = {
 };
 
 export async function classifyPhoto(base64: string, mediaType: string): Promise<string> {
-  const msg = await client.messages.create({
+  const msg = await client().messages.create({
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 10,
     messages: [{
@@ -74,7 +77,7 @@ export async function planWalkthrough(photos: PhotoSource[]): Promise<Walkthroug
   ]);
   content.push({ type: 'text', text: PLAN_PROMPT });
 
-  const msg = await client.messages.create({
+  const msg = await client().messages.create({
     model: 'claude-sonnet-5',
     max_tokens: 800,
     messages: [{ role: 'user', content }],
@@ -120,7 +123,7 @@ export async function planTransitions(urls: string[]): Promise<string[]> {
   ]);
   content.push({ type: 'text', text: TRANSITIONS_PROMPT });
 
-  const msg = await client.messages.create({
+  const msg = await client().messages.create({
     model: 'claude-sonnet-5',
     max_tokens: 1200,
     messages: [{ role: 'user', content }],

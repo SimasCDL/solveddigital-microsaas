@@ -2,7 +2,7 @@ import { after } from 'next/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { getOrder, updateOrder, countOrdersBySession } from '@/lib/orders';
 import { fulfillOrder } from '@/lib/fulfill';
-import { stripe } from '@/lib/stripe';
+import { getStripe } from '@/lib/stripe';
 
 export const maxDuration = 800;
 
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       );
     }
     try {
-      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      const session = await getStripe().checkout.sessions.retrieve(sessionId);
       if (session.payment_status !== 'paid') {
         return NextResponse.json(
           { error: 'This checkout hasn’t been paid yet. Please complete your purchase first.' },

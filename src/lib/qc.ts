@@ -7,7 +7,11 @@ import { execFile } from 'child_process';
 import { promisify } from 'util';
 
 const execFileAsync = promisify(execFile);
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+
+// Lazy singleton — constructing Anthropic at module load throws when the API key
+// isn't present (e.g. during Vercel's build). Build it on first use.
+let _client: Anthropic | null = null;
+const client = () => (_client ??= new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! }));
 
 const ffmpegBin = () =>
   join(
@@ -95,7 +99,7 @@ export async function qcReelSegment(clipUrl: string, sourcePhotoUrls: string[]):
     }
     content.push({ type: 'text', text: REEL_QC_PROMPT });
 
-    const msg = await client.messages.create({
+    const msg = await client().messages.create({
       model: 'claude-sonnet-5',
       max_tokens: 1500,
       messages: [{ role: 'user', content }],
@@ -155,7 +159,7 @@ export async function qcClip(clipUrl: string, sourcePhotoUrl: string): Promise<Q
     });
     content.push({ type: 'text', text: QC_PROMPT });
 
-    const msg = await client.messages.create({
+    const msg = await client().messages.create({
       model: 'claude-sonnet-5',
       max_tokens: 1500,
       messages: [{ role: 'user', content }],
