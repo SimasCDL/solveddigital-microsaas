@@ -1,6 +1,7 @@
 import { Container } from "@/components/site/Container";
 import { CtaButton } from "@/components/ab/CtaButton";
 import { ProofStats } from "@/components/desktop/ProofStats";
+import { BeforeAfterRail } from "@/components/sections/BeforeAfterRail";
 
 export function Hero() {
   return (
@@ -34,6 +35,11 @@ export function Hero() {
           <p className="text-sm text-ink-soft">
             Secure checkout · Money-back guarantee
           </p>
+        </div>
+
+        {/* Before → After showcase (AI staging transformations). */}
+        <div className="mt-14 overflow-hidden rounded-[24px] border border-line shadow-[0_40px_90px_-50px_rgba(0,0,0,0.5)]">
+          <BeforeAfterRail height={440} cardWidth={640} />
         </div>
 
         <div className="mt-10">
