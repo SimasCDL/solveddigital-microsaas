@@ -2,16 +2,10 @@
 
 import { useRef } from "react";
 import { useVideoAutoplay } from "@/components/site/useVideoAutoplay";
-
-const TOURS = [
-  { clip: 1, duration: "0:28", label: "Modern kitchen" },
-  { clip: 2, duration: "0:31", label: "Sunlit living room" },
-  { clip: 3, duration: "0:24", label: "Primary suite" },
-  { clip: 4, duration: "0:33", label: "Backyard & pool" },
-];
+import { WORK_TOURS } from "@/lib/work";
 
 /** Cards duplicated once so the -50% marquee loop is seamless. */
-const TRACK = [...TOURS, ...TOURS];
+const TRACK = [...WORK_TOURS, ...WORK_TOURS];
 
 export function Sample() {
   const ref = useRef<HTMLElement>(null);
@@ -42,10 +36,10 @@ export function Sample() {
           style={{ animationDuration: "20s" }}
         >
           {TRACK.map((t, i) => (
-            <div key={`${t.clip}-${i}`} className="w-[158px] flex-none">
+            <div key={`${t.src}-${i}`} className="w-[158px] flex-none">
               <div className="relative aspect-[9/16] overflow-hidden rounded-[18px] border border-white/10">
                 <video
-                  src={`/clips/clip-${t.clip}.mp4`}
+                  src={t.src}
                   autoPlay
                   muted
                   loop
