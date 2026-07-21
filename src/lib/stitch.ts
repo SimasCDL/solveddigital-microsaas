@@ -122,7 +122,7 @@ export async function addMusicTrack(video: Buffer): Promise<Buffer> {
       '-map', '0:v', '-map', '1:a',
       '-c:v', 'copy',
       '-c:a', 'aac', '-b:a', '160k',
-      '-af', `afade=t=out:st=${fadeStart.toFixed(2)}:d=1.5`,
+      '-af', `volume=0.3,afade=t=out:st=${fadeStart.toFixed(2)}:d=1.5`,
       '-shortest', '-movflags', '+faststart',
       outPath,
     ], { maxBuffer: 1024 * 1024 * 64 });
