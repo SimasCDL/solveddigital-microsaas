@@ -16,6 +16,16 @@ export function priceForPhotoCount(n: number): number {
   return 15000; // $150 — up to 40 photos
 }
 
+// Max photos a paid Stripe amount (in cents) entitles a customer to.
+// Mirrors the funnel packs: $105→15, $125→25, $160→40. Tolerant of small
+// discounts/rounding by using >= thresholds slightly below each price.
+export function photosForAmount(amountTotal: number | null): number {
+  const cents = amountTotal ?? 0;
+  if (cents >= 15500) return 40; // $160 pack
+  if (cents >= 12000) return 25; // $125 pack
+  return 15;                     // $105 pack (floor)
+}
+
 export async function createCheckoutSession(params: {
   orderId: string;
   email: string;

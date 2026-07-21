@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 const MAX_PHOTOS = 40;
 
@@ -26,13 +26,24 @@ export default function UploadPage() {
   const [music, setMusic] = useState(true);
   const [error, setError] = useState('');
   const [step, setStep] = useState<'form' | 'uploading' | 'redirecting'>('form');
+  const [maxPhotos, setMaxPhotos] = useState(MAX_PHOTOS);
+
+  // Ask the server how many photos this customer's pack allows (based on their
+  // paid Stripe session) so the uploader caps itself. Falls back to 40.
+  useEffect(() => {
+    const sessionId = new URLSearchParams(window.location.search).get('session_id');
+    fetch(`/api/pack${sessionId ? `?session_id=${encodeURIComponent(sessionId)}` : ''}`)
+      .then(r => r.json())
+      .then(d => { if (d?.maxPhotos) setMaxPhotos(d.maxPhotos); })
+      .catch(() => {});
+  }, []);
 
   const previews = useMemo(() => files.map(f => URL.createObjectURL(f)), [files]);
 
   const handleFiles = (selected: FileList | null) => {
     if (!selected) return;
     const valid = Array.from(selected).filter(f => f.type.startsWith('image/'));
-    setFiles(prev => [...prev, ...valid].slice(0, MAX_PHOTOS));
+    setFiles(prev => [...prev, ...valid].slice(0, maxPhotos));
   };
 
   const removeFile = (i: number) => setFiles(f => f.filter((_, idx) => idx !== i));
@@ -108,7 +119,7 @@ export default function UploadPage() {
               Upload your listing photos
             </h1>
             <p className="mx-auto mt-1.5 max-w-md text-sm text-tink-soft">
-              Drop in up to {MAX_PHOTOS} photos — your cinematic tour lands in your inbox.
+              Drop in up to {maxPhotos} photos — your cinematic tour lands in your inbox.
             </p>
           </div>
 
@@ -140,7 +151,7 @@ export default function UploadPage() {
                     </svg>
                   </div>
                   <p className="font-display text-base text-tink">Drop your photos here</p>
-                  <p className="mt-0.5 text-sm text-tink-soft">or click to browse — JPG or PNG, up to {MAX_PHOTOS}</p>
+                  <p className="mt-0.5 text-sm text-tink-soft">or click to browse — JPG or PNG, up to {maxPhotos}</p>
                 </>
               ) : (
                 <div className="grid max-h-[34vh] grid-cols-5 gap-1.5 overflow-y-auto sm:grid-cols-8">
@@ -158,7 +169,7 @@ export default function UploadPage() {
                       </button>
                     </div>
                   ))}
-                  {files.length < MAX_PHOTOS && (
+                  {files.length < maxPhotos && (
                     <button
                       type="button"
                       onClick={() => fileRef.current?.click()}

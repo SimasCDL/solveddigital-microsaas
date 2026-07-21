@@ -2,7 +2,7 @@ import { after } from 'next/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { getOrder, updateOrder, countOrdersBySession } from '@/lib/orders';
 import { fulfillOrder } from '@/lib/fulfill';
-import { getStripe } from '@/lib/stripe';
+import { getStripe, photosForAmount } from '@/lib/stripe';
 
 export const maxDuration = 800;
 
@@ -55,6 +55,14 @@ export async function POST(req: NextRequest) {
       if (used >= usesForAmount(session.amount_total)) {
         return NextResponse.json(
           { error: 'This purchase has already been used. If that doesn’t seem right, reply to your confirmation email.' },
+          { status: 402 }
+        );
+      }
+      // Enforce the pack's photo limit — can't buy the 15-pack and upload 40.
+      const allowed = photosForAmount(session.amount_total);
+      if (order.photoUrls.length > allowed) {
+        return NextResponse.json(
+          { error: `Your pack covers up to ${allowed} photos, but you added ${order.photoUrls.length}. Please remove ${order.photoUrls.length - allowed} and try again — or buy a larger pack.` },
           { status: 402 }
         );
       }
