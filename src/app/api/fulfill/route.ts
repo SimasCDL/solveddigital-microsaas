@@ -45,7 +45,8 @@ export async function POST(req: NextRequest) {
     }
     try {
       const session = await getStripe().checkout.sessions.retrieve(sessionId);
-      if (session.payment_status !== 'paid') {
+      // 'paid' = normal purchase; 'no_payment_required' = 100%-off coupon ($0 total).
+      if (session.payment_status !== 'paid' && session.payment_status !== 'no_payment_required') {
         return NextResponse.json(
           { error: 'This checkout hasn’t been paid yet. Please complete your purchase first.' },
           { status: 402 }
