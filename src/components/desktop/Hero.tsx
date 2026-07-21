@@ -1,15 +1,16 @@
 import { Container } from "@/components/site/Container";
 import { CtaButton } from "@/components/ab/CtaButton";
-import { ProofStats } from "@/components/desktop/ProofStats";
+import { ReviewsRow } from "@/components/site/ReviewsRow";
+import { Arrow } from "@/components/site/icons";
 import { BeforeAfterRail } from "@/components/sections/BeforeAfterRail";
 
 export function Hero() {
   return (
-    <section className="relative overflow-hidden">
+    <section className="relative overflow-hidden pb-16">
       {/* Soft light wash behind the headline. */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(70%_55%_at_50%_-10%,var(--color-accent-soft),transparent_70%)]" />
 
-      <Container className="relative pt-14 pb-16 text-center sm:pt-20">
+      <Container className="relative pt-14 text-center sm:pt-20">
         <span className="inline-flex items-center rounded-full bg-accent-soft px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-accent">
           The 2-minute listing tour
         </span>
@@ -37,15 +38,23 @@ export function Hero() {
           </p>
         </div>
 
-        {/* Before → After showcase (AI staging transformations). */}
-        <div className="mt-14 overflow-hidden rounded-[24px] border border-line shadow-[0_40px_90px_-50px_rgba(0,0,0,0.5)]">
-          <BeforeAfterRail height={440} cardWidth={640} />
-        </div>
+        <ReviewsRow className="mt-8" />
 
-        <div className="mt-10">
-          <ProofStats />
+        {/* Before → After label */}
+        <div className="mt-12 flex items-center justify-center gap-3 text-xl font-semibold text-ink">
+          <span>Before</span>
+          <Arrow className="h-6 w-6 text-accent" />
+          <span>After</span>
         </div>
       </Container>
+
+      {/* Full-bleed Before → After showcase (AI staging transformations). */}
+      <BeforeAfterRail
+        height={400}
+        cardWidth={620}
+        durationSec={22}
+        className="mt-8"
+      />
     </section>
   );
 }

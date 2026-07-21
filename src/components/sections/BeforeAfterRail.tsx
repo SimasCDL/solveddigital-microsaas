@@ -12,6 +12,8 @@ interface BeforeAfterRailProps {
   height: number;
   /** Card width in px (landscape scenes read best wider than tall). */
   cardWidth: number;
+  /** Seconds per full marquee loop (lower = faster). Defaults to the CSS 36s. */
+  durationSec?: number;
   className?: string;
 }
 
@@ -24,6 +26,7 @@ interface BeforeAfterRailProps {
 export function BeforeAfterRail({
   height,
   cardWidth,
+  durationSec,
   className = "",
 }: BeforeAfterRailProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -33,6 +36,9 @@ export function BeforeAfterRail({
     "h-full flex-none overflow-hidden rounded-[18px] mr-3 shadow-[0_24px_50px_-24px_rgba(0,0,0,0.5)]";
   const video = "h-full w-full object-cover block";
   const cardStyle = { width: cardWidth };
+  const railStyle = durationSec
+    ? { animationDuration: `${durationSec}s` }
+    : undefined;
 
   return (
     <div
@@ -45,7 +51,7 @@ export function BeforeAfterRail({
         className="absolute inset-0"
         style={{ clipPath: "inset(0 50% 0 0)" }}
       >
-        <div className="animate-rail flex h-full w-max">
+        <div className="animate-rail flex h-full w-max" style={railStyle}>
           {TRACK.map((s, i) => (
             <div key={`b-${i}`} className={card} style={cardStyle}>
               <video
@@ -65,7 +71,7 @@ export function BeforeAfterRail({
         className="absolute inset-0"
         style={{ clipPath: "inset(0 0 0 50%)" }}
       >
-        <div className="animate-rail flex h-full w-max">
+        <div className="animate-rail flex h-full w-max" style={railStyle}>
           {TRACK.map((s, i) => (
             <div key={`a-${i}`} className={card} style={cardStyle}>
               <video
@@ -83,14 +89,6 @@ export function BeforeAfterRail({
 
       {/* Fixed center divider. */}
       <div className="pointer-events-none absolute inset-y-0 left-1/2 z-[5] w-[5px] -translate-x-1/2 rounded-[3px] bg-cream shadow-[0_0_0_1px_rgba(0,0,0,0.04),0_0_16px_rgba(0,0,0,0.32)]" />
-
-      {/* Corner labels. */}
-      <span className="pointer-events-none absolute left-3 top-3 z-[6] rounded-full bg-black/55 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
-        Before
-      </span>
-      <span className="pointer-events-none absolute right-3 top-3 z-[6] rounded-full bg-accent px-3 py-1 text-xs font-semibold text-white">
-        After
-      </span>
     </div>
   );
 }
