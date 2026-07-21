@@ -236,3 +236,85 @@ body {
 .check {
   accent-color: var(--ink);
 }
+
+/* ── Marketing landing (funnel) — tokens + classes merged from landing/ ── */
+@theme {
+  /* Funnel components use `ink`/`ink-soft`; alias to the same values as tink. */
+  --color-ink: #15130f;
+  --color-ink-soft: #6f6a60;
+}
+
+/* Cinematic hero fallbacks. */
+.hero-cinematic {
+  background: radial-gradient(135% 105% at 18% -5%, #3a342a 0%, #1d1812 42%, #100d09 100%);
+}
+.hero-vignette {
+  background: radial-gradient(120% 80% at 50% 30%, transparent 40%, rgba(0, 0, 0, 0.55) 100%);
+}
+.hero-sheen {
+  background: linear-gradient(100deg, transparent 30%, rgba(255, 248, 235, 0.06) 48%, transparent 66%);
+  background-size: 250% 100%;
+  animation: sheen 14s ease-in-out infinite;
+}
+@keyframes sheen {
+  0%, 100% { background-position: 130% 0; }
+  50% { background-position: -30% 0; }
+}
+
+/* Auto-scrolling sample carousels. */
+@keyframes marquee-left {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes marquee-right {
+  from { transform: translateX(-50%); }
+  to { transform: translateX(0); }
+}
+.animate-marquee-left { animation: marquee-left 48s linear infinite; }
+.animate-marquee-right { animation: marquee-right 48s linear infinite; }
+.marquee-row:hover .animate-marquee-left,
+.marquee-row:hover .animate-marquee-right { animation-play-state: paused; }
+.marquee-mask {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 7%, #000 93%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 7%, #000 93%, transparent);
+}
+
+/* Before/after carousel + floating pills. */
+@keyframes railMove {
+  from { transform: translateX(-50%); }
+  to { transform: translateX(0); }
+}
+.animate-rail { animation: railMove 36s linear infinite; }
+@keyframes tourlyFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+.animate-float { animation: tourlyFloat 3s ease-in-out infinite; }
+.rail { scrollbar-width: none; }
+.rail::-webkit-scrollbar { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-sheen,
+  .animate-marquee-left,
+  .animate-marquee-right,
+  .animate-rail,
+  .animate-float { animation: none !important; }
+}
+
+/* Legal / policy pages. */
+.legal { color: var(--color-ink-soft); font-size: 0.975rem; line-height: 1.75; }
+.legal h2 {
+  color: var(--color-ink);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  letter-spacing: -0.022em;
+  font-weight: 600;
+  font-size: 1.35rem;
+  margin-top: 2.75rem;
+  margin-bottom: 0.75rem;
+}
+.legal h2:first-child { margin-top: 0; }
+.legal p { margin-bottom: 1rem; }
+.legal ul { margin: 0 0 1rem; padding-left: 1.25rem; list-style: disc; }
+.legal li { margin-bottom: 0.4rem; }
+.legal a { color: var(--color-accent); text-decoration: underline; text-underline-offset: 2px; }
+.legal strong { color: var(--color-ink); font-weight: 600; }

@@ -21,9 +21,9 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Tourly — Upload your listing photos",
+  title: "Tourly — AI video tours for your listings, in 2 minutes",
   description:
-    "Turn your listing photos into a cinematic AI video tour. Upload your photos and get the finished video by email.",
+    "Turn your listing photos into a scroll-stopping video tour ready for the MLS, Reels & TikTok — without hiring a videographer or editing a thing.",
 };
 
 export default function RootLayout({
@@ -32,7 +32,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${ibmPlex.variable} ${plusJakarta.variable}`}>
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${ibmPlex.variable} ${plusJakarta.variable}`}
+    >
       <body className="min-h-screen">{children}</body>
     </html>
   );
