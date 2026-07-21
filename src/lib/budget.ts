@@ -1,7 +1,12 @@
 import { readFile, writeFile, mkdir } from 'fs/promises';
+import { tmpdir } from 'os';
 import { join, dirname } from 'path';
 
-const FILE = join(process.cwd(), '.orders', 'usage.json');
+// Serverless filesystems (Vercel) are read-only except /tmp, so the counter
+// lives there. Note: /tmp is per-instance and ephemeral, so on serverless this
+// daily cap is a per-warm-instance backstop, not a strict global limit — the
+// per-run retry budget (makeRunBudget) is the primary cost guard per order.
+const FILE = join(tmpdir(), 'tourly-usage.json');
 
 /**
  * Hard daily cap on video generations — a backstop against any future bug that

@@ -1,11 +1,13 @@
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import type { Order } from './types';
 
 // Orders live in Supabase (table `orders`) so support can look any customer up
-// in the dashboard; local .orders/ is the fallback when Supabase is unreachable
-// (and doubles as dev storage before the table exists).
-const LOCAL_DIR = path.join(process.cwd(), '.orders');
+// in the dashboard. The local copy is a best-effort cache/fallback — it uses the
+// OS temp dir because serverless filesystems (Vercel) are read-only except /tmp,
+// and all local writes are non-fatal so a read-only FS never breaks an order.
+const LOCAL_DIR = path.join(os.tmpdir(), 'tourly-orders');
 
 const useSupabase = () =>
   !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -67,8 +69,13 @@ const fromRow = (r: OrderRow): Order => ({
 });
 
 function writeLocal(order: Order) {
-  if (!fs.existsSync(LOCAL_DIR)) fs.mkdirSync(LOCAL_DIR, { recursive: true });
-  fs.writeFileSync(path.join(LOCAL_DIR, `${order.id}.json`), JSON.stringify(order));
+  // Best-effort only — never let a read-only FS (serverless) break the request.
+  try {
+    if (!fs.existsSync(LOCAL_DIR)) fs.mkdirSync(LOCAL_DIR, { recursive: true });
+    fs.writeFileSync(path.join(LOCAL_DIR, `${order.id}.json`), JSON.stringify(order));
+  } catch (err) {
+    console.error('[orders] local write skipped (read-only FS?):', err);
+  }
 }
 
 function readLocal(orderId: string): Order | null {

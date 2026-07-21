@@ -1,8 +1,11 @@
 import { writeFile, readFile, mkdir } from 'fs/promises';
+import { tmpdir } from 'os';
 import { join } from 'path';
 
 const USE_BLOB = !!process.env.BLOB_READ_WRITE_TOKEN;
-const LOCAL_DIR = join(process.cwd(), '.orders', 'videos');
+// /tmp — the only writable path on serverless (Vercel). Supabase is primary; this
+// is a last-resort fallback so a video is never lost to a read-only FS crash.
+const LOCAL_DIR = join(tmpdir(), 'tourly-videos');
 
 const useSupabase = () =>
   !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
