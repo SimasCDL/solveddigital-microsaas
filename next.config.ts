@@ -9,8 +9,10 @@ const nextConfig: NextConfig = {
   // Vercel's tracer can't detect it — without this, ffmpeg is missing in
   // production and stitching / QC / format variants / music all fail.
   outputFileTracingIncludes: {
-    '/api/fulfill': ['./node_modules/ffmpeg-static/**'],
-    '/api/generate': ['./node_modules/ffmpeg-static/**'],
+    // ffmpeg binary + the background music track (both read from disk at runtime
+    // via dynamic paths the tracer can't detect on its own).
+    '/api/fulfill': ['./node_modules/ffmpeg-static/**', './assets/**'],
+    '/api/generate': ['./node_modules/ffmpeg-static/**', './assets/**'],
     '/api/stitch': ['./node_modules/ffmpeg-static/**'],
     '/api/qc-test': ['./node_modules/ffmpeg-static/**'],
   },
