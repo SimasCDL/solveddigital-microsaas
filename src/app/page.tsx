@@ -8,11 +8,11 @@ import { DesktopLanding } from "@/components/DesktopLanding";
  */
 export default function Home() {
   return (
-    <div className="tourly min-h-screen bg-cream">
+    <div className="tourly min-h-screen bg-cream text-ink">
       <div className="md:hidden">
         <MobileFunnel />
       </div>
-      <div className="hidden md:block">
+      <div className="hidden md:block" style={{ zoom: 0.8 }}>
         <DesktopLanding />
       </div>
     </div>

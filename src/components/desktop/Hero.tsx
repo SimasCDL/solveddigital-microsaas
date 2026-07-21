@@ -52,7 +52,7 @@ export function Hero() {
       <BeforeAfterRail
         height={400}
         cardWidth={620}
-        durationSec={22}
+        durationSec={34}
         className="mt-8"
       />
     </section>
