@@ -20,10 +20,37 @@ const plusJakarta = Plus_Jakarta_Sans({
   weight: ["400", "500", "600", "700", "800"],
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://renoa.ai";
+const TITLE = "Tourly — AI video tours for your listings, in minutes";
+const DESCRIPTION =
+  "Turn your listing photos into a scroll-stopping video tour ready for the MLS, Reels & TikTok — without hiring a videographer or editing a thing.";
+
 export const metadata: Metadata = {
-  title: "Tourly — AI video tours for your listings, in 2 minutes",
-  description:
-    "Turn your listing photos into a scroll-stopping video tour ready for the MLS, Reels & TikTok — without hiring a videographer or editing a thing.",
+  metadataBase: new URL(SITE_URL),
+  title: TITLE,
+  description: DESCRIPTION,
+  applicationName: "Tourly",
+  keywords: [
+    "real estate video",
+    "listing video tour",
+    "AI property video",
+    "MLS video",
+    "real estate reels",
+  ],
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: SITE_URL,
+    siteName: "Tourly",
+    type: "website",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "Tourly" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+    images: ["/og.png"],
+  },
 };
 
 export default function RootLayout({
