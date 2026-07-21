@@ -38,22 +38,14 @@ export function HowItWorks() {
           </p>
         </div>
 
-        <div className="mt-14 grid gap-8 sm:grid-cols-3">
+        <div className="mt-16 grid gap-8 sm:grid-cols-3">
           {STEPS.map((s) => (
             <div
               key={s.n}
-              className="flex flex-col rounded-3xl border border-line bg-paper p-7 text-center"
+              className="flex flex-col overflow-hidden rounded-3xl border border-line bg-paper shadow-[0_30px_70px_-45px_rgba(30,26,20,0.4)]"
             >
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-soft">
-                Step {s.n}
-              </p>
-              <h3 className="mt-1 text-xl font-semibold text-ink">{s.title}</h3>
-              <p className="mx-auto mt-3 max-w-xs flex-1 leading-7 text-ink-soft">
-                {s.body}
-              </p>
-
-              {/* Bigger 4:3 media panel with the real step illustration. */}
-              <div className="relative mt-7 aspect-[4/3] overflow-hidden rounded-2xl border border-line">
+              {/* Big image-forward media (perfect 4:3). */}
+              <div className="relative aspect-[4/3] overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={s.img}
@@ -65,13 +57,28 @@ export function HowItWorks() {
                     {PLATFORMS.map((p) => (
                       <span
                         key={p}
-                        className="rounded-full bg-white/90 px-3 py-1 text-sm font-semibold text-ink backdrop-blur"
+                        className="rounded-full bg-white/90 px-3.5 py-1.5 text-sm font-semibold text-ink backdrop-blur"
                       >
                         {p}
                       </span>
                     ))}
                   </div>
                 )}
+                <span className="absolute left-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-accent text-sm font-semibold text-cream shadow-lg">
+                  {s.n}
+                </span>
+              </div>
+
+              <div className="flex flex-1 flex-col p-7">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-soft">
+                  Step {s.n}
+                </p>
+                <h3 className="mt-2 text-2xl font-semibold text-ink">
+                  {s.title}
+                </h3>
+                <p className="mt-3 text-[1.05rem] leading-7 text-ink-soft">
+                  {s.body}
+                </p>
               </div>
             </div>
           ))}
