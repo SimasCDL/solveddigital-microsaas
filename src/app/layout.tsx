@@ -59,7 +59,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const clarityId = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID;
+  // Public Clarity project ID; override (or disable) via the env var.
+  const clarityId = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID ?? "xpy86yhdm3";
 
   return (
     <html
