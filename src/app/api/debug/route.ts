@@ -21,6 +21,8 @@ export async function GET(req: NextRequest) {
     FROM_EMAIL: process.env.FROM_EMAIL || 'MISSING',
     VIDEO_PROVIDER: process.env.VIDEO_PROVIDER || 'MISSING',
     NEXT_PUBLIC_FREE_MODE: process.env.NEXT_PUBLIC_FREE_MODE || 'MISSING',
+    // Base URL used to build order/video links in delivery emails.
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'MISSING',
     // Must be absent/false in production — bypasses Stripe payment verification.
     SKIP_PAYMENT_CHECK: process.env.SKIP_PAYMENT_CHECK || 'unset (good)',
   });
