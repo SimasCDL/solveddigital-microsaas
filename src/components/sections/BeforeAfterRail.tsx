@@ -54,14 +54,16 @@ export function BeforeAfterRail({
         <div className="animate-rail flex h-full w-max" style={railStyle}>
           {TRACK.map((s, i) => (
             <div key={`b-${i}`} className={card} style={cardStyle}>
-              {/* BEFORE only ever shows the static poster frame, so never
-                  download the video here — saves 8 clips on first paint. */}
-              <video
-                src={`/transform/${s}.mp4#t=0.1`}
-                poster={`/transform/${s}.jpg`}
-                muted
-                playsInline
-                preload="none"
+              {/* BEFORE is a static frame — a plain <img> paints instantly and
+                  keeps 8 <video> elements off the page, so iOS doesn't starve
+                  the "after" clips + purchase videos of decoders. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`/transform/${s}.jpg`}
+                alt=""
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
                 className={video}
               />
             </div>

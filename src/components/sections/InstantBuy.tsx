@@ -42,10 +42,12 @@ export function InstantBuy() {
         <div className="relative mt-4 aspect-[4/5] overflow-hidden rounded-2xl bg-night">
           <video
             src="/clips/clip-1.mp4"
+            poster="/clips/clip-1.jpg"
             autoPlay
             muted
             loop
             playsInline
+            preload="auto"
             className="absolute inset-0 h-full w-full object-cover"
           />
           <span className="absolute left-3 top-3 rounded-full bg-accent px-3 py-1.5 text-[11.5px] font-bold uppercase tracking-[0.04em] text-cream">
@@ -60,10 +62,12 @@ export function InstantBuy() {
             >
               <video
                 src={`/clips/clip-${n}.mp4`}
+                poster={`/clips/clip-${n}.jpg`}
                 autoPlay
                 muted
                 loop
                 playsInline
+                preload="metadata"
                 className="h-full w-full object-cover"
               />
             </div>
