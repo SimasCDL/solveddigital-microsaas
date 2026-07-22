@@ -28,5 +28,9 @@ export async function GET(req: NextRequest) {
     // Server-side Meta Lead (Conversions API).
     META_CAPI_TOKEN: p('META_CAPI_TOKEN'),
     META_TEST_EVENT_CODE: process.env.META_TEST_EVENT_CODE || 'unset',
+    // Stripe webhook → Telegram sale alerts.
+    STRIPE_WEBHOOK_SECRET: p('STRIPE_WEBHOOK_SECRET'),
+    TELEGRAM_BOT_TOKEN: p('TELEGRAM_BOT_TOKEN'),
+    TELEGRAM_CHAT_ID: process.env.TELEGRAM_CHAT_ID || 'MISSING',
   });
 }
