@@ -4,12 +4,23 @@ import { sortPhotoUrls } from '@/lib/sort';
 import { stitchClips, makeVerticalVariants, addMusicTrack } from '@/lib/stitch';
 import { saveVideo } from '@/lib/videos';
 import { sendDeliveryEmail, sendFailureEmail, sendAdminAlert } from '@/lib/resend';
+import { sendLeadServerSide } from '@/lib/meta';
 
 // The one fulfillment pipeline: sort → generate → stitch → persist → email.
 // Called from the Stripe webhook (paid orders) and /api/fulfill (free mode).
 export async function fulfillOrder(orderId: string): Promise<void> {
   const order = await getOrder(orderId);
   if (!order) throw new Error(`Order ${orderId} not found`);
+
+  // Record the purchase as a Meta Lead server-side, the moment fulfillment
+  // starts (payment is already verified by the caller). Independent of the
+  // customer's browser; de-dupes with the browser pixel via event_id=orderId.
+  const appBase = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  await sendLeadServerSide({
+    orderId,
+    email: order.email,
+    eventSourceUrl: `${appBase}/order/${orderId}`,
+  }).catch(() => {});
 
   try {
     const sortedUrls = await sortPhotoUrls(order.photoUrls);
