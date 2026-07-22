@@ -57,9 +57,15 @@ async function notifyPurchase(
     daySales += 1;
   }
 
-  const item = photoCount ? `${photoCount}-photo tour` : "Listing tour";
+  // ~delivery cost ≈ $1.5 per uploaded photo.
+  const cost = photoCount * 1.5;
+  const costStr = Number.isInteger(cost) ? String(cost) : cost.toFixed(1);
+  const photoLine = photoCount
+    ? `\n📸 ${photoCount} photo${photoCount === 1 ? "" : "s"} · ~${sym}${costStr} cost`
+    : "";
+
   await sendTelegram(
-    `💸 *New sale* — ${item} · ${money(amount)}\n\n📊 Today: ${money(dayRevenue)} · ${daySales} sale${daySales === 1 ? "" : "s"}`,
+    `💸 *New sale* · ${money(amount)}${photoLine}\n\n📊 Today: ${money(dayRevenue)} · ${daySales} sale${daySales === 1 ? "" : "s"}`,
   );
 }
 

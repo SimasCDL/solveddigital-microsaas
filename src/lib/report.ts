@@ -134,11 +134,51 @@ function money(n: number, currency: string): string {
   return `${sym}${n.toFixed(n % 1 ? 2 : 0)}${sym ? "" : " " + currency.toUpperCase()}`;
 }
 
+/** Clarity device split (phone vs computer) via the Device dimension. */
+async function fetchDevices(
+  days: number,
+): Promise<{ mobile: number; desktop: number; tablet: number } | null> {
+  const token = process.env.CLARITY_API_TOKEN;
+  if (!token) return null;
+  try {
+    const res = await fetch(
+      `${CLARITY_URL}?numOfDays=${days}&dimension1=Device`,
+      { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" },
+    );
+    if (!res.ok) return null;
+    const data = (await res.json()) as ClarityRow[];
+    const rows =
+      data.find((m) => m.metricName === "Device")?.information ??
+      data.find((m) => m.metricName === "Traffic")?.information ??
+      [];
+    let mobile = 0;
+    let desktop = 0;
+    let tablet = 0;
+    for (const r of rows) {
+      const name = String(
+        r.device ??
+          r.Device ??
+          r.name ??
+          Object.values(r).find((v) => typeof v === "string") ??
+          "",
+      ).toLowerCase();
+      const count = num(r.totalSessionCount ?? r.sessionsCount ?? r.subTotal);
+      if (/mobile|phone/.test(name)) mobile += count;
+      else if (/tablet|ipad/.test(name)) tablet += count;
+      else if (/pc|desktop|computer|windows|mac/.test(name)) desktop += count;
+    }
+    return { mobile, desktop, tablet };
+  } catch {
+    return null;
+  }
+}
+
 export async function buildReport(): Promise<string> {
-  const [day, week, sales7] = await Promise.all([
+  const [day, week, sales7, devices] = await Promise.all([
     fetchClarity(1).catch(() => null),
     fetchSales(24).catch(() => null),
     fetchSales(24 * 7).catch(() => null),
+    fetchDevices(1).catch(() => null),
   ]);
 
   const date = new Intl.DateTimeFormat("en-GB", {
@@ -169,6 +209,13 @@ export async function buildReport(): Promise<string> {
     L.push(
       `⏱ Active ${fmtSec(day.activeSec)} · Scroll ${Math.round(day.scrollPct)}% · 👤 ${day.sessions} (bots ${day.botPct.toFixed(0)}%)`,
     );
+    if (devices && (devices.mobile || devices.desktop || devices.tablet)) {
+      const dv: string[] = [];
+      if (devices.desktop) dv.push(`🖥 Desktop ${devices.desktop}`);
+      if (devices.mobile) dv.push(`📱 Mobile ${devices.mobile}`);
+      if (devices.tablet) dv.push(`▫️ Tablet ${devices.tablet}`);
+      L.push(dv.join(" · "));
+    }
     if (day.topSources.length) {
       L.push(
         "📈 " + day.topSources.map((s) => `${s.name} ${s.count}`).join(" · "),
