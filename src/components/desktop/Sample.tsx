@@ -42,6 +42,7 @@ export function Sample() {
             >
               <video
                 src={t.src}
+                poster={t.src.replace(".mp4", ".jpg")}
                 autoPlay
                 muted
                 loop

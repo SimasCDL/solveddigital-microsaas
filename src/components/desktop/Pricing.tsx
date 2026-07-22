@@ -1,6 +1,6 @@
 import { Container } from "@/components/site/Container";
 import { Check, Arrow } from "@/components/site/icons";
-import { PACKS, packCheckoutUrl, type Pack } from "@/lib/pricing";
+import { PACKS, type Pack } from "@/lib/pricing";
 
 function PackCard({ pack }: { pack: Pack }) {
   const highlighted = pack.highlighted;
@@ -67,7 +67,7 @@ function PackCard({ pack }: { pack: Pack }) {
       </ul>
 
       <a
-        href={packCheckoutUrl(pack)}
+        href="/upload"
         className={`group mt-10 inline-flex h-14 items-center justify-center gap-2 rounded-full px-6 text-[1.05rem] font-medium tracking-tight transition-all active:scale-[0.99] ${
           highlighted
             ? "bg-cream text-ink hover:bg-paper"

@@ -40,6 +40,7 @@ export function Sample() {
               <div className="relative aspect-[9/16] overflow-hidden rounded-[18px] border border-white/10">
                 <video
                   src={t.src}
+                  poster={t.src.replace(".mp4", ".jpg")}
                   autoPlay
                   muted
                   loop

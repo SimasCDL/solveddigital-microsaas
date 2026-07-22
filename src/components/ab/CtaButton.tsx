@@ -1,7 +1,7 @@
 import { Arrow } from "@/components/site/icons";
 
 interface CtaButtonProps {
-  /** Where it goes. Defaults to the pricing section. */
+  /** Where it goes. Defaults to the upload/purchase flow. */
   href?: string;
   size?: "sm" | "lg" | "xl";
   /** "accent" = shiny teal (primary). "dark" = ink. "light" = cream. */
@@ -24,7 +24,7 @@ const SIZES = {
 };
 
 export function CtaButton({
-  href = "#pricing",
+  href = "/upload",
   size = "lg",
   tone = "accent",
   label = "Make my first tour",

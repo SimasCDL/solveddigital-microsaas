@@ -56,6 +56,7 @@ export function BeforeAfterRail({
             <div key={`b-${i}`} className={card} style={cardStyle}>
               <video
                 src={`/transform/${s}.mp4#t=0.1`}
+                poster={`/transform/${s}.jpg`}
                 muted
                 playsInline
                 preload="auto"
@@ -76,6 +77,7 @@ export function BeforeAfterRail({
             <div key={`a-${i}`} className={card} style={cardStyle}>
               <video
                 src={`/transform/${s}.mp4`}
+                poster={`/transform/${s}.jpg`}
                 autoPlay
                 muted
                 loop
