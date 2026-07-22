@@ -91,24 +91,34 @@ export async function POST(req: NextRequest) {
   }
 
   const session = event.data.object as Stripe.Checkout.Session;
-  const orderId = session.client_reference_id!;
 
-  const order = await getOrder(orderId);
-  if (!order)
-    return NextResponse.json({ error: "Order not found" }, { status: 404 });
-
-  // Stripe retries webhooks — only fulfill once
-  if (order.status !== "pending_payment") {
+  // Only real sales — paid, or 100%-off coupons (no_payment_required).
+  if (
+    session.payment_status !== "paid" &&
+    session.payment_status !== "no_payment_required"
+  ) {
     return NextResponse.json({ received: true });
   }
 
-  await updateOrder(orderId, {
-    status: "processing",
-    stripeSessionId: session.id,
-  });
+  // In the pay-first funnel, purchases come through Stripe Payment Links which
+  // have NO client_reference_id and NO pre-existing order (the order is created
+  // later, when the customer uploads photos). So the Telegram sale alert must
+  // fire for EVERY completed checkout — never gate it behind an order lookup.
+  const orderId = session.client_reference_id ?? "";
+  const order = orderId ? await getOrder(orderId) : null;
 
-  after(() => notifyPurchase(session, order.photoUrls?.length ?? 0));
-  after(() => fulfillOrder(orderId));
+  after(() => notifyPurchase(session, order?.photoUrls?.length ?? 0));
+
+  // Fulfillment only applies to the pay-after-upload flow (/api/checkout), where
+  // an order already exists in pending_payment. Stripe retries webhooks, so the
+  // status guard keeps this idempotent. Pay-first orders fulfill via /api/fulfill.
+  if (order && order.status === "pending_payment") {
+    await updateOrder(orderId, {
+      status: "processing",
+      stripeSessionId: session.id,
+    });
+    after(() => fulfillOrder(orderId));
+  }
 
   return NextResponse.json({ received: true });
 }
