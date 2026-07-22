@@ -1,5 +1,6 @@
 import { MobileFunnel } from "@/components/MobileFunnel";
 import { DesktopLanding } from "@/components/DesktopLanding";
+import { SmartHashScroll } from "@/components/SmartHashScroll";
 
 /**
  * Marketing landing — the site's front door. Desktop layout at md+, the mobile
@@ -9,6 +10,7 @@ import { DesktopLanding } from "@/components/DesktopLanding";
 export default function Home() {
   return (
     <div className="tourly min-h-screen bg-cream text-ink">
+      <SmartHashScroll />
       <div className="md:hidden">
         <MobileFunnel />
       </div>
