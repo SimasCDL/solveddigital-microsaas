@@ -55,7 +55,7 @@ export function ValueStack() {
       ))}
 
       <div className="mt-[26px] flex justify-center">
-        <CtaButton label="Make my first tour" />
+        <CtaButton label="Make my first tour" href="#buy" />
       </div>
     </section>
   );

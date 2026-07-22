@@ -20,7 +20,7 @@ export function Hero() {
       </p>
 
       <div className="mt-7 flex flex-col items-center gap-3">
-        <CtaButton size="xl" label="Make my first tour" />
+        <CtaButton size="xl" label="Make my first tour" href="#buy" />
         <p className="text-[13.5px] text-ink-soft">
           Secure checkout · Money-back guarantee
         </p>

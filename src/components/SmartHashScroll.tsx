@@ -11,9 +11,10 @@ import { useEffect } from "react";
  * link does nothing. (The desktop wrapper's `zoom` also breaks native anchor
  * scrolling.)
  *
- * This intercepts clicks on any same-page #pricing link and smooth-scrolls to
- * whichever #pricing is actually on screen — desktop lands on the desktop
- * pricing, mobile on the mobile pricing.
+ * This intercepts clicks on same-page anchor links (#pricing, #buy) and
+ * smooth-scrolls to whichever matching section is actually on screen — so the
+ * desktop CTAs land on the desktop pricing while the mobile CTAs land on the
+ * mobile buy widget, even though both funnels are in the DOM at once.
  *
  * The desktop landing sits inside a `zoom: 0.8` wrapper, which breaks the
  * browser's native smooth scrolling (`scrollIntoView`/`scrollTo` with
@@ -48,20 +49,23 @@ function smoothScrollTo(target: number, duration = 500) {
 
 export function SmartHashScroll() {
   useEffect(() => {
+    const HANDLED = new Set(["pricing", "buy"]);
     const onClick = (e: MouseEvent) => {
       if (e.defaultPrevented || e.button !== 0) return;
       const link = (e.target as HTMLElement)?.closest?.(
-        'a[href$="#pricing"]',
+        'a[href*="#"]',
       ) as HTMLAnchorElement | null;
       if (!link) return;
 
+      const url = new URL(link.href, window.location.href);
+      const id = url.hash.slice(1);
+      if (!HANDLED.has(id)) return;
       // Only handle in-page links — let cross-page ones (e.g. /#pricing from
       // /upload) navigate normally.
-      const url = new URL(link.href, window.location.href);
       if (url.pathname !== window.location.pathname) return;
 
       const visible = Array.from(
-        document.querySelectorAll<HTMLElement>("#pricing"),
+        document.querySelectorAll<HTMLElement>(`#${id}`),
       ).find((el) => el.offsetParent !== null);
       if (!visible) return;
 
@@ -69,7 +73,7 @@ export function SmartHashScroll() {
       // ~16px breathing room above the section (clears the sticky nav).
       const target = visible.getBoundingClientRect().top + window.scrollY - 16;
       smoothScrollTo(Math.max(0, target));
-      history.replaceState(null, "", "#pricing");
+      history.replaceState(null, "", `#${id}`);
     };
 
     document.addEventListener("click", onClick);
