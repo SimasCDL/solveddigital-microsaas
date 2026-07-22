@@ -94,7 +94,7 @@ export default function OrderPage() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-3xl px-4 pb-24 pt-12 sm:px-6 sm:pt-16">
+      <main className="mx-auto flex min-h-[82vh] w-full max-w-3xl flex-col justify-center px-4 pb-16 pt-8 sm:px-6">
         {error ? (
           <div className="text-center">
             <h1 className="font-display text-3xl text-tink">
