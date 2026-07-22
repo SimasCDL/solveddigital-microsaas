@@ -1,16 +1,25 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { randomUUID } from 'crypto';
-import { stitchClips } from '@/lib/stitch';
-import { saveVideo } from '@/lib/videos';
+import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
+import { stitchClips } from "@/lib/stitch";
+import { saveVideo } from "@/lib/videos";
 
 export const maxDuration = 800;
 
 export async function POST(req: NextRequest) {
+  if (
+    !process.env.ADMIN_KEY ||
+    req.headers.get("x-admin-key") !== process.env.ADMIN_KEY
+  ) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   try {
     const { urls }: { urls: string[] } = await req.json();
     if (!urls?.length) {
       return NextResponse.json(
-        { error: 'No clips to merge — every clip failed to generate. Please try again.' },
+        {
+          error:
+            "No clips to merge — every clip failed to generate. Please try again.",
+        },
         { status: 400 },
       );
     }
@@ -21,7 +30,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ id, url });
   } catch (err) {
-    console.error('[stitch]', err);
+    console.error("[stitch]", err);
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }

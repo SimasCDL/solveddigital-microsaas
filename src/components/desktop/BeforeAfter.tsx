@@ -49,24 +49,32 @@ export function BeforeAfter() {
           onPointerCancel={() => (dragging.current = false)}
           className="relative mt-10 aspect-[16/10] w-full cursor-ew-resize touch-none select-none overflow-hidden rounded-3xl border border-white/10 shadow-[0_40px_100px_-40px_rgba(0,0,0,0.8)]"
         >
-          {/* AFTER — the real tour video */}
+          {/* AFTER — the real pool tour video */}
           <video
             className="absolute inset-0 h-full w-full object-cover"
-            src="/hero.mp4"
+            src="/transform/pool-after.mp4"
+            poster="/transform/pool-after.jpg"
             autoPlay
             muted
             loop
             playsInline
+            preload="metadata"
           />
           <span className="absolute right-3 top-3 z-20 rounded-full bg-[#34c4a8] px-3 py-1 text-xs font-semibold text-night">
             After: AI video
           </span>
 
-          {/* BEFORE — flat static photo (clipped) */}
+          {/* BEFORE — the real flat listing photo (clipped) */}
           <div
-            className="absolute inset-0 bg-gradient-to-br from-[#c9c4ba] via-[#a7a298] to-[#7d786f] grayscale"
+            className="absolute inset-0"
             style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
           >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/transform/pool-before.webp"
+              alt="Before: flat listing photo"
+              className="h-full w-full object-cover"
+            />
             <span className="absolute left-3 top-3 rounded-full bg-black/55 px-3 py-1 text-xs font-semibold text-cream backdrop-blur">
               Before: static photo
             </span>

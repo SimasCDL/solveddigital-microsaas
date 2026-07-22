@@ -54,12 +54,14 @@ export function BeforeAfterRail({
         <div className="animate-rail flex h-full w-max" style={railStyle}>
           {TRACK.map((s, i) => (
             <div key={`b-${i}`} className={card} style={cardStyle}>
+              {/* BEFORE only ever shows the static poster frame, so never
+                  download the video here — saves 8 clips on first paint. */}
               <video
                 src={`/transform/${s}.mp4#t=0.1`}
                 poster={`/transform/${s}.jpg`}
                 muted
                 playsInline
-                preload="auto"
+                preload="none"
                 className={video}
               />
             </div>

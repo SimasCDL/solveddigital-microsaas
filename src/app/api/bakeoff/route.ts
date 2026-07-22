@@ -74,7 +74,7 @@ const CANDIDATES: Candidate[] = [
 ];
 
 export async function POST(req: NextRequest) {
-  if (process.env.ADMIN_KEY && req.headers.get('x-admin-key') !== process.env.ADMIN_KEY) {
+  if (!process.env.ADMIN_KEY || req.headers.get('x-admin-key') !== process.env.ADMIN_KEY) {
     return new Response('Unauthorized', { status: 401 });
   }
 

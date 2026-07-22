@@ -40,9 +40,16 @@ export default function UploadPage() {
     "form",
   );
   const [maxPhotos, setMaxPhotos] = useState(MAX_PHOTOS);
+  // In pay-first (FREE_MODE) the uploader must only open for a verified PAID
+  // Stripe session. Non-checkout mode collects payment after upload, so it's
+  // always open. "checking" avoids a flash of the form before we know.
+  const [access, setAccess] = useState<"checking" | "ok" | "denied">(
+    SKIP_CHECKOUT ? "checking" : "ok",
+  );
 
-  // Ask the server how many photos this customer's pack allows (based on their
-  // paid Stripe session) so the uploader caps itself. Falls back to 40.
+  // Ask the server to verify the customer's paid Stripe session — it returns
+  // how many photos their pack allows (uploader caps itself) and whether the
+  // session is actually paid. The real enforcement also lives in /api/fulfill.
   useEffect(() => {
     const sessionId = new URLSearchParams(window.location.search).get(
       "session_id",
@@ -53,8 +60,11 @@ export default function UploadPage() {
       .then((r) => r.json())
       .then((d) => {
         if (d?.maxPhotos) setMaxPhotos(d.maxPhotos);
+        if (SKIP_CHECKOUT) setAccess(d?.paid ? "ok" : "denied");
       })
-      .catch(() => {});
+      .catch(() => {
+        if (SKIP_CHECKOUT) setAccess("denied");
+      });
   }, []);
 
   const previews = useMemo(
@@ -135,6 +145,39 @@ export default function UploadPage() {
         ? "Starting your tour…"
         : "Opening secure checkout…"
     : "Create my tour";
+
+  // Verifying the paid session — brief hold to avoid flashing the form.
+  if (access === "checking") {
+    return (
+      <div className="tourly flex h-screen items-center justify-center bg-cream text-tink-soft">
+        <p className="text-sm">Verifying your purchase…</p>
+      </div>
+    );
+  }
+
+  // No verified purchase — send them to buy a pack instead of the uploader.
+  if (access === "denied") {
+    return (
+      <div className="tourly flex h-screen flex-col items-center justify-center gap-5 bg-cream px-6 text-center text-tink">
+        <div>
+          <h1 className="font-display text-2xl leading-tight text-tink sm:text-3xl">
+            No active purchase found
+          </h1>
+          <p className="mx-auto mt-2 max-w-md text-sm text-tink-soft">
+            Grab a pack first — you&apos;ll land right back here to upload your
+            photos.
+          </p>
+        </div>
+        <a
+          href="/#pricing"
+          className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] px-7 text-[0.95rem] font-semibold tracking-tight text-white shadow-[0_14px_34px_-10px_rgba(15,125,107,0.65)]"
+        >
+          See pricing
+          <Arrow className="h-4 w-4" />
+        </a>
+      </div>
+    );
+  }
 
   return (
     <div className="tourly flex h-screen flex-col overflow-hidden bg-cream text-tink">
