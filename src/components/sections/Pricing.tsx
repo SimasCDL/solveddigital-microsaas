@@ -1,5 +1,5 @@
 import { Check, Arrow } from "@/components/site/icons";
-import { PACKS, type Pack } from "@/lib/pricing";
+import { PACKS, packCheckoutUrl, type Pack } from "@/lib/pricing";
 
 function PackCard({ pack }: { pack: Pack }) {
   const hi = pack.highlighted;
@@ -51,7 +51,7 @@ function PackCard({ pack }: { pack: Pack }) {
       </div>
 
       <a
-        href="/upload"
+        href={packCheckoutUrl(pack)}
         className={`mt-[22px] flex h-[52px] items-center justify-center gap-2 rounded-full text-[15px] font-medium ${
           hi ? "bg-cream text-ink" : "bg-ink text-cream"
         }`}

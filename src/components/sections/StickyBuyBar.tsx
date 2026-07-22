@@ -47,7 +47,7 @@ export function StickyBuyBar() {
           </div>
         </div>
         <a
-          href="/upload"
+          href="#pricing"
           className="flex h-[54px] items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-[15.5px] font-bold text-white shadow-[0_14px_30px_-12px_rgba(15,125,107,0.6)]"
         >
           Create your first winning video

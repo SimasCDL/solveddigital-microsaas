@@ -3,7 +3,7 @@ import { Tag, Arrow } from "@/components/site/icons";
 export function PromoBar() {
   return (
     <a
-      href="/upload"
+      href="#pricing"
       className="flex items-center justify-center gap-2 whitespace-nowrap bg-accent px-3.5 py-[11px] text-center text-[12.5px] font-semibold text-cream"
     >
       <Tag className="h-[15px] w-[15px]" />

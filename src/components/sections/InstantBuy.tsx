@@ -8,6 +8,7 @@ import { useVideoAutoplay } from "@/components/site/useVideoAutoplay";
 import {
   PACKS,
   packById,
+  packCheckoutUrl,
   discountPct,
   type PackId,
 } from "@/lib/pricing";
@@ -147,7 +148,7 @@ export function InstantBuy() {
         </div>
 
         <a
-          href="/upload"
+          href={packCheckoutUrl(selected)}
           className="mt-[18px] flex h-14 items-center justify-center gap-2.5 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-base font-bold text-white shadow-[0_16px_34px_-12px_rgba(15,125,107,0.6)]"
         >
           Get my tour — {selected.priceLabel}
