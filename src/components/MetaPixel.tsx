@@ -46,25 +46,54 @@ fbq('track', 'PageView');`}
   );
 }
 
+// In-memory guard so the order page's repeated status polls can't each kick off
+// their own fire loop for the same order within a single page load.
+const leadInFlight = new Set<string>();
+
 /**
  * Fire a Meta "Lead" for a completed purchase — exactly once per order, even
  * across refreshes, revisits, or the order page's status polling. `eventID`
  * lets Meta dedupe if the same event is ever also sent via the Conversions API.
+ *
+ * The order page reaches this via a status fetch that can resolve before the
+ * pixel snippet (loaded `afterInteractive`) has defined `window.fbq`. So we
+ * WAIT for fbq to exist before firing, and only persist the de-dupe flag once
+ * the event has actually gone out — otherwise a fast status response would mark
+ * the order "sent" while the pixel was still loading and the Lead would be lost.
  */
 export function trackLeadOnce(orderId: string): void {
   if (typeof window === "undefined" || !orderId) return;
+  if (leadInFlight.has(orderId)) return;
   const key = `fb_lead_${orderId}`;
   try {
     if (localStorage.getItem(key)) return;
-    localStorage.setItem(key, "1");
   } catch {
-    // localStorage blocked (private mode) — still fires, just not de-duped
-    // across reloads. Meta's own eventID de-dupes on their side.
+    // localStorage blocked (private mode) — fall through; Meta's eventID still
+    // de-dupes on their side.
   }
-  window.fbq?.(
-    "track",
-    "Lead",
-    { content_name: "video_tour_order" },
-    { eventID: orderId },
-  );
+  leadInFlight.add(orderId);
+
+  let tries = 0;
+  const fire = () => {
+    if (typeof window.fbq === "function") {
+      window.fbq(
+        "track",
+        "Lead",
+        { content_name: "video_tour_order" },
+        { eventID: orderId },
+      );
+      try {
+        localStorage.setItem(key, "1");
+      } catch {}
+      return;
+    }
+    // Wait up to ~15s for the pixel to initialize, then give up and release the
+    // guard so a later page load can retry.
+    if (tries++ < 60) {
+      setTimeout(fire, 250);
+    } else {
+      leadInFlight.delete(orderId);
+    }
+  };
+  fire();
 }
