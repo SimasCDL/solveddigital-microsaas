@@ -25,5 +25,8 @@ export async function GET(req: NextRequest) {
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'MISSING',
     // Must be absent/false in production — bypasses Stripe payment verification.
     SKIP_PAYMENT_CHECK: process.env.SKIP_PAYMENT_CHECK || 'unset (good)',
+    // Server-side Meta Lead (Conversions API).
+    META_CAPI_TOKEN: p('META_CAPI_TOKEN'),
+    META_TEST_EVENT_CODE: process.env.META_TEST_EVENT_CODE || 'unset',
   });
 }
