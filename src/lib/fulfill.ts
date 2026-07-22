@@ -66,7 +66,6 @@ export async function fulfillOrder(orderId: string): Promise<void> {
     try {
       await sendDeliveryEmail({
         to: order.email,
-        propertyAddress: order.propertyAddress,
         orderId,
       });
     } catch (emailErr) {

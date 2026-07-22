@@ -27,21 +27,18 @@ const shell = (inner: string) => `
 
 export async function sendDeliveryEmail(params: {
   to: string;
-  propertyAddress?: string;
   orderId: string;
 }): Promise<void> {
   const orderUrl = `${appUrl()}/order/${params.orderId}`;
-  const addr = params.propertyAddress?.trim();
 
   const resend = getResend();
   if (!resend) { console.error("[resend] RESEND_API_KEY not set — skipping email"); return; }
   await resend.emails.send({
     from: process.env.FROM_EMAIL!,
     to: params.to,
-    subject: addr ? `Your video tour is ready — ${addr}` : `Your video tour is ready`,
+    subject: `Your video tour is ready`,
     html: shell(`
-      <h1 style="color:#15130f;font-size:26px;font-weight:600;letter-spacing:-0.022em;margin:0 0 ${addr ? '6px' : '28px'};">Your tour is ready</h1>
-      ${addr ? `<p style="color:#6f6a60;font-size:15px;margin:0 0 28px;">${addr}</p>` : ''}
+      <h1 style="color:#15130f;font-size:26px;font-weight:600;letter-spacing:-0.022em;margin:0 0 28px;">Your tour is ready</h1>
       <p style="color:#15130f;font-size:15px;margin:0 0 28px;">
         Your tour is ready to watch and download — widescreen for Zillow &amp; the MLS,
         plus two vertical cuts for Reels and TikTok. Open your page to grab them all.
