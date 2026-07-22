@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
+import { trackLeadOnce } from "@/components/MetaPixel";
 
 type Status = "pending_payment" | "processing" | "completed" | "failed";
 
@@ -69,6 +70,13 @@ export default function OrderPage() {
         if (!res.ok) throw new Error("Order not found");
         const json: StatusData = await res.json();
         setData(json);
+
+        // Reaching this page in processing/completed means the Stripe payment
+        // was verified in /api/fulfill — count it as a converted Lead in Meta,
+        // once per order.
+        if (json.status === "processing" || json.status === "completed") {
+          trackLeadOnce(orderId);
+        }
 
         if (json.status !== "processing" && json.status !== "pending_payment")
           return;
