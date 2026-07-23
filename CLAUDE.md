@@ -83,6 +83,15 @@ Defined in `app/globals.css` `@theme`:
 - **HowItWorks:** 3 cards w/ teal numbered circles (Upload → Wait ~2 min → Post).
 - Value / Guarantee / Pricing / FAQ / FinalCta — clean cream/ink, teal accents.
 
+## Analytics
+
+- **Microsoft Clarity** (project ID `xpy86yhdm3`) via
+  `components/site/ClarityAnalytics.tsx`, loaded in `app/layout.tsx`. ID is
+  hardcoded (public, non-secret client ID) with an optional
+  `NEXT_PUBLIC_CLARITY_ID` override. Fires **only in production** (`NODE_ENV`),
+  so local dev doesn't pollute the project. Historically the tag was absent from
+  the site entirely, so paid ad traffic went untracked — this is the fix.
+
 ## Stubs / integration seams (intentional — not needed for design work)
 
 - **Stripe + delivery:** the colleague builds the real Stripe → success → delivery
