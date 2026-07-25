@@ -1,4 +1,5 @@
 import { CtaButton } from "@/components/ab/CtaButton";
+import { FreeTrialCta } from "@/components/FreeTrialCta";
 import { ReviewsRow } from "@/components/site/ReviewsRow";
 import { Arrow } from "@/components/site/icons";
 
@@ -21,6 +22,7 @@ export function Hero() {
 
       <div className="mt-7 flex flex-col items-center gap-3">
         <CtaButton size="xl" label="Make my first tour" href="#buy" />
+        <FreeTrialCta variant="pill" />
         <p className="text-[13.5px] text-ink-soft">
           Secure checkout · Money-back guarantee
         </p>

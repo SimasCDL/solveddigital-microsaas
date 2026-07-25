@@ -1,5 +1,6 @@
 import { Container } from "@/components/site/Container";
 import { CtaButton } from "@/components/ab/CtaButton";
+import { FreeTrialCta } from "@/components/FreeTrialCta";
 import { ReviewsRow } from "@/components/site/ReviewsRow";
 import { Arrow } from "@/components/site/icons";
 import { BeforeAfterRail } from "@/components/sections/BeforeAfterRail";
@@ -32,7 +33,10 @@ export function Hero() {
         </p>
 
         <div className="mt-9 flex flex-col items-center gap-3">
-          <CtaButton size="xl" />
+          <div className="flex flex-col items-center gap-3 sm:flex-row">
+            <CtaButton size="xl" />
+            <FreeTrialCta variant="pill" className="h-16 px-8 text-base" />
+          </div>
           <p className="text-sm text-ink-soft">
             Secure checkout · Money-back guarantee
           </p>

@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Check, Shield, Arrow } from "@/components/site/icons";
+import { FreeTrialCta } from "@/components/FreeTrialCta";
 import { Stars } from "@/components/site/Stars";
 import { PaymentLogos } from "@/components/site/PaymentLogos";
 import { useVideoAutoplay } from "@/components/site/useVideoAutoplay";
@@ -159,19 +160,8 @@ export function InstantBuy() {
           <Arrow className="h-[18px] w-[18px]" />
         </a>
 
-        {/* Risk-reversal for sceptics. Deliberately understated — a text link,
-            not a second button — so it never competes with the paid packs.
-            Hidden until NEXT_PUBLIC_FREE_TRIAL=true so the offer can't go live
-            before its Supabase ledger (free_trials) exists. */}
-        {process.env.NEXT_PUBLIC_FREE_TRIAL === "true" && (
-          <a
-            href="/free"
-            className="mt-3 flex items-center justify-center gap-1.5 text-[13.5px] font-semibold text-accent underline decoration-accent/30 underline-offset-2"
-          >
-            Not sure? Try it free with 2 photos
-            <Arrow className="h-3.5 w-3.5" />
-          </a>
-        )}
+        {/* Risk-reversal for someone hesitating at the buy button. */}
+        <FreeTrialCta className="mt-3 w-full" />
 
         {/* Money-back strip */}
         <div className="mt-[18px] flex items-center gap-3 rounded-[14px] border border-line bg-accent-soft px-[15px] py-3.5">

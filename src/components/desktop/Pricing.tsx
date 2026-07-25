@@ -1,4 +1,5 @@
 import { Container } from "@/components/site/Container";
+import { FreeTrialCta } from "@/components/FreeTrialCta";
 import { Check, Arrow } from "@/components/site/icons";
 import { PACKS, packCheckoutUrl, type Pack } from "@/lib/pricing";
 
@@ -106,19 +107,10 @@ export function Pricing() {
           Secure checkout · Instant delivery · Money-back guarantee
         </p>
 
-        {/* Risk-reversal for sceptics — a text link, never a competing button.
-            Gated on NEXT_PUBLIC_FREE_TRIAL so the offer stays dark until the
-            free_trials ledger exists in Supabase. */}
-        {process.env.NEXT_PUBLIC_FREE_TRIAL === "true" && (
-          <p className="mt-4 text-center text-sm">
-            <a
-              href="/free"
-              className="font-semibold text-accent underline decoration-accent/30 underline-offset-2"
-            >
-              Not sure? Try it free with 2 photos →
-            </a>
-          </p>
-        )}
+        {/* Risk-reversal for someone hesitating at the packs. */}
+        <p className="mt-4 text-center">
+          <FreeTrialCta />
+        </p>
       </Container>
     </section>
   );
