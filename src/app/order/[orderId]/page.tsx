@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { trackLeadOnce, trackStartTrialOnce } from "@/components/MetaPixel";
+import { FullTourUpsell } from "@/components/FullTourUpsell";
 
 type Status = "pending_payment" | "processing" | "completed" | "failed";
 
@@ -33,6 +34,14 @@ const DEMO_STATES: Record<string, StatusData> = {
     videoUrls: [DEMO_SAMPLE, DEMO_SAMPLE, DEMO_SAMPLE],
     propertyAddress: "128 Maple Ave, Austin, TX",
     photoCount: 24,
+  },
+  // Finished free trial — the upsell variant. /order/demo?demo=free
+  free: {
+    status: "completed",
+    free: true,
+    videoUrls: [DEMO_SAMPLE, DEMO_SAMPLE, DEMO_SAMPLE],
+    propertyAddress: "",
+    photoCount: 2,
   },
   expired: {
     status: "completed",
@@ -200,24 +209,7 @@ export default function OrderPage() {
               )}
             </div>
 
-            {data.free && (
-              <div className="mt-6 rounded-2xl border border-accent/25 bg-accent-soft p-5 text-center sm:p-6">
-                <p className="font-display text-xl text-tink sm:text-2xl">
-                  That was 2 photos. Imagine the whole listing.
-                </p>
-                <p className="mx-auto mt-2 max-w-md text-sm text-tink-soft">
-                  Upload your full gallery and get a complete cinematic tour —
-                  widescreen for the MLS plus both vertical cuts, with licensed
-                  music. Packs start at $105.
-                </p>
-                <a
-                  href="/#buy"
-                  className="mt-5 inline-flex h-13 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] px-8 py-3.5 text-[0.95rem] font-semibold tracking-tight text-white shadow-[0_14px_34px_-10px_rgba(15,125,107,0.65)] ring-1 ring-white/10 transition-all hover:brightness-[1.06] active:scale-[0.99]"
-                >
-                  Make my full tour →
-                </a>
-              </div>
-            )}
+            {data.free && <FullTourUpsell />}
 
             <p className="mt-6 text-center text-[13px] text-tink-soft">
               We also sent these links to your email · Order #{orderId}
