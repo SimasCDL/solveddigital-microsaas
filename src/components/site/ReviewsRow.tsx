@@ -8,6 +8,7 @@ const AVATARS = [
   "/reviews/reviewer-2.jpg",
   "/reviews/reviewer-3.jpg",
   "/reviews/reviewer-4.jpg",
+  "/reviews/reviewer-5.jpg",
 ];
 
 /** Overlapping avatars + rating + review count. Shared by mobile & desktop heroes. */
