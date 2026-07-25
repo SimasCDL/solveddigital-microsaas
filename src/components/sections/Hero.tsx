@@ -31,7 +31,7 @@ export function Hero() {
         )}
         <p className="text-[13.5px] text-ink-soft">
           {FREE_TRIAL_ENABLED
-            ? "No card required · Your clip in about a minute"
+            ? "No card · ready in minutes"
             : "Secure checkout · Money-back guarantee"}
         </p>
       </div>

@@ -238,7 +238,7 @@ export default function OrderPage() {
             </h1>
             <p className="mt-3 text-tink-soft">{data.propertyAddress}</p>
             <p className="mt-1.5 text-sm text-tink-soft">
-              {`Turning ${data.photoCount} photo${data.photoCount !== 1 ? "s" : ""} into your video — usually ready in 15–30 minutes`}
+              {`Turning ${data.photoCount} photo${data.photoCount !== 1 ? "s" : ""} into your video — ${data.free ? "usually ready in under 5 minutes" : "usually ready in 15–30 minutes"}`}
             </p>
             <p className="mt-8 text-[13px] text-tink-soft/80">
               This page updates automatically · We&apos;ll also email you when

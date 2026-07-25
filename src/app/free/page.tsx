@@ -90,7 +90,7 @@ export default function FreeTrialPage() {
           </h1>
           <p className="mx-auto mt-2.5 max-w-md text-[15px] text-tink-soft">
             Drop in 2 photos and we&apos;ll film a real cinematic clip from them
-            — free, in about a minute. No card, no catch.
+            — free, in a few minutes. No card, no catch.
           </p>
         </div>
 
