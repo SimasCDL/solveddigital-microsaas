@@ -105,6 +105,20 @@ export function Pricing() {
         <p className="mt-10 text-center text-sm text-ink-soft">
           Secure checkout · Instant delivery · Money-back guarantee
         </p>
+
+        {/* Risk-reversal for sceptics — a text link, never a competing button.
+            Gated on NEXT_PUBLIC_FREE_TRIAL so the offer stays dark until the
+            free_trials ledger exists in Supabase. */}
+        {process.env.NEXT_PUBLIC_FREE_TRIAL === "true" && (
+          <p className="mt-4 text-center text-sm">
+            <a
+              href="/free"
+              className="font-semibold text-accent underline decoration-accent/30 underline-offset-2"
+            >
+              Not sure? Try it free with 2 photos →
+            </a>
+          </p>
+        )}
       </Container>
     </section>
   );

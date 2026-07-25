@@ -2,29 +2,13 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import type { Order } from './types';
+import { sbFetch, useSupabase } from './supabase';
 
 // Orders live in Supabase (table `orders`) so support can look any customer up
 // in the dashboard. The local copy is a best-effort cache/fallback — it uses the
 // OS temp dir because serverless filesystems (Vercel) are read-only except /tmp,
 // and all local writes are non-fatal so a read-only FS never breaks an order.
 const LOCAL_DIR = path.join(os.tmpdir(), 'tourly-orders');
-
-const useSupabase = () =>
-  !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
-
-async function sbFetch(pathname: string, init?: RequestInit & { headers?: Record<string, string> }) {
-  const res = await fetch(`${process.env.SUPABASE_URL}/rest/v1${pathname}`, {
-    ...init,
-    headers: {
-      apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}`,
-      'Content-Type': 'application/json',
-      ...init?.headers,
-    },
-  });
-  if (!res.ok) throw new Error(`Supabase ${res.status}: ${await res.text()}`);
-  return res;
-}
 
 interface OrderRow {
   id: string;

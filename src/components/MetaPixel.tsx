@@ -48,10 +48,10 @@ fbq('track', 'PageView');`}
 
 // In-memory guard so the order page's repeated status polls can't each kick off
 // their own fire loop for the same order within a single page load.
-const leadInFlight = new Set<string>();
+const inFlight = new Set<string>();
 
 /**
- * Fire a Meta "Lead" for a completed purchase — exactly once per order, even
+ * Fire a Meta conversion event for an order — exactly once per order, even
  * across refreshes, revisits, or the order page's status polling. `eventID`
  * lets Meta dedupe if the same event is ever also sent via the Conversions API.
  *
@@ -59,29 +59,29 @@ const leadInFlight = new Set<string>();
  * pixel snippet (loaded `afterInteractive`) has defined `window.fbq`. So we
  * WAIT for fbq to exist before firing, and only persist the de-dupe flag once
  * the event has actually gone out — otherwise a fast status response would mark
- * the order "sent" while the pixel was still loading and the Lead would be lost.
+ * the order "sent" while the pixel was still loading and the event would be lost.
  */
-export function trackLeadOnce(orderId: string): void {
+function trackOnce(
+  event: "Lead" | "StartTrial",
+  orderId: string,
+  contentName: string,
+): void {
   if (typeof window === "undefined" || !orderId) return;
-  if (leadInFlight.has(orderId)) return;
-  const key = `fb_lead_${orderId}`;
+  const guard = `${event}:${orderId}`;
+  if (inFlight.has(guard)) return;
+  const key = `fb_${event.toLowerCase()}_${orderId}`;
   try {
     if (localStorage.getItem(key)) return;
   } catch {
     // localStorage blocked (private mode) — fall through; Meta's eventID still
     // de-dupes on their side.
   }
-  leadInFlight.add(orderId);
+  inFlight.add(guard);
 
   let tries = 0;
   const fire = () => {
     if (typeof window.fbq === "function") {
-      window.fbq(
-        "track",
-        "Lead",
-        { content_name: "video_tour_order" },
-        { eventID: orderId },
-      );
+      window.fbq("track", event, { content_name: contentName }, { eventID: orderId });
       try {
         localStorage.setItem(key, "1");
       } catch {}
@@ -92,8 +92,18 @@ export function trackLeadOnce(orderId: string): void {
     if (tries++ < 60) {
       setTimeout(fire, 250);
     } else {
-      leadInFlight.delete(orderId);
+      inFlight.delete(guard);
     }
   };
   fire();
 }
+
+/** A completed PURCHASE. This is the event the ad campaigns optimize on, so it
+ *  must never fire for a free trial. */
+export const trackLeadOnce = (orderId: string) =>
+  trackOnce("Lead", orderId, "video_tour_order");
+
+/** A claimed free trial — tracked separately so it can't pollute the Lead
+ *  signal the paid campaigns are optimizing against. */
+export const trackStartTrialOnce = (orderId: string) =>
+  trackOnce("StartTrial", orderId, "free_video_tour");

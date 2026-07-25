@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import { trackLeadOnce } from "@/components/MetaPixel";
+import { trackLeadOnce, trackStartTrialOnce } from "@/components/MetaPixel";
 
 type Status = "pending_payment" | "processing" | "completed" | "failed";
 
@@ -12,6 +12,8 @@ interface StatusData {
   videoUrls: string[];
   propertyAddress: string;
   photoCount: number;
+  /** True for a 2-photo free trial rather than a paid order. */
+  free?: boolean;
 }
 
 const POLL_INTERVAL = 8000;
@@ -73,9 +75,11 @@ export default function OrderPage() {
 
         // Reaching this page in processing/completed means the Stripe payment
         // was verified in /api/fulfill — count it as a converted Lead in Meta,
-        // once per order.
+        // once per order. Free trials report StartTrial instead so they never
+        // dilute the Lead signal the paid campaigns optimize on.
         if (json.status === "processing" || json.status === "completed") {
-          trackLeadOnce(orderId);
+          if (json.free) trackStartTrialOnce(orderId);
+          else trackLeadOnce(orderId);
         }
 
         if (json.status !== "processing" && json.status !== "pending_payment")
@@ -195,6 +199,25 @@ export default function OrderPage() {
                 </div>
               )}
             </div>
+
+            {data.free && (
+              <div className="mt-6 rounded-2xl border border-accent/25 bg-accent-soft p-5 text-center sm:p-6">
+                <p className="font-display text-xl text-tink sm:text-2xl">
+                  That was 2 photos. Imagine the whole listing.
+                </p>
+                <p className="mx-auto mt-2 max-w-md text-sm text-tink-soft">
+                  Upload your full gallery and get a complete cinematic tour —
+                  widescreen for the MLS plus both vertical cuts, with licensed
+                  music. Packs start at $105.
+                </p>
+                <a
+                  href="/#buy"
+                  className="mt-5 inline-flex h-13 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] px-8 py-3.5 text-[0.95rem] font-semibold tracking-tight text-white shadow-[0_14px_34px_-10px_rgba(15,125,107,0.65)] ring-1 ring-white/10 transition-all hover:brightness-[1.06] active:scale-[0.99]"
+                >
+                  Make my full tour →
+                </a>
+              </div>
+            )}
 
             <p className="mt-6 text-center text-[13px] text-tink-soft">
               We also sent these links to your email · Order #{orderId}

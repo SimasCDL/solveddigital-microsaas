@@ -26,5 +26,9 @@ export async function GET(req: NextRequest) {
     videoUrls: expired ? [] : await signVideoUrls(order.videoUrls ?? [], PLAYBACK_SIGN_SECONDS),
     propertyAddress: order.propertyAddress,
     photoCount: order.photoUrls.length,
+    // Free trials carry a `free:<segment>` marker instead of a Stripe session.
+    // The order page needs this so it reports a trial as StartTrial and keeps
+    // the Meta Lead event meaning "paid purchase".
+    free: (order.stripeSessionId ?? '').startsWith('free:'),
   });
 }
