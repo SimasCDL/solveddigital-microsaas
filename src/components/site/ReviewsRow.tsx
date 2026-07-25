@@ -1,10 +1,13 @@
 import { Stars } from "@/components/site/Stars";
 
+// Pilot users who agreed to appear. Square-cropped to 160px and served from
+// /public rather than hotlinked, so the hero doesn't depend on a third-party
+// image host and doesn't ship megabytes to mobile ad traffic.
 const AVATARS = [
-  "https://randomuser.me/api/portraits/women/68.jpg",
-  "https://randomuser.me/api/portraits/men/32.jpg",
-  "https://randomuser.me/api/portraits/women/44.jpg",
-  "https://randomuser.me/api/portraits/men/75.jpg",
+  "/reviews/reviewer-1.jpg",
+  "/reviews/reviewer-2.jpg",
+  "/reviews/reviewer-3.jpg",
+  "/reviews/reviewer-4.jpg",
 ];
 
 /** Overlapping avatars + rating + review count. Shared by mobile & desktop heroes. */
