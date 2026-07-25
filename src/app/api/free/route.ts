@@ -105,10 +105,16 @@ export async function POST(req: NextRequest) {
     };
     await createOrder(order);
 
-    after(() => fulfillOrder(orderId));
+    // Alert first, and independently guarded: the lead is worth more than the
+    // video, so a fulfillment blow-up must never take the notification with it.
     after(() =>
       sendTelegram(
         `🎬 *Free trial* · ${segment === 'agent' ? 'Agent' : 'Homeowner'}\n📧 ${email}\n📸 ${photoUrls.length} photos`,
+      ).catch(() => {}),
+    );
+    after(() =>
+      fulfillOrder(orderId).catch((err) =>
+        console.error(`[free] fulfillment failed for ${orderId}:`, err),
       ),
     );
 

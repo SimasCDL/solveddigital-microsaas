@@ -4,7 +4,8 @@ import { sortPhotoUrls } from '@/lib/sort';
 import { stitchClips, makeVerticalVariants, addMusicTrack } from '@/lib/stitch';
 import { saveVideo } from '@/lib/videos';
 import { sendDeliveryEmail, sendFailureEmail, sendAdminAlert } from '@/lib/resend';
-import { sendLeadServerSide } from '@/lib/meta';
+import { sendMetaEventServerSide } from '@/lib/meta';
+import { sendTelegram } from '@/lib/telegram';
 
 // The one fulfillment pipeline: sort → generate → stitch → persist → email.
 // Called from the Stripe webhook (paid orders) and /api/fulfill (free mode).
@@ -12,11 +13,16 @@ export async function fulfillOrder(orderId: string): Promise<void> {
   const order = await getOrder(orderId);
   if (!order) throw new Error(`Order ${orderId} not found`);
 
-  // Record the purchase as a Meta Lead server-side, the moment fulfillment
-  // starts (payment is already verified by the caller). Independent of the
-  // customer's browser; de-dupes with the browser pixel via event_id=orderId.
+  // Free trials carry a `free:<segment>` marker instead of a Stripe session id.
+  const isFree = (order.stripeSessionId ?? '').startsWith('free:');
+
+  // Report the conversion to Meta server-side, independent of the customer's
+  // browser; de-dupes with the browser pixel via event_id=orderId. A free trial
+  // must report StartTrial — sending Lead here would dilute the purchase signal
+  // the paid campaigns optimize on, which is the whole reason they're separate.
   const appBase = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  await sendLeadServerSide({
+  await sendMetaEventServerSide({
+    eventName: isFree ? 'StartTrial' : 'Lead',
     orderId,
     email: order.email,
     eventSourceUrl: `${appBase}/order/${orderId}`,
@@ -90,6 +96,16 @@ export async function fulfillOrder(orderId: string): Promise<void> {
   } catch (err) {
     console.error('Video generation failed:', err);
     await updateOrder(orderId, { status: 'failed', errorMessage: String(err) });
+
+    // Telegram first and always: sendAdminAlert depends on ADMIN_ALERT_EMAIL
+    // being set and silently drops the alert if it isn't, which would leave a
+    // failed order — and a real prospect's email — completely unnoticed.
+    await sendTelegram(
+      `⚠️ *Order FAILED* · ${isFree ? 'free trial' : 'paid'}\n` +
+      `📧 ${order.email}\n📸 ${order.photoUrls.length} photos\n🆔 \`${orderId}\`\n\n` +
+      `${String(err).slice(0, 300)}`
+    ).catch(() => {});
+
     await sendFailureEmail({ to: order.email, orderId }).catch(e =>
       console.error('[fulfill] failure email also failed:', e)
     );

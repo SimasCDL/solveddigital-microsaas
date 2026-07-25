@@ -7,19 +7,22 @@ const sha256 = (v: string) =>
   crypto.createHash('sha256').update(v.trim().toLowerCase()).digest('hex');
 
 /**
- * Fire a Meta "Lead" server-side via the Conversions API. Runs during
- * fulfillment (payment already verified), so it's completely independent of the
- * customer's browser — ad blockers, a closed tab, or a missed order-page load
- * can't drop it.
+ * Fire a Meta conversion event server-side via the Conversions API. Runs during
+ * fulfillment, so it's completely independent of the customer's browser — ad
+ * blockers, a closed tab, or a missed order-page load can't drop it.
+ *
+ * `Lead` = a paid purchase (what the campaigns optimize on). `StartTrial` = a
+ * claimed free trial, kept separate so it can't dilute that signal.
  *
  * `event_id` = orderId matches the browser pixel's eventID, so if both fire
- * Meta de-dupes them into a single Lead (never double-counts).
+ * Meta de-dupes them into a single event (never double-counts).
  *
  * No-ops unless META_CAPI_TOKEN is set, so it's safe to ship before the token
  * exists. Set META_TEST_EVENT_CODE to make events show under Events Manager →
  * Test Events while testing (remove it for production).
  */
-export async function sendLeadServerSide(params: {
+export async function sendMetaEventServerSide(params: {
+  eventName: 'Lead' | 'StartTrial';
   orderId: string;
   email?: string;
   eventSourceUrl?: string;
@@ -32,7 +35,7 @@ export async function sendLeadServerSide(params: {
   if (params.email) user_data.em = [sha256(params.email)];
 
   const event: Record<string, unknown> = {
-    event_name: 'Lead',
+    event_name: params.eventName,
     event_time: Math.floor(Date.now() / 1000),
     event_id: params.orderId,
     action_source: 'website',
@@ -55,9 +58,9 @@ export async function sendLeadServerSide(params: {
       },
     );
     if (!res.ok) {
-      console.error('[meta] CAPI Lead failed:', res.status, await res.text().catch(() => ''));
+      console.error(`[meta] CAPI ${params.eventName} failed:`, res.status, await res.text().catch(() => ''));
     }
   } catch (err) {
-    console.error('[meta] CAPI Lead error:', err);
+    console.error(`[meta] CAPI ${params.eventName} error:`, err);
   }
 }
