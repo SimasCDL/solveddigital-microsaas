@@ -11,7 +11,13 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     // ffmpeg binary + the background music track (both read from disk at runtime
     // via dynamic paths the tracer can't detect on its own).
+    //
+    // EVERY route that calls fulfillOrder() needs both, since fulfillment
+    // stitches clips, builds the vertical variants and lays the music track.
     "/api/fulfill": ["./node_modules/ffmpeg-static/**", "./assets/**"],
+    "/api/free": ["./node_modules/ffmpeg-static/**", "./assets/**"],
+    "/api/webhook": ["./node_modules/ffmpeg-static/**", "./assets/**"],
+    "/api/admin/retry": ["./node_modules/ffmpeg-static/**", "./assets/**"],
     "/api/generate": ["./node_modules/ffmpeg-static/**", "./assets/**"],
     "/api/stitch": ["./node_modules/ffmpeg-static/**"],
     "/api/qc-test": ["./node_modules/ffmpeg-static/**"],
