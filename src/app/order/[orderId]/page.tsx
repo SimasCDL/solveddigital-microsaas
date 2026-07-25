@@ -29,6 +29,14 @@ const DEMO_STATES: Record<string, StatusData> = {
     propertyAddress: "128 Maple Ave, Austin, TX",
     photoCount: 24,
   },
+  // Free 2-photo trial while generating — /order/demo?demo=processing-free
+  "processing-free": {
+    status: "processing",
+    free: true,
+    videoUrls: [],
+    propertyAddress: "",
+    photoCount: 2,
+  },
   completed: {
     status: "completed",
     videoUrls: [DEMO_SAMPLE, DEMO_SAMPLE, DEMO_SAMPLE],
@@ -66,6 +74,9 @@ export default function OrderPage() {
 
   const [data, setData] = useState<StatusData | null>(null);
   const [error, setError] = useState("");
+  // Seconds on the "creating your tour" screen — drives the live progress bar
+  // and step, so the wait feels like something is happening (not a dead spinner).
+  const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
     if (demo) {
@@ -102,6 +113,30 @@ export default function OrderPage() {
     poll();
     return () => clearTimeout(timer);
   }, [orderId, demo]);
+
+  // Tick the elapsed counter once a second while the video is generating.
+  useEffect(() => {
+    if (data?.status !== "processing") return;
+    const t = setInterval(() => setElapsed((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [data?.status]);
+
+  // Progress model for the generating screen. No real server ETA, so we ease a
+  // bar toward (but never reaching) 100% over the expected duration, and walk a
+  // set of reassuring step labels alongside it.
+  const expectedSec = data?.free ? 300 : 1800;
+  const progressPct = Math.min(96, Math.round((elapsed / expectedSec) * 100));
+  const steps = [
+    "Analyzing your photos",
+    "Directing the camera moves",
+    "Rendering your video",
+    "Adding the final polish",
+  ];
+  const stepIndex = Math.min(
+    steps.length - 1,
+    Math.floor(elapsed / (expectedSec / steps.length)),
+  );
+  const elapsedLabel = `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, "0")}`;
 
   return (
     <div className="tourly min-h-screen bg-cream text-tink">
@@ -226,23 +261,40 @@ export default function OrderPage() {
             </p>
           </div>
         ) : (
-          <div className="text-center">
+          <div className="mx-auto w-full max-w-md text-center">
             {justPaid && (
               <div className="mx-auto mb-8 inline-block rounded-full border border-accent/25 bg-accent-soft px-5 py-2.5 text-sm font-medium text-accent">
                 ✓ Payment confirmed — filming your tour now
               </div>
             )}
-            <div className="mx-auto mb-6 h-12 w-12 animate-spin rounded-full border-2 border-accent border-t-transparent" />
             <h1 className="font-display text-3xl text-tink sm:text-4xl">
               Creating your tour
             </h1>
-            <p className="mt-3 text-tink-soft">{data.propertyAddress}</p>
-            <p className="mt-1.5 text-sm text-tink-soft">
-              {`Turning ${data.photoCount} photo${data.photoCount !== 1 ? "s" : ""} into your video — ${data.free ? "usually ready in under 5 minutes" : "usually ready in 15–30 minutes"}`}
+            {data.propertyAddress && (
+              <p className="mt-3 text-tink-soft">{data.propertyAddress}</p>
+            )}
+
+            {/* Live progress bar — eases toward completion over the ETA */}
+            <div className="mt-8 h-2.5 w-full overflow-hidden rounded-full bg-line">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-[#13a48c] to-[#0e7d6b] transition-[width] duration-1000 ease-linear"
+                style={{ width: `${Math.max(4, progressPct)}%` }}
+              />
+            </div>
+
+            {/* Current step */}
+            <div className="mt-5 flex items-center justify-center gap-2 text-[15px] font-medium text-tink">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-accent" />
+              {steps[stepIndex]}…
+            </div>
+            <p className="mt-2 text-sm text-tink-soft">
+              {elapsedLabel} elapsed ·{" "}
+              {data.free ? "usually under 5 minutes" : "usually 15–30 minutes"}
             </p>
+
             <p className="mt-8 text-[13px] text-tink-soft/80">
-              This page updates automatically · We&apos;ll also email you when
-              it&apos;s done
+              This page updates on its own · we&apos;ll email you the moment
+              it&apos;s ready, so you can safely close this tab.
             </p>
           </div>
         )}
