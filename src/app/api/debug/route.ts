@@ -1,10 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { sendTelegram } from '@/lib/telegram';
 
 // Admin-gated env diagnostic — reports which env vars production actually has
 // (presence + length only, never the secret values). Pass x-admin-key.
+//
+// `?telegram=1` also fires a test message to the sales channel, so the alerting
+// path can be verified without burning a free trial or generating a video.
 export async function GET(req: NextRequest) {
   if (!process.env.ADMIN_KEY || req.headers.get('x-admin-key') !== process.env.ADMIN_KEY) {
     return new Response('Unauthorized', { status: 401 });
+  }
+
+  let telegramTest: { ok: boolean; error?: string } | undefined;
+  if (new URL(req.url).searchParams.get('telegram') === '1') {
+    telegramTest = await sendTelegram(
+      '🔔 *Test alert* — alerting works.\n\nThis is a manual check from the admin diagnostic, not a real order.'
+    );
   }
   const p = (k: string) => {
     const v = process.env[k];
@@ -32,5 +43,6 @@ export async function GET(req: NextRequest) {
     STRIPE_WEBHOOK_SECRET: p('STRIPE_WEBHOOK_SECRET'),
     TELEGRAM_BOT_TOKEN: p('TELEGRAM_BOT_TOKEN'),
     TELEGRAM_CHAT_ID: process.env.TELEGRAM_CHAT_ID || 'MISSING',
+    ...(telegramTest ? { telegramTest } : {}),
   });
 }
