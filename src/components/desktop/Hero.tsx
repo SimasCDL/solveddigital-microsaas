@@ -1,6 +1,6 @@
 import { Container } from "@/components/site/Container";
 import { CtaButton } from "@/components/ab/CtaButton";
-import { FreeTrialCta } from "@/components/FreeTrialCta";
+import { FreeTrialCta, FREE_TRIAL_ENABLED } from "@/components/FreeTrialCta";
 import { ReviewsRow } from "@/components/site/ReviewsRow";
 import { Arrow } from "@/components/site/icons";
 import { BeforeAfterRail } from "@/components/sections/BeforeAfterRail";
@@ -33,12 +33,18 @@ export function Hero() {
         </p>
 
         <div className="mt-9 flex flex-col items-center gap-3">
-          <div className="flex flex-col items-center gap-3 sm:flex-row">
+          {/* The free trial is the hero's single call to action — the paid packs
+              take over further down the page. Falls back to the buy CTA if the
+              offer is switched off, so the hero is never left without one. */}
+          {FREE_TRIAL_ENABLED ? (
+            <FreeTrialCta variant="primary" />
+          ) : (
             <CtaButton size="xl" />
-            <FreeTrialCta variant="pill" className="h-16 px-8 text-base" />
-          </div>
+          )}
           <p className="text-sm text-ink-soft">
-            Secure checkout · Money-back guarantee
+            {FREE_TRIAL_ENABLED
+              ? "No card required · Your clip in about a minute"
+              : "Secure checkout · Money-back guarantee"}
           </p>
         </div>
 
