@@ -17,6 +17,8 @@ interface StatusData {
   free?: boolean;
   /** How many of their photos the free preview was built from. */
   previewCount?: number;
+  /** One of their uploaded photos — shown blurred/locked while generating. */
+  previewPhoto?: string;
 }
 
 const POLL_INTERVAL = 8000;
@@ -30,6 +32,7 @@ const DEMO_STATES: Record<string, StatusData> = {
     videoUrls: [],
     propertyAddress: "128 Maple Ave, Austin, TX",
     photoCount: 24,
+    previewPhoto: "/transform/pool.jpg",
   },
   // Free 2-photo trial while generating — /order/demo?demo=processing-free
   "processing-free": {
@@ -38,6 +41,7 @@ const DEMO_STATES: Record<string, StatusData> = {
     videoUrls: [],
     propertyAddress: "",
     photoCount: 2,
+    previewPhoto: "/transform/furniture.jpg",
   },
   completed: {
     status: "completed",
@@ -294,8 +298,59 @@ export default function OrderPage() {
               <p className="mt-3 text-tink-soft">{data.propertyAddress}</p>
             )}
 
+            {/* Locked preview — their own photo, blurred, behind a play/lock
+                badge. Makes the wait feel like a real video is being built for
+                them, not a blank screen. Falls back to a brand gradient. */}
+            <div className="relative mx-auto mt-8 aspect-video w-full overflow-hidden rounded-2xl bg-night ring-1 ring-black/5">
+              {data.previewPhoto ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={data.previewPhoto}
+                  alt=""
+                  className="h-full w-full scale-110 object-cover blur-md brightness-[0.6]"
+                />
+              ) : (
+                <div
+                  className="h-full w-full"
+                  style={{
+                    background:
+                      "linear-gradient(135deg,#0e7d6b 0%,#13a48c 55%,#0b6659 100%)",
+                  }}
+                />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-night/55 to-night/10" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/30 backdrop-blur-md">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    className="ml-0.5 h-6 w-6 text-white/90"
+                    aria-hidden="true"
+                  >
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                  <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-night text-white ring-2 ring-white/20">
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      className="h-3 w-3"
+                      aria-hidden="true"
+                    >
+                      <rect x="4" y="10" width="16" height="10" rx="2" />
+                      <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+                    </svg>
+                  </span>
+                </div>
+              </div>
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 animate-pulse whitespace-nowrap rounded-full bg-night/70 px-3 py-1 text-[11px] font-medium text-white backdrop-blur-sm">
+                Locked · rendering your tour…
+              </div>
+            </div>
+
             {/* Live progress bar — eases toward completion over the ETA */}
-            <div className="mt-8 h-2.5 w-full overflow-hidden rounded-full bg-line">
+            <div className="mt-6 h-2.5 w-full overflow-hidden rounded-full bg-line">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-[#13a48c] to-[#0e7d6b] transition-[width] duration-1000 ease-linear"
                 style={{ width: `${Math.max(4, progressPct)}%` }}

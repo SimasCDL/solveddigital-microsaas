@@ -27,6 +27,7 @@ export async function GET(req: NextRequest) {
     videoUrls: expired ? [] : await signVideoUrls(order.videoUrls ?? [], PLAYBACK_SIGN_SECONDS),
     propertyAddress: order.propertyAddress,
     photoCount: order.photoUrls.length,
+    previewPhoto: order.photoUrls[0] ?? null,
     // Free previews carry a `free:<segment>` marker instead of a Stripe session
     // id; paying to unlock replaces it with the real `cs_...`. So this flag is
     // both "report StartTrial rather than the paid Lead event" and "this is
