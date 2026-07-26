@@ -5,7 +5,7 @@ import { stitchClips, makeVerticalVariants, addMusicTrack } from '@/lib/stitch';
 import { saveVideo } from '@/lib/videos';
 import { sendDeliveryEmail, sendFailureEmail, sendAdminAlert } from '@/lib/resend';
 import { sendMetaEventServerSide } from '@/lib/meta';
-import { sendTelegram } from '@/lib/telegram';
+import { sendTelegram, generationReadyMessage } from '@/lib/telegram';
 
 // The one fulfillment pipeline: sort → generate → stitch → persist → email.
 // Called from the Stripe webhook (paid orders) and /api/fulfill (free mode).
@@ -95,6 +95,18 @@ export async function fulfillOrder(
     // email gets signed links that expire after 7 days.
     const allUrls = [wideUrl, blurredUrl, cropUrl];
     await updateOrder(orderId, { status: 'completed', videoUrls: allUrls });
+
+    // Ping the channel with a link, so a finished tour can be eyeballed without
+    // digging through Supabase for the order id.
+    await sendTelegram(
+      generationReadyMessage({
+        orderId,
+        email: order.email,
+        photoCount: order.photoUrls.length,
+        free: isFree,
+        appUrl,
+      }),
+    ).catch(() => {});
 
     // The video exists and the order page can serve it — a delivery-email
     // failure must NOT mark the order failed. Alert the admin instead.

@@ -1,3 +1,19 @@
+/** The "it's done" ping, with a link straight to the finished tour. Shared so
+ *  the admin re-notify endpoint sends exactly what fulfillment sends. */
+export function generationReadyMessage(p: {
+  orderId: string;
+  email: string;
+  photoCount: number;
+  free: boolean;
+  appUrl: string;
+}): string {
+  return (
+    `✅ *Generation ready* · ${p.free ? "free preview" : "PAID"}\n` +
+    `📧 ${p.email}\n📸 ${p.photoCount} photos\n` +
+    `🔗 ${p.appUrl}/order/${p.orderId}`
+  );
+}
+
 /**
  * Send a Telegram message to the configured chat/channel.
  *

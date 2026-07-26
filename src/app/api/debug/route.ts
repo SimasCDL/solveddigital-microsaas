@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendTelegram } from '@/lib/telegram';
+import { sendTelegram, generationReadyMessage } from '@/lib/telegram';
+import { getOrder } from '@/lib/orders';
 
 // Admin-gated env diagnostic — reports which env vars production actually has
 // (presence + length only, never the secret values). Pass x-admin-key.
@@ -11,11 +12,30 @@ export async function GET(req: NextRequest) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  let telegramTest: { ok: boolean; error?: string } | undefined;
-  if (new URL(req.url).searchParams.get('telegram') === '1') {
+  // ?telegram=1        → plain "alerting works" ping
+  // ?telegram=<orderId> → re-send that order's real "generation ready" message,
+  //                       useful for eyeballing a finished tour or re-notifying
+  //                       after an alert was missed.
+  let telegramTest: { ok: boolean; error?: string; sent?: string } | undefined;
+  const tg = new URL(req.url).searchParams.get('telegram');
+  if (tg === '1') {
     telegramTest = await sendTelegram(
       '🔔 *Test alert* — alerting works.\n\nThis is a manual check from the admin diagnostic, not a real order.'
     );
+  } else if (tg) {
+    const order = await getOrder(tg);
+    if (!order) {
+      telegramTest = { ok: false, error: `order ${tg} not found` };
+    } else {
+      const msg = generationReadyMessage({
+        orderId: tg,
+        email: order.email,
+        photoCount: order.photoUrls.length,
+        free: (order.stripeSessionId ?? '').startsWith('free:'),
+        appUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://www.renoa.ai',
+      });
+      telegramTest = { ...(await sendTelegram(msg)), sent: msg };
+    }
   }
   const p = (k: string) => {
     const v = process.env[k];
