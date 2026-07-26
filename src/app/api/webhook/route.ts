@@ -6,6 +6,17 @@ import { fulfillOrder } from "@/lib/fulfill";
 import { sendTelegram } from "@/lib/telegram";
 import type Stripe from "stripe";
 
+// A pack's photo cap is fixed by the Stripe Price the customer paid for — NOT
+// the amount. Deriving it from the amount broke under promo codes: OFF20 on the
+// $160/40-photo pack pays $128, which the amount ladder misread as the 25-pack.
+// The Price a promo discounts is still the same Price, so this stays correct.
+// Keep in sync with the pack Payment Links.
+const PHOTOS_BY_PRICE: Record<string, number> = {
+  price_1TvdxxI5ln1sJkOAwnzfABr8: 40, // $160 pack
+  price_1TvdxbI5ln1sJkOAZt1Xttod: 25, // $125 pack
+  price_1TvdxBI5ln1sJkOA1GKh5Q4C: 15, // $105 pack
+};
+
 /** Telegram "cha-ching" on a sale: what + amount + today's running total. */
 async function notifyPurchase(
   session: Stripe.Checkout.Session,
@@ -150,7 +161,21 @@ export async function POST(req: NextRequest) {
       status: "processing",
       stripeSessionId: session.id,
     });
-    const allowed = photosForAmount(session.amount_total);
+    // Entitlement from the Price the customer bought (discount-proof). Fall back
+    // to the amount only if the line item can't be read for some reason.
+    let allowed = photosForAmount(session.amount_total);
+    try {
+      const items = await getStripe().checkout.sessions.listLineItems(
+        session.id,
+        { limit: 1 },
+      );
+      const priceId = items.data[0]?.price?.id;
+      if (priceId && PHOTOS_BY_PRICE[priceId]) {
+        allowed = PHOTOS_BY_PRICE[priceId];
+      }
+    } catch {
+      /* keep the amount-based fallback */
+    }
     after(() => fulfillOrder(orderId, { limitPhotos: allowed }));
     fulfilled = true;
   }
