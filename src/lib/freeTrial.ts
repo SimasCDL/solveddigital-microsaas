@@ -1,7 +1,14 @@
 import crypto from 'crypto';
-import { sbFetch, useSupabase } from './supabase';
+import { sbFetch, supabaseConfigured } from './supabase';
 
 export type Segment = 'agent' | 'homeowner';
+
+/**
+ * Customers upload their whole gallery, but the free preview renders only this
+ * many photos. Every photo is still stored on the order, so unlocking rebuilds
+ * the full tour without asking them to upload again.
+ */
+export const FREE_PREVIEW_PHOTOS = 3;
 
 /** Free trials are 2 photos → ~6s of video ≈ $2.70 of Replicate credit each, so
  *  the global daily cap is the real spend guard. Raise deliberately via env. */
@@ -54,7 +61,7 @@ export async function checkFreeTrialEligible(
   email: string,
   ipHash: string,
 ): Promise<FreeTrialDenial> {
-  if (!useSupabase()) {
+  if (!supabaseConfigured()) {
     console.error('[free] Supabase not configured — refusing free trials');
     return { ok: false, reason: 'unavailable' };
   }

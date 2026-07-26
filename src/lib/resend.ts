@@ -28,24 +28,41 @@ const shell = (inner: string) => `
 export async function sendDeliveryEmail(params: {
   to: string;
   orderId: string;
+  /** A free 3-photo preview — watch-only, so the copy must not promise downloads. */
+  preview?: boolean;
 }): Promise<void> {
   const orderUrl = `${appUrl()}/order/${params.orderId}`;
 
   const resend = getResend();
   if (!resend) { console.error("[resend] RESEND_API_KEY not set — skipping email"); return; }
-  await resend.emails.send({
-    from: process.env.FROM_EMAIL!,
-    to: params.to,
-    subject: `Your video tour is ready`,
-    html: shell(`
+
+  const body = params.preview
+    ? `
+      <h1 style="color:#15130f;font-size:26px;font-weight:600;letter-spacing:-0.022em;margin:0 0 28px;">Your free preview is ready</h1>
+      <p style="color:#15130f;font-size:15px;margin:0 0 28px;">
+        We turned a few of your photos into a cinematic clip &mdash; have a watch.
+        When you&rsquo;re happy with it, unlock the full tour built from all your
+        photos: widescreen for Zillow &amp; the MLS, plus two vertical cuts for
+        Reels and TikTok.
+      </p>
+      <p style="margin:0 0 28px;">
+        <a href="${orderUrl}" style="display:inline-block;background:#0f7d6b;color:#ffffff;font-weight:600;font-size:15px;padding:15px 32px;border-radius:999px;text-decoration:none;">Watch your preview &rarr;</a>
+      </p>`
+    : `
       <h1 style="color:#15130f;font-size:26px;font-weight:600;letter-spacing:-0.022em;margin:0 0 28px;">Your tour is ready</h1>
       <p style="color:#15130f;font-size:15px;margin:0 0 28px;">
-        Your tour is ready to watch and download — widescreen for Zillow &amp; the MLS,
+        Your tour is ready to watch and download &mdash; widescreen for Zillow &amp; the MLS,
         plus two vertical cuts for Reels and TikTok. Open your page to grab them all.
       </p>
       <p style="margin:0 0 28px;">
         <a href="${orderUrl}" style="display:inline-block;background:#0f7d6b;color:#ffffff;font-weight:600;font-size:15px;padding:15px 32px;border-radius:999px;text-decoration:none;">Watch &amp; download your tour &rarr;</a>
-      </p>
+      </p>`;
+
+  await resend.emails.send({
+    from: process.env.FROM_EMAIL!,
+    to: params.to,
+    subject: params.preview ? `Your free preview is ready` : `Your video tour is ready`,
+    html: shell(`${body}
       <p style="color:#6f6a60;font-size:12px;margin:28px 0 0;border-top:1px solid #e7e1d6;padding-top:16px;">
         Order #${params.orderId} &middot; Your videos stay available on this page for 7 days.
       </p>

@@ -9,7 +9,15 @@ import { sendTelegram } from '@/lib/telegram';
 
 // The one fulfillment pipeline: sort → generate → stitch → persist → email.
 // Called from the Stripe webhook (paid orders) and /api/fulfill (free mode).
-export async function fulfillOrder(orderId: string): Promise<void> {
+//
+// `limitPhotos` builds the video from only the first N photos after sorting.
+// The order always stores every photo the customer uploaded — the free preview
+// just renders a few of them, and unlocking re-runs this with no limit (or the
+// limit their pack allows) against the same stored set.
+export async function fulfillOrder(
+  orderId: string,
+  opts: { limitPhotos?: number } = {},
+): Promise<void> {
   const order = await getOrder(orderId);
   if (!order) throw new Error(`Order ${orderId} not found`);
 
@@ -29,7 +37,10 @@ export async function fulfillOrder(orderId: string): Promise<void> {
   }).catch(() => {});
 
   try {
-    const sortedUrls = await sortPhotoUrls(order.photoUrls);
+    const allSorted = await sortPhotoUrls(order.photoUrls);
+    const sortedUrls = opts.limitPhotos
+      ? allSorted.slice(0, opts.limitPhotos)
+      : allSorted;
 
     // same pipeline as the test page: Seedance reel segments when enabled,
     // per-photo clips otherwise
@@ -84,6 +95,7 @@ export async function fulfillOrder(orderId: string): Promise<void> {
       await sendDeliveryEmail({
         to: order.email,
         orderId,
+        preview: isFree,
       });
     } catch (emailErr) {
       console.error('[fulfill] delivery email failed (video is fine):', emailErr);

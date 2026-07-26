@@ -1,6 +1,7 @@
 /** Shared Supabase REST helpers — service-role key, server-side only. */
 
-export const useSupabase = () =>
+/** Named so it doesn't read as a React hook (`use*`) to the lint rules. */
+export const supabaseConfigured = () =>
   !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 export async function sbFetch(

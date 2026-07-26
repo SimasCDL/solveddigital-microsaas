@@ -13,8 +13,10 @@ interface StatusData {
   videoUrls: string[];
   propertyAddress: string;
   photoCount: number;
-  /** True for a 2-photo free trial rather than a paid order. */
+  /** True while this is an unpaid free preview rather than a paid order. */
   free?: boolean;
+  /** How many of their photos the free preview was built from. */
+  previewCount?: number;
 }
 
 const POLL_INTERVAL = 8000;
@@ -43,13 +45,14 @@ const DEMO_STATES: Record<string, StatusData> = {
     propertyAddress: "128 Maple Ave, Austin, TX",
     photoCount: 24,
   },
-  // Finished free trial — the upsell variant. /order/demo?demo=free
+  // Finished free preview — watch-only + unlock offer. /order/demo?demo=free
   free: {
     status: "completed",
     free: true,
     videoUrls: [DEMO_SAMPLE, DEMO_SAMPLE, DEMO_SAMPLE],
     propertyAddress: "",
-    photoCount: 2,
+    photoCount: 24,
+    previewCount: 3,
   },
   expired: {
     status: "completed",
@@ -181,10 +184,10 @@ export default function OrderPage() {
           <div>
             <div className="mb-8 text-center">
               <span className="eyebrow inline-block rounded-full bg-accent-soft px-4 py-2 text-accent">
-                Ready to post
+                {data.free ? "Free preview" : "Ready to post"}
               </span>
               <h1 className="font-display mt-5 text-4xl text-tink sm:text-5xl">
-                Your tour is ready
+                {data.free ? "Here's your preview" : "Your tour is ready"}
               </h1>
               {data.propertyAddress && (
                 <p className="mt-3 text-tink-soft">{data.propertyAddress}</p>
@@ -194,18 +197,27 @@ export default function OrderPage() {
             <div className="rounded-3xl border border-line bg-paper p-4 shadow-xl shadow-black/5 sm:p-6">
               <video
                 controls
+                controlsList={data.free ? "nodownload" : undefined}
                 src={data.videoUrls[0]}
                 className="aspect-video w-full rounded-2xl bg-night"
               />
-              <a
-                href={data.videoUrls[0]}
-                download="tourly-widescreen.mp4"
-                className="mt-5 inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-[0.95rem] font-semibold tracking-tight text-white shadow-[0_14px_34px_-10px_rgba(15,125,107,0.65)] ring-1 ring-white/10 transition-all hover:brightness-[1.06] active:scale-[0.99]"
-              >
-                Download widescreen (16:9)
-              </a>
+              {/* Downloads are the thing being paid for — a free preview is
+                  watch-only until the order is unlocked. */}
+              {data.free ? (
+                <p className="mt-5 text-center text-sm text-tink-soft">
+                  Downloads unlock with the full tour ↓
+                </p>
+              ) : (
+                <a
+                  href={data.videoUrls[0]}
+                  download="tourly-widescreen.mp4"
+                  className="mt-5 inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-[0.95rem] font-semibold tracking-tight text-white shadow-[0_14px_34px_-10px_rgba(15,125,107,0.65)] ring-1 ring-white/10 transition-all hover:brightness-[1.06] active:scale-[0.99]"
+                >
+                  Download widescreen (16:9)
+                </a>
+              )}
 
-              {data.videoUrls.length > 1 && (
+              {!data.free && data.videoUrls.length > 1 && (
                 <div className="mt-8">
                   <p className="eyebrow mb-3 text-tink-soft">
                     Vertical versions — for Reels & TikTok
@@ -244,10 +256,18 @@ export default function OrderPage() {
               )}
             </div>
 
-            {data.free && <FullTourUpsell />}
+            {data.free && (
+              <FullTourUpsell
+                orderId={orderId}
+                photoCount={data.photoCount}
+                previewCount={data.previewCount ?? 3}
+              />
+            )}
 
             <p className="mt-6 text-center text-[13px] text-tink-soft">
-              We also sent these links to your email · Order #{orderId}
+              {data.free
+                ? `Order #${orderId}`
+                : `We also sent these links to your email · Order #${orderId}`}
             </p>
           </div>
         ) : data.status === "failed" ? (

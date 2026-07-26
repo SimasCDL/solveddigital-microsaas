@@ -10,6 +10,7 @@ import {
   clientIp,
   hashIp,
   recordFreeTrial,
+  FREE_PREVIEW_PHOTOS,
   type Segment,
 } from '@/lib/freeTrial';
 import type { Order } from '@/lib/types';
@@ -18,8 +19,8 @@ fal.config({ credentials: process.env.FAL_KEY! });
 
 export const maxDuration = 800;
 
-/** The whole point of the free tier: a 2-photo taste, not a usable listing tour. */
-const FREE_PHOTOS = 2;
+/** Upper bound on what we'll store — matches the biggest pack. */
+const MAX_PHOTOS = 40;
 const MAX_FILE_BYTES = 15 * 1024 * 1024;
 
 const SEGMENTS: Segment[] = ['agent', 'homeowner'];
@@ -63,10 +64,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Hard-cap at 2 photos server-side — the client cap is only cosmetic.
+    // Store everything they sent (up to the biggest pack) — the preview limit is
+    // applied at generation time, not here.
     const valid = files
       .filter((f) => f.type.startsWith('image/') && f.size > 0 && f.size <= MAX_FILE_BYTES)
-      .slice(0, FREE_PHOTOS);
+      .slice(0, MAX_PHOTOS);
     if (!valid.length) {
       return NextResponse.json({ error: 'No valid image files' }, { status: 400 });
     }
@@ -109,11 +111,12 @@ export async function POST(req: NextRequest) {
     // video, so a fulfillment blow-up must never take the notification with it.
     after(() =>
       sendTelegram(
-        `🎬 *Free trial* · ${segment === 'agent' ? 'Agent' : 'Homeowner'}\n📧 ${email}\n📸 ${photoUrls.length} photos`,
+        `🎬 *Free preview* · ${segment === 'agent' ? 'Agent' : 'Homeowner'}\n📧 ${email}\n` +
+        `📸 ${photoUrls.length} photos uploaded · previewing ${Math.min(FREE_PREVIEW_PHOTOS, photoUrls.length)}`,
       ).catch(() => {}),
     );
     after(() =>
-      fulfillOrder(orderId).catch((err) =>
+      fulfillOrder(orderId, { limitPhotos: FREE_PREVIEW_PHOTOS }).catch((err) =>
         console.error(`[free] fulfillment failed for ${orderId}:`, err),
       ),
     );

@@ -5,31 +5,49 @@ import {
   PACKS,
   packById,
   packCheckoutUrl,
+  packForPhotoCount,
   discountPct,
   type PackId,
 } from "@/lib/pricing";
 
 /**
- * The upsell on a finished free trial — the highest-intent moment we get, since
- * they've just watched a clip made from their own photos. So checkout lives
- * right here: pick a pack, one tap to Stripe. No trip back to the landing page.
+ * The unlock offer on a finished free preview — the highest-intent moment we
+ * get, since they've just watched a clip made from their own photos. Checkout
+ * lives right here: the pack that covers their upload is preselected, and the
+ * order id rides along so payment unlocks THIS order rather than starting a new
+ * one. No re-uploading, no trip back to the landing page.
  */
-export function FullTourUpsell() {
-  const [pack, setPack] = useState<PackId>("p25");
+export function FullTourUpsell({
+  orderId,
+  photoCount = 0,
+  previewCount = 3,
+}: {
+  orderId?: string;
+  photoCount?: number;
+  previewCount?: number;
+}) {
+  const [pack, setPack] = useState<PackId>(
+    () => packForPhotoCount(photoCount || 25).id,
+  );
   const selected = packById(pack);
+  const shown = Math.min(previewCount, photoCount || previewCount);
+  const covered = Math.min(photoCount, selected.photos);
 
   return (
     <div className="mt-8 rounded-3xl border border-accent/25 bg-accent-soft/60 p-5 sm:p-7">
       <div className="text-center">
         <span className="eyebrow inline-block rounded-full bg-paper px-4 py-2 text-accent">
-          That was just 2 photos
+          {photoCount > shown
+            ? `That was ${shown} of your ${photoCount} photos`
+            : `That was just ${shown} photos`}
         </span>
         <h2 className="font-display mt-4 text-2xl leading-tight text-tink sm:text-3xl">
-          Now do the whole listing
+          Unlock your full tour
         </h2>
         <p className="mx-auto mt-2.5 max-w-md text-[15px] text-tink-soft">
-          Same look, your full gallery — widescreen for the MLS plus both
-          vertical cuts, with licensed music. Delivered in about 15 minutes.
+          {photoCount > shown
+            ? `We'll rebuild it using all ${covered} of your photos — widescreen for the MLS plus both vertical cuts, with licensed music. Yours to download.`
+            : `Add your full gallery and get the complete tour — widescreen for the MLS plus both vertical cuts, with licensed music. Yours to download.`}
         </p>
       </div>
 
@@ -80,9 +98,10 @@ export function FullTourUpsell() {
         })}
       </div>
 
-      {/* Straight to Stripe — the pack's Payment Link */}
+      {/* Straight to Stripe — the pack's Payment Link, carrying the order id so
+          the webhook can unlock this exact order. */}
       <a
-        href={packCheckoutUrl(selected)}
+        href={packCheckoutUrl(selected, orderId)}
         className="mt-4 flex h-14 items-center justify-center gap-2.5 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-base font-bold text-white shadow-[0_16px_34px_-12px_rgba(15,125,107,0.6)] ring-1 ring-white/10 transition-all hover:brightness-[1.06] active:scale-[0.99]"
       >
         Get my full tour — {selected.priceLabel}

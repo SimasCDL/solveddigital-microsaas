@@ -1,6 +1,6 @@
 import { after } from "next/server";
 import { NextRequest, NextResponse } from "next/server";
-import { getStripe } from "@/lib/stripe";
+import { getStripe, photosForAmount } from "@/lib/stripe";
 import { getOrder, updateOrder } from "@/lib/orders";
 import { fulfillOrder } from "@/lib/fulfill";
 import { sendTelegram } from "@/lib/telegram";
@@ -118,6 +118,21 @@ export async function POST(req: NextRequest) {
       stripeSessionId: session.id,
     });
     after(() => fulfillOrder(orderId));
+  }
+
+  // Unlocking a free preview: the result page sends the customer to Stripe with
+  // client_reference_id set to their order, so payment lands back here. Their
+  // photos are already stored — re-render the full tour from all of them, up to
+  // whatever their pack covers. Replacing the `free:` marker with the real
+  // session id is what flips the order from preview to paid, and makes this
+  // idempotent against Stripe's webhook retries.
+  if (order && order.status === "completed" && (order.stripeSessionId ?? "").startsWith("free:")) {
+    await updateOrder(orderId, {
+      status: "processing",
+      stripeSessionId: session.id,
+    });
+    const allowed = photosForAmount(session.amount_total);
+    after(() => fulfillOrder(orderId, { limitPhotos: allowed }));
   }
 
   return NextResponse.json({ received: true });

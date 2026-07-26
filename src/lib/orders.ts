@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import type { Order } from './types';
-import { sbFetch, useSupabase } from './supabase';
+import { sbFetch, supabaseConfigured } from './supabase';
 
 // Orders live in Supabase (table `orders`) so support can look any customer up
 // in the dashboard. The local copy is a best-effort cache/fallback — it uses the
@@ -73,7 +73,7 @@ function readLocal(orderId: string): Order | null {
 export async function createOrder(order: Order): Promise<Order> {
   // local copy always — cheap insurance against Supabase hiccups mid-order
   writeLocal(order);
-  if (useSupabase()) {
+  if (supabaseConfigured()) {
     try {
       await sbFetch('/orders', {
         method: 'POST',
@@ -88,7 +88,7 @@ export async function createOrder(order: Order): Promise<Order> {
 }
 
 export async function getOrder(orderId: string): Promise<Order | null> {
-  if (useSupabase()) {
+  if (supabaseConfigured()) {
     try {
       const res = await sbFetch(`/orders?id=eq.${encodeURIComponent(orderId)}&select=*&limit=1`);
       const rows: OrderRow[] = await res.json();
@@ -105,7 +105,7 @@ export async function updateOrder(orderId: string, updates: Partial<Order>): Pro
   if (!existing) throw new Error(`Order ${orderId} not found`);
   const updated: Order = { ...existing, ...updates, updatedAt: new Date().toISOString() };
   writeLocal(updated);
-  if (useSupabase()) {
+  if (supabaseConfigured()) {
     try {
       await sbFetch('/orders', {
         method: 'POST',
@@ -122,7 +122,7 @@ export async function updateOrder(orderId: string, updates: Partial<Order>): Pro
 /** How many orders (any status except pending_payment) already used this Stripe
  *  session — enforces single-use (or 3-use for the multi-video pack) sessions. */
 export async function countOrdersBySession(sessionId: string): Promise<number> {
-  if (useSupabase()) {
+  if (supabaseConfigured()) {
     try {
       const res = await sbFetch(
         `/orders?stripe_session_id=eq.${encodeURIComponent(sessionId)}&status=neq.pending_payment&select=id`

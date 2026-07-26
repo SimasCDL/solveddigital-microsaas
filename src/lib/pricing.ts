@@ -101,11 +101,25 @@ export function packById(id: PackId): Pack {
   return PACKS.find((p) => p.id === id) ?? PACKS[1];
 }
 
-/** Build the checkout destination for a pack (real Stripe link or placeholder). */
-export function packCheckoutUrl(p: Pack): string {
+/** The smallest pack that covers this many photos. */
+export function packForPhotoCount(count: number): Pack {
+  return PACKS.find((p) => count <= p.photos) ?? PACKS[PACKS.length - 1];
+}
+
+/**
+ * Build the checkout destination for a pack (real Stripe link or placeholder).
+ *
+ * Passing `orderId` appends Stripe's `client_reference_id`, which comes back on
+ * the `checkout.session.completed` webhook — that's how paying to unlock a free
+ * preview gets tied back to the order holding the customer's photos.
+ */
+export function packCheckoutUrl(p: Pack, orderId?: string): string {
+  const ref = orderId
+    ? `&client_reference_id=${encodeURIComponent(orderId)}`
+    : "";
   if (p.stripeUrl) {
     const sep = p.stripeUrl.includes("?") ? "&" : "?";
-    return `${p.stripeUrl}${sep}pack=${p.id}`;
+    return `${p.stripeUrl}${sep}pack=${p.id}${ref}`;
   }
-  return `/checkout?pack=${p.id}&price=${p.price}`;
+  return `/checkout?pack=${p.id}&price=${p.price}${ref}`;
 }

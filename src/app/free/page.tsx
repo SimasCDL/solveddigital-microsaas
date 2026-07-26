@@ -2,8 +2,9 @@
 
 import { useMemo, useRef, useState } from "react";
 
-/** A taste, not a deliverable — 2 photos is ~6 seconds of video. */
-const FREE_PHOTOS = 2;
+/** Upload the whole gallery; the free preview renders the first few. */
+const MAX_PHOTOS = 40;
+const PREVIEW_PHOTOS = 3;
 
 type Segment = "agent" | "homeowner";
 
@@ -35,7 +36,7 @@ export default function FreeTrialPage() {
   const handleFiles = (selected: FileList | null) => {
     if (!selected) return;
     const valid = Array.from(selected).filter((f) => f.type.startsWith("image/"));
-    setFiles((prev) => [...prev, ...valid].slice(0, FREE_PHOTOS));
+    setFiles((prev) => [...prev, ...valid].slice(0, MAX_PHOTOS));
   };
 
   const removeFile = (i: number) =>
@@ -89,8 +90,13 @@ export default function FreeTrialPage() {
             See it on your own listing
           </h1>
           <p className="mx-auto mt-2.5 max-w-md text-[15px] text-tink-soft">
+<<<<<<< Updated upstream
             Drop in 2 photos and we&apos;ll film a real cinematic clip from them
             — free, in a few minutes. No card, no catch.
+=======
+            Add your listing photos and we&apos;ll film a real cinematic clip
+            from {PREVIEW_PHOTOS} of them — free, in minutes. No card, no catch.
+>>>>>>> Stashed changes
           </p>
         </div>
 
@@ -134,21 +140,27 @@ export default function FreeTrialPage() {
                   </svg>
                 </div>
                 <p className="font-display text-base text-tink">
-                  Drop 2 photos here
+                  Drop your listing photos here
                 </p>
                 <p className="mt-0.5 text-sm text-tink-soft">
-                  or click to browse — your best 2 rooms work great
+                  or click to browse — add the whole gallery
                 </p>
               </>
             ) : (
-              <div className="flex items-center gap-3">
+              <div className="grid max-h-[34vh] grid-cols-5 gap-1.5 overflow-y-auto sm:grid-cols-8">
                 {previews.map((src, i) => (
                   <div
                     key={i}
-                    className="group relative h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-line"
+                    className="group relative aspect-square overflow-hidden rounded-lg bg-line"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={src} alt={`Photo ${i + 1}`} className="h-full w-full object-cover" />
+                    {/* Mark the ones the free preview will actually use. */}
+                    {i < PREVIEW_PHOTOS && (
+                      <span className="absolute left-1 top-1 rounded-full bg-accent px-1.5 text-[10px] font-bold leading-4 text-white">
+                        {i + 1}
+                      </span>
+                    )}
                     <button
                       type="button"
                       onClick={() => removeFile(i)}
@@ -159,11 +171,11 @@ export default function FreeTrialPage() {
                     </button>
                   </div>
                 ))}
-                {files.length < FREE_PHOTOS && (
+                {files.length < MAX_PHOTOS && (
                   <button
                     type="button"
                     onClick={() => fileRef.current?.click()}
-                    className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg border border-dashed border-line text-lg text-tink-soft transition-colors hover:border-accent hover:text-accent"
+                    className="flex aspect-square items-center justify-center rounded-lg border border-dashed border-line text-lg text-tink-soft transition-colors hover:border-accent hover:text-accent"
                   >
                     +
                   </button>
@@ -231,7 +243,9 @@ export default function FreeTrialPage() {
           </button>
 
           <p className="mt-3 text-center text-[13px] text-tink-soft">
-            One free clip per person · No card required
+            {files.length > PREVIEW_PHOTOS
+              ? `${files.length} photos added · your free clip uses the first ${PREVIEW_PHOTOS}`
+              : "One free clip per person · No card required"}
           </p>
         </div>
 
