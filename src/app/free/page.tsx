@@ -90,13 +90,9 @@ export default function FreeTrialPage() {
             See it on your own listing
           </h1>
           <p className="mx-auto mt-2.5 max-w-md text-[15px] text-tink-soft">
-<<<<<<< Updated upstream
-            Drop in 2 photos and we&apos;ll film a real cinematic clip from them
-            — free, in a few minutes. No card, no catch.
-=======
             Add your listing photos and we&apos;ll film a real cinematic clip
-            from {PREVIEW_PHOTOS} of them — free, in minutes. No card, no catch.
->>>>>>> Stashed changes
+            from {PREVIEW_PHOTOS} of them — free, in a few minutes. No card, no
+            catch.
           </p>
         </div>
 
