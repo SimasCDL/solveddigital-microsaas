@@ -109,6 +109,11 @@ export async function POST(req: NextRequest) {
 
   after(() => notifyPurchase(session, order?.photoUrls?.length ?? 0));
 
+  // Did this payment actually kick off fulfillment? A paid checkout that carries
+  // an order reference but fulfills NOTHING is a customer who paid and got
+  // nothing — that must never pass silently (see the alert below).
+  let fulfilled = false;
+
   // Fulfillment only applies to the pay-after-upload flow (/api/checkout), where
   // an order already exists in pending_payment. Stripe retries webhooks, so the
   // status guard keeps this idempotent. Pay-first orders fulfill via /api/fulfill.
@@ -118,6 +123,7 @@ export async function POST(req: NextRequest) {
       stripeSessionId: session.id,
     });
     after(() => fulfillOrder(orderId));
+    fulfilled = true;
   }
 
   // Unlocking a free preview: the result page sends the customer to Stripe with
@@ -126,13 +132,39 @@ export async function POST(req: NextRequest) {
   // whatever their pack covers. Replacing the `free:` marker with the real
   // session id is what flips the order from preview to paid, and makes this
   // idempotent against Stripe's webhook retries.
-  if (order && order.status === "completed" && (order.stripeSessionId ?? "").startsWith("free:")) {
-    await updateOrder(orderId, {
-      status: "processing",
-      stripeSessionId: session.id,
-    });
+  //
+  // `allowed` is derived from the amount actually paid, so a $0 / 100%-off
+  // checkout maps to 0 photos and can never hand out a full tour for free — it
+  // falls through to the "paid but not fulfilled" alert instead.
+  if (
+    order &&
+    order.status === "completed" &&
+    (order.stripeSessionId ?? "").startsWith("free:")
+  ) {
     const allowed = photosForAmount(session.amount_total);
-    after(() => fulfillOrder(orderId, { limitPhotos: allowed }));
+    if (allowed > 0) {
+      await updateOrder(orderId, {
+        status: "processing",
+        stripeSessionId: session.id,
+      });
+      after(() => fulfillOrder(orderId, { limitPhotos: allowed }));
+      fulfilled = true;
+    }
+  }
+
+  // Paid, tied to an order, but nothing fulfilled — order missing, already
+  // unlocked, a double-payment, a $0 unlock attempt, or an unexpected state.
+  // Never keep the money silently: alert loudly for a manual fix/refund.
+  if (orderId && !fulfilled) {
+    const amount = ((session.amount_total ?? 0) / 100).toFixed(2);
+    const cur = (session.currency ?? "usd").toUpperCase();
+    after(() =>
+      sendTelegram(
+        `⚠️ *PAID BUT NOT FULFILLED* — manual review\n` +
+          `🆔 order \`${orderId}\`\n💳 session \`${session.id}\`\n` +
+          `💵 ${amount} ${cur} · order status: ${order?.status ?? "NOT FOUND"}`,
+      ).catch(() => {}),
+    );
   }
 
   return NextResponse.json({ received: true });
