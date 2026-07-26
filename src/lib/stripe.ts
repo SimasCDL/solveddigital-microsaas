@@ -23,8 +23,7 @@ export function photosForAmount(amountTotal: number | null): number {
   const cents = amountTotal ?? 0;
   if (cents >= 15500) return 40; // $160 pack
   if (cents >= 12000) return 25; // $125 pack
-  if (cents >= 9000) return 15; // $105 pack (headroom for small discounts)
-  return 0; // below any real pack, do not unlock
+  return 15;                     // $105 pack (floor)
 }
 
 export async function createCheckoutSession(params: {

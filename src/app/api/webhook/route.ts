@@ -132,24 +132,18 @@ export async function POST(req: NextRequest) {
   // whatever their pack covers. Replacing the `free:` marker with the real
   // session id is what flips the order from preview to paid, and makes this
   // idempotent against Stripe's webhook retries.
-  //
-  // `allowed` is derived from the amount actually paid, so a $0 / 100%-off
-  // checkout maps to 0 photos and can never hand out a full tour for free — it
-  // falls through to the "paid but not fulfilled" alert instead.
   if (
     order &&
     order.status === "completed" &&
     (order.stripeSessionId ?? "").startsWith("free:")
   ) {
+    await updateOrder(orderId, {
+      status: "processing",
+      stripeSessionId: session.id,
+    });
     const allowed = photosForAmount(session.amount_total);
-    if (allowed > 0) {
-      await updateOrder(orderId, {
-        status: "processing",
-        stripeSessionId: session.id,
-      });
-      after(() => fulfillOrder(orderId, { limitPhotos: allowed }));
-      fulfilled = true;
-    }
+    after(() => fulfillOrder(orderId, { limitPhotos: allowed }));
+    fulfilled = true;
   }
 
   // Paid, tied to an order, but nothing fulfilled — order missing, already
