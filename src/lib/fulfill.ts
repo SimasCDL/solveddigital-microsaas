@@ -37,6 +37,9 @@ export async function fulfillOrder(
   }).catch(() => {});
 
   try {
+    // Sort FIRST, then trim — so a limited preview opens on the exterior and
+    // walks inward like the full tour, rather than using whichever photos the
+    // customer happened to select first.
     const allSorted = await sortPhotoUrls(order.photoUrls);
     const sortedUrls = opts.limitPhotos
       ? allSorted.slice(0, opts.limitPhotos)

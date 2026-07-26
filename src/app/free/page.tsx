@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import Link from "next/link";
 
 /** Upload the whole gallery; the free preview renders the first few. */
 const MAX_PHOTOS = 40;
@@ -71,9 +72,12 @@ export default function FreeTrialPage() {
       <header className="px-4 pt-3 sm:px-6 sm:pt-4">
         <div className="mx-auto w-full max-w-2xl">
           <div className="flex h-14 items-center justify-between rounded-full border border-line bg-cream/85 px-6 shadow-lg shadow-black/5 backdrop-blur-md">
-            <a href="/" className="font-display text-xl tracking-tight text-tink">
+            <Link
+              href="/"
+              className="font-display text-xl tracking-tight text-tink"
+            >
               Tourly
-            </a>
+            </Link>
             <span className="hidden text-sm text-tink-soft sm:block">
               No card needed
             </span>
@@ -151,12 +155,6 @@ export default function FreeTrialPage() {
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={src} alt={`Photo ${i + 1}`} className="h-full w-full object-cover" />
-                    {/* Mark the ones the free preview will actually use. */}
-                    {i < PREVIEW_PHOTOS && (
-                      <span className="absolute left-1 top-1 rounded-full bg-accent px-1.5 text-[10px] font-bold leading-4 text-white">
-                        {i + 1}
-                      </span>
-                    )}
                     <button
                       type="button"
                       onClick={() => removeFile(i)}
@@ -240,16 +238,16 @@ export default function FreeTrialPage() {
 
           <p className="mt-3 text-center text-[13px] text-tink-soft">
             {files.length > PREVIEW_PHOTOS
-              ? `${files.length} photos added · your free clip uses the first ${PREVIEW_PHOTOS}`
+              ? `${files.length} photos added · your free clip uses ${PREVIEW_PHOTOS} of them, starting outside`
               : "One free clip per person · No card required"}
           </p>
         </div>
 
         <p className="mt-5 text-center text-[13px] text-tink-soft">
           Want the whole listing?{" "}
-          <a href="/#buy" className="font-semibold text-accent underline">
+          <Link href="/#buy" className="font-semibold text-accent underline">
             See the full packs
-          </a>
+          </Link>
         </p>
       </main>
     </div>
