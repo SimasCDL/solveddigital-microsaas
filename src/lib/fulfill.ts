@@ -44,6 +44,10 @@ export async function fulfillOrder(
     const sortedUrls = opts.limitPhotos
       ? allSorted.slice(0, opts.limitPhotos)
       : allSorted;
+    console.log(
+      `[fulfill] ${orderId}: stored=${order.photoUrls.length} ` +
+        `limit=${opts.limitPhotos ?? 'none'} using=${sortedUrls.length}`,
+    );
 
     // same pipeline as the test page: Seedance reel segments when enabled,
     // per-photo clips otherwise

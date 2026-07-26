@@ -107,6 +107,15 @@ export async function POST(req: NextRequest) {
   const orderId = session.client_reference_id ?? "";
   const order = orderId ? await getOrder(orderId) : null;
 
+  // Stripe retries webhooks (timeouts, 5xx, manual resend). If the order already
+  // carries THIS session id we've fully handled this payment: don't re-announce
+  // the sale, and — critically — don't fire the unfulfilled alarm below. Crying
+  // wolf on every retry is how a real "paid but got nothing" gets ignored.
+  const alreadyHandled = !!order && order.stripeSessionId === session.id;
+  if (alreadyHandled) {
+    return NextResponse.json({ received: true, duplicate: true });
+  }
+
   after(() => notifyPurchase(session, order?.photoUrls?.length ?? 0));
 
   // Did this payment actually kick off fulfillment? A paid checkout that carries
