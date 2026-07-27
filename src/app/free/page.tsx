@@ -11,7 +11,12 @@ type Segment = "agent" | "homeowner";
 
 function Arrow({ className = "" }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <svg
+      className={className}
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+    >
       <path
         d="M2 8h11m0 0L9.5 4.5M13 8l-3.5 3.5"
         stroke="currentColor"
@@ -32,11 +37,16 @@ export default function FreeTrialPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const previews = useMemo(() => files.map((f) => URL.createObjectURL(f)), [files]);
+  const previews = useMemo(
+    () => files.map((f) => URL.createObjectURL(f)),
+    [files],
+  );
 
   const handleFiles = (selected: FileList | null) => {
     if (!selected) return;
-    const valid = Array.from(selected).filter((f) => f.type.startsWith("image/"));
+    const valid = Array.from(selected).filter((f) =>
+      f.type.startsWith("image/"),
+    );
     setFiles((prev) => [...prev, ...valid].slice(0, MAX_PHOTOS));
   };
 
@@ -58,7 +68,9 @@ export default function FreeTrialPage() {
       const res = await fetch("/api/free", { method: "POST", body });
       const json = await res.json().catch(() => null);
       if (!res.ok) {
-        throw new Error(json?.error || "Something went wrong — please try again.");
+        throw new Error(
+          json?.error || "Something went wrong, please try again.",
+        );
       }
       window.location.href = `/order/${json.orderId}`;
     } catch (err) {
@@ -95,8 +107,7 @@ export default function FreeTrialPage() {
           </h1>
           <p className="mx-auto mt-2.5 max-w-md text-[15px] text-tink-soft">
             Add your listing photos and we&apos;ll film a real cinematic clip
-            from {PREVIEW_PHOTOS} of them — free, in a few minutes. No card, no
-            catch.
+            for free in a few minutes. No card, no catch.
           </p>
         </div>
 
@@ -115,7 +126,9 @@ export default function FreeTrialPage() {
             onDragLeave={() => setDragging(false)}
             onClick={() => !files.length && fileRef.current?.click()}
             className={`rounded-xl border border-dashed transition-colors ${
-              dragging ? "border-accent bg-accent-soft/40" : "border-line bg-cream"
+              dragging
+                ? "border-accent bg-accent-soft/40"
+                : "border-line bg-cream"
             } ${files.length ? "p-3" : "cursor-pointer p-8 text-center"}`}
           >
             <input
@@ -129,7 +142,12 @@ export default function FreeTrialPage() {
             {files.length === 0 ? (
               <>
                 <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-accent-soft text-accent">
-                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    className="h-5 w-5"
+                    aria-hidden="true"
+                  >
                     <path
                       d="M12 16V5m0 0L7.5 9.5M12 5l4.5 4.5M4 19h16"
                       stroke="currentColor"
@@ -143,7 +161,7 @@ export default function FreeTrialPage() {
                   Drop your listing photos here
                 </p>
                 <p className="mt-0.5 text-sm text-tink-soft">
-                  or click to browse — add the whole gallery
+                  or click to browse and add the whole gallery
                 </p>
               </>
             ) : (
@@ -154,7 +172,11 @@ export default function FreeTrialPage() {
                     className="group relative aspect-square overflow-hidden rounded-lg bg-line"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={src} alt={`Photo ${i + 1}`} className="h-full w-full object-cover" />
+                    <img
+                      src={src}
+                      alt={`Photo ${i + 1}`}
+                      className="h-full w-full object-cover"
+                    />
                     <button
                       type="button"
                       onClick={() => removeFile(i)}
@@ -186,8 +208,16 @@ export default function FreeTrialPage() {
             <div className="grid grid-cols-2 gap-2">
               {(
                 [
-                  { id: "agent", label: "Real estate agent", hint: "I list properties" },
-                  { id: "homeowner", label: "Selling my own home", hint: "Just my place" },
+                  {
+                    id: "agent",
+                    label: "Real estate agent",
+                    hint: "I list properties",
+                  },
+                  {
+                    id: "homeowner",
+                    label: "Selling my home",
+                    hint: "Just my place",
+                  },
                 ] as const
               ).map((o) => (
                 <button
@@ -200,7 +230,9 @@ export default function FreeTrialPage() {
                       : "border-line bg-cream hover:border-accent/40"
                   }`}
                 >
-                  <span className="text-sm font-semibold text-tink">{o.label}</span>
+                  <span className="text-sm font-semibold text-tink">
+                    {o.label}
+                  </span>
                   <span className="text-[12.5px] text-tink-soft">{o.hint}</span>
                 </button>
               ))}
@@ -208,7 +240,10 @@ export default function FreeTrialPage() {
           </div>
 
           <div className="mt-4">
-            <label htmlFor="email" className="eyebrow mb-1.5 block text-tink-soft">
+            <label
+              htmlFor="email"
+              className="eyebrow mb-1.5 block text-tink-soft"
+            >
               Email
             </label>
             <input
@@ -242,13 +277,6 @@ export default function FreeTrialPage() {
               : "One free clip per person · No card required"}
           </p>
         </div>
-
-        <p className="mt-5 text-center text-[13px] text-tink-soft">
-          Want the whole listing?{" "}
-          <Link href="/#buy" className="font-semibold text-accent underline">
-            See the full packs
-          </Link>
-        </p>
       </main>
     </div>
   );

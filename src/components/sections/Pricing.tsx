@@ -65,7 +65,7 @@ export function Pricing() {
         </h2>
         <p className="mx-auto mt-3 max-w-[20rem] text-sm leading-[1.5] text-ink-soft">
           A videographer charges $300+ for a single listing video. See it on
-          your own listing first — free.
+          your own listing first, for free.
         </p>
       </div>
 
