@@ -1,7 +1,7 @@
 import { Container } from "@/components/site/Container";
 import { FreeTrialCta } from "@/components/FreeTrialCta";
 import { Check, Arrow } from "@/components/site/icons";
-import { PACKS, packCheckoutUrl, type Pack } from "@/lib/pricing";
+import { PACKS, type Pack } from "@/lib/pricing";
 
 function PackCard({ pack }: { pack: Pack }) {
   const highlighted = pack.highlighted;
@@ -21,30 +21,12 @@ function PackCard({ pack }: { pack: Pack }) {
       )}
 
       <p
-        className={`text-base font-medium ${
-          highlighted ? "text-cream/60" : "text-ink-soft"
+        className={`font-display text-4xl font-semibold leading-tight ${
+          highlighted ? "text-cream" : "text-ink"
         }`}
       >
         {pack.name}
       </p>
-
-      <div className="mt-3 flex items-baseline gap-2.5">
-        <span className="font-display text-6xl leading-none">
-          {pack.priceLabel}
-        </span>
-        <span
-          className={`text-2xl line-through ${
-            highlighted ? "text-cream/45" : "text-ink-soft/70"
-          }`}
-        >
-          {pack.wasLabel}
-        </span>
-        <span
-          className={`text-base ${highlighted ? "text-cream/50" : "text-ink-soft"}`}
-        >
-          one-time
-        </span>
-      </div>
 
       <p
         className={`mt-3 text-base ${
@@ -68,14 +50,14 @@ function PackCard({ pack }: { pack: Pack }) {
       </ul>
 
       <a
-        href={packCheckoutUrl(pack)}
+        href="/free"
         className={`group mt-10 inline-flex h-14 items-center justify-center gap-2 rounded-full px-6 text-[1.05rem] font-medium tracking-tight transition-all active:scale-[0.99] ${
           highlighted
             ? "bg-cream text-ink hover:bg-paper"
             : "bg-ink text-cream hover:bg-ink/90"
         }`}
       >
-        Choose {pack.priceLabel}
+        Make your first video for free
         <Arrow className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
       </a>
     </div>

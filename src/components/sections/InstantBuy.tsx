@@ -2,17 +2,10 @@
 
 import { useRef, useState } from "react";
 import { Check, Shield, Arrow } from "@/components/site/icons";
-import { FreeTrialCta } from "@/components/FreeTrialCta";
 import { Stars } from "@/components/site/Stars";
 import { PaymentLogos } from "@/components/site/PaymentLogos";
 import { useVideoAutoplay } from "@/components/site/useVideoAutoplay";
-import {
-  PACKS,
-  packById,
-  packCheckoutUrl,
-  discountPct,
-  type PackId,
-} from "@/lib/pricing";
+import { PACKS, packById, type PackId } from "@/lib/pricing";
 
 const THUMBS = [1, 2, 3, 4];
 
@@ -75,18 +68,10 @@ export function InstantBuy() {
           ))}
         </div>
 
-        {/* Dynamic price */}
-        <div className="mt-4 flex items-baseline gap-2.5">
-          <span className="font-display text-[34px] font-bold text-ink">
-            {selected.priceLabel}
-          </span>
-          <span className="text-[17px] text-ink-soft line-through">
-            {selected.wasLabel}
-          </span>
-          <span className="rounded-full bg-accent-soft px-2.5 py-[5px] text-[11.5px] font-bold text-accent">
-            Save {discountPct(selected)}%
-          </span>
-        </div>
+        {/* Pack size — no price on the landing; that comes after the free preview */}
+        <p className="mt-4 font-display text-[28px] font-bold leading-tight text-ink">
+          {selected.name}
+        </p>
 
         {/* Product features */}
         <div className="mt-3.5 flex flex-wrap gap-x-[18px] gap-y-[9px]">
@@ -139,29 +124,18 @@ export function InstantBuy() {
                     {p.blurbShort}
                   </span>
                 </span>
-                <span className="text-right">
-                  <span className="block text-base font-bold text-ink">
-                    {p.priceLabel}
-                  </span>
-                  <span className="block text-xs text-ink-soft line-through">
-                    {p.wasLabel}
-                  </span>
-                </span>
               </button>
             );
           })}
         </div>
 
         <a
-          href={packCheckoutUrl(selected)}
+          href="/free"
           className="mt-[18px] flex h-14 items-center justify-center gap-2.5 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-base font-bold text-white shadow-[0_16px_34px_-12px_rgba(15,125,107,0.6)]"
         >
-          Get my tour — {selected.priceLabel}
+          Make your first video for free
           <Arrow className="h-[18px] w-[18px]" />
         </a>
-
-        {/* Risk-reversal for someone hesitating at the buy button. */}
-        <FreeTrialCta className="mt-3 w-full" />
 
         {/* Money-back strip */}
         <div className="mt-[18px] flex items-center gap-3 rounded-[14px] border border-line bg-accent-soft px-[15px] py-3.5">

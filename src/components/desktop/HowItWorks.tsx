@@ -85,7 +85,7 @@ export function HowItWorks() {
         </div>
 
         <div className="mt-14 flex flex-col items-center gap-3">
-          <CtaButton />
+          <CtaButton label="Make your first video for free" href="/free" />
           <p className="text-sm text-ink-soft">
             No subscription · Love it or it’s free
           </p>

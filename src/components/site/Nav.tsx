@@ -57,11 +57,11 @@ export function Nav() {
             FAQ
           </a>
           <a
-            href="#buy"
+            href="/free"
             onClick={close}
             className="m-3 flex h-12 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-[15px] font-bold text-white"
           >
-            Make my tour
+            Try it free
             <Arrow className="h-[17px] w-[17px]" />
           </a>
         </div>

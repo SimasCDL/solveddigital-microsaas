@@ -56,7 +56,7 @@ export function ValueStack() {
         </div>
 
         <div className="mt-14 flex justify-center">
-          <CtaButton />
+          <CtaButton label="Make your first video for free" href="/free" />
         </div>
       </Container>
     </section>

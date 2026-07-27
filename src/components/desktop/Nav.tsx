@@ -35,7 +35,7 @@ export function Nav() {
           </div>
 
           {/* Right: CTA */}
-          <CtaButton size="sm" label="Make my tour" />
+          <CtaButton size="sm" label="Try it free" href="/free" />
         </div>
       </div>
     </header>

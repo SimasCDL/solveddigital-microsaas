@@ -1,5 +1,5 @@
 import { Check, Arrow } from "@/components/site/icons";
-import { PACKS, packCheckoutUrl, type Pack } from "@/lib/pricing";
+import { PACKS, type Pack } from "@/lib/pricing";
 
 function PackCard({ pack }: { pack: Pack }) {
   const hi = pack.highlighted;
@@ -17,20 +17,10 @@ function PackCard({ pack }: { pack: Pack }) {
         </span>
       )}
       <p
-        className={`text-[13px] font-medium ${hi ? "text-cream/60" : "text-ink-soft"}`}
+        className={`font-display text-[30px] font-semibold leading-tight ${hi ? "text-cream" : "text-ink"}`}
       >
         {pack.name}
       </p>
-      <div className="mt-2.5 flex items-baseline gap-2">
-        <span className="font-display text-[44px] font-semibold leading-none">
-          {pack.priceLabel}
-        </span>
-        <span
-          className={`text-[13px] ${hi ? "text-cream/50" : "text-ink-soft"}`}
-        >
-          one-time
-        </span>
-      </div>
       <p
         className={`mt-2 text-[13px] ${hi ? "text-cream/70" : "text-ink-soft"}`}
       >
@@ -51,12 +41,12 @@ function PackCard({ pack }: { pack: Pack }) {
       </div>
 
       <a
-        href={packCheckoutUrl(pack)}
+        href="/free"
         className={`mt-[22px] flex h-[52px] items-center justify-center gap-2 rounded-full text-[15px] font-medium ${
           hi ? "bg-cream text-ink" : "bg-ink text-cream"
         }`}
       >
-        Choose {pack.priceLabel}
+        Make your first video for free
         <Arrow className="h-4 w-4" />
       </a>
     </div>
@@ -74,8 +64,8 @@ export function Pricing() {
           One-time pricing. No subscription.
         </h2>
         <p className="mx-auto mt-3 max-w-[20rem] text-sm leading-[1.5] text-ink-soft">
-          A videographer charges $300+ for a single listing video. Pick a pack
-          and keep your margin.
+          A videographer charges $300+ for a single listing video. See it on
+          your own listing first — free.
         </p>
       </div>
 
