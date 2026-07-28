@@ -38,10 +38,10 @@ export const PACKS: Pack[] = [
     id: "p15",
     photos: 15,
     name: "Up to 15 photos",
-    price: 105,
-    priceLabel: "$105",
-    was: 160,
-    wasLabel: "$160",
+    price: 65,
+    priceLabel: "$65",
+    was: 105,
+    wasLabel: "$105",
     blurbShort: "Quick single listing",
     blurb: "Perfect for a quick single listing",
     features: [
@@ -51,16 +51,16 @@ export const PACKS: Pack[] = [
     ],
     stripeUrl:
       process.env.NEXT_PUBLIC_STRIPE_LINK_P15 ??
-      "https://buy.stripe.com/fZu3cvfUkcuNdbwcCY0x200",
+      "https://buy.stripe.com/7sY8wP9vW52l0oKfPa0x203",
   },
   {
     id: "p25",
     photos: 25,
     name: "Up to 25 photos",
-    price: 125,
-    priceLabel: "$125",
-    was: 190,
-    wasLabel: "$190",
+    price: 84,
+    priceLabel: "$84",
+    was: 125,
+    wasLabel: "$125",
     blurbShort: "Most listings fit here",
     blurb: "Most listings fit right here",
     badge: "Most popular",
@@ -72,22 +72,22 @@ export const PACKS: Pack[] = [
     ],
     stripeUrl:
       process.env.NEXT_PUBLIC_STRIPE_LINK_P25 ??
-      "https://buy.stripe.com/3cIaEX23u8exefAgTe0x201",
+      "https://buy.stripe.com/eVq4gzeQg52lefAauQ0x204",
   },
   {
     id: "p40",
     photos: 40,
     name: "Up to 40 photos",
-    price: 160,
-    priceLabel: "$160",
-    was: 245,
-    wasLabel: "$245",
+    price: 112,
+    priceLabel: "$112",
+    was: 160,
+    wasLabel: "$160",
     blurbShort: "Big homes & full galleries",
     blurb: "Big homes & full galleries",
     features: ["Everything in the 25-photo pack", "Full-home walkthrough"],
     stripeUrl:
       process.env.NEXT_PUBLIC_STRIPE_LINK_P40 ??
-      "https://buy.stripe.com/00weVd7nOgL33AW5aw0x202",
+      "https://buy.stripe.com/14AbJ14bCdyR4F0byU0x205",
   },
 ];
 

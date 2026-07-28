@@ -9,21 +9,23 @@ export function getStripe(): Stripe {
   }));
 }
 
-// Pack ladder — keep in sync with PACKS in src/app/page.tsx
+// Pack ladder — keep in sync with PACKS in src/lib/pricing.ts
 export function priceForPhotoCount(n: number): number {
-  if (n <= 10) return 7000; // $70
-  if (n <= 20) return 10000; // $100
-  return 15000; // $150 — up to 40 photos
+  if (n <= 15) return 6500; // $65
+  if (n <= 25) return 8400; // $84
+  return 11200; // $112 — up to 40 photos
 }
 
 // Max photos a paid Stripe amount (in cents) entitles a customer to.
-// Mirrors the funnel packs: $105→15, $125→25, $160→40. Tolerant of small
-// discounts/rounding by using >= thresholds slightly below each price.
+// FALLBACK ONLY: the webhook entitles by Stripe Price id (PHOTOS_BY_PRICE) and
+// only lands here if that lookup fails, because an amount can't survive a promo
+// code — $112 minus 20% reads as the $84 pack. Thresholds sit below each price
+// to tolerate rounding, not discounts.
 export function photosForAmount(amountTotal: number | null): number {
   const cents = amountTotal ?? 0;
-  if (cents >= 15500) return 40; // $160 pack
-  if (cents >= 12000) return 25; // $125 pack
-  return 15;                     // $105 pack (floor)
+  if (cents >= 11000) return 40; // $112 pack
+  if (cents >= 7500) return 25;  // $84 pack
+  return 15;                     // $65 pack (floor)
 }
 
 export async function createCheckoutSession(params: {

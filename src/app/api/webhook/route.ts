@@ -12,9 +12,15 @@ import type Stripe from "stripe";
 // The Price a promo discounts is still the same Price, so this stays correct.
 // Keep in sync with the pack Payment Links.
 const PHOTOS_BY_PRICE: Record<string, number> = {
-  price_1TvdxxI5ln1sJkOAwnzfABr8: 40, // $160 pack
-  price_1TvdxbI5ln1sJkOAZt1Xttod: 25, // $125 pack
-  price_1TvdxBI5ln1sJkOA1GKh5Q4C: 15, // $105 pack
+  // Current prices.
+  price_1TyAcqI5ln1sJkOAvIqvpvp1: 40, // $112 pack
+  price_1TyAcpI5ln1sJkOAq05gmtCD: 25, // $84 pack
+  price_1TyAcoI5ln1sJkOAXNVR2BxX: 15, // $65 pack
+  // Retired prices — kept so an in-flight checkout opened before the price
+  // change still entitles the right pack instead of falling back to 15.
+  price_1TvdxxI5ln1sJkOAwnzfABr8: 40, // was $160
+  price_1TvdxbI5ln1sJkOAZt1Xttod: 25, // was $125
+  price_1TvdxBI5ln1sJkOA1GKh5Q4C: 15, // was $105
 };
 
 /** Telegram "cha-ching" on a sale: what + amount + today's running total. */
