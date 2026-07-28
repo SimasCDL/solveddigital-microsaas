@@ -29,7 +29,8 @@ export interface Pack {
   badge?: string;
   highlighted?: boolean;
   features: string[];
-  /** Stripe Payment Link URL. Empty → local /checkout placeholder. */
+  /** Stripe Payment Link URL. Hardcoded on purpose: an env override once left
+   *  the page showing a new price while Stripe still charged the old one. */
   stripeUrl: string;
 }
 
@@ -49,9 +50,7 @@ export const PACKS: Pack[] = [
       "Vertical + horizontal cuts",
       "Licensed background music",
     ],
-    stripeUrl:
-      process.env.NEXT_PUBLIC_STRIPE_LINK_P15 ??
-      "https://buy.stripe.com/7sY8wP9vW52l0oKfPa0x203",
+    stripeUrl: "https://buy.stripe.com/7sY8wP9vW52l0oKfPa0x203",
   },
   {
     id: "p25",
@@ -70,9 +69,7 @@ export const PACKS: Pack[] = [
       "Longer, richer edit",
       "Priority rendering",
     ],
-    stripeUrl:
-      process.env.NEXT_PUBLIC_STRIPE_LINK_P25 ??
-      "https://buy.stripe.com/eVq4gzeQg52lefAauQ0x204",
+    stripeUrl: "https://buy.stripe.com/eVq4gzeQg52lefAauQ0x204",
   },
   {
     id: "p40",
@@ -85,9 +82,7 @@ export const PACKS: Pack[] = [
     blurbShort: "Big homes & full galleries",
     blurb: "Big homes & full galleries",
     features: ["Everything in the 25-photo pack", "Full-home walkthrough"],
-    stripeUrl:
-      process.env.NEXT_PUBLIC_STRIPE_LINK_P40 ??
-      "https://buy.stripe.com/14AbJ14bCdyR4F0byU0x205",
+    stripeUrl: "https://buy.stripe.com/14AbJ14bCdyR4F0byU0x205",
   },
 ];
 
