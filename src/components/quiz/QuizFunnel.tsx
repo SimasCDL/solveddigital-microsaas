@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Shield, Arrow, Bolt } from "@/components/site/icons";
+import { Shield, Arrow, Bolt } from "@/components/site/icons";
 import { Stars } from "@/components/site/Stars";
 import { PaymentLogos } from "@/components/site/PaymentLogos";
 import { ReviewAvatars } from "@/components/site/ReviewsRow";
@@ -520,40 +520,12 @@ function Result({
 
       <Testimonials />
 
-      <h2 className="font-display mt-10 text-[24px] font-bold leading-[1.15] text-ink">
-        What&apos;s happening with your listings
-      </h2>
-      <p className="mt-3 text-[15px] leading-[1.6] text-ink-soft">
-        Your score is {d.score}/100: {d.archetype}. {d.situation}
-      </p>
-
-      <h3 className="font-display mt-6 text-[19px] font-bold text-ink">
-        What to fix first
-      </h3>
-      <p className="mt-2.5 text-[15px] leading-[1.6] text-ink-soft">{d.fixFirst}</p>
-
-      <h3 className="font-display mt-6 text-[19px] font-bold text-ink">
-        Your 30-day plan
-      </h3>
-      {/* Framed as the route to the outcome they picked on the last question, so
-          the plan reads as theirs rather than as our sales sequence. */}
-      {d.goalPhrase && (
-        <p className="mt-1 text-[13.5px] text-ink-soft">
-          Built around {d.goalPhrase}.
-        </p>
-      )}
-      <div className="mt-3 flex flex-col gap-3">
-        {d.plan.map((t) => (
-          <div key={t} className="flex items-start gap-2.5">
-            <Check className="mt-[3px] h-4 w-4 shrink-0 text-accent" />
-            <span className="text-[14.5px] leading-[1.5] text-ink-soft">{t}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* No free-trial escape hatch here on purpose: checkout is the only exit
-          from this funnel. The guarantee in the offer carries the risk
-          reversal. */}
+      {/* The written diagnosis and 30-day plan used to sit here. They are still
+          generated and still go out in the emailed copy — they were just reading
+          material stacked under a buy button, and every screen of it was a
+          chance to leave before deciding.
+          No free-trial escape hatch either: checkout is the only exit from this
+          funnel, and the guarantee in the offer carries the risk reversal. */}
     </Shell>
   );
 }

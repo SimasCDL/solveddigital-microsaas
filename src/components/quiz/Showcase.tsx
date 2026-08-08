@@ -112,8 +112,12 @@ export function Showcase() {
 
       {/* Every clip gets a thumb, including whichever one is currently playing.
           Showing only the inactive ones left the opening clip unreachable once
-          you moved off it. */}
-      <div className="mt-2.5 grid grid-cols-4 gap-1.5">
+          you moved off it.
+
+          Four across on a phone and 2x2 from lg. A second row on mobile would
+          push the CTA past the in-app browser fold, so the phone gets its size
+          from a taller crop instead; desktop has the width to spare. */}
+      <div className="mt-2.5 grid grid-cols-4 gap-2 lg:grid-cols-2 lg:gap-2.5">
         {ITEMS.map((t, idx) => {
           const on = idx === active;
           return (
@@ -123,7 +127,7 @@ export function Showcase() {
               onClick={() => select(idx)}
               aria-label={`Play ${t.label}`}
               aria-pressed={on}
-              className={`relative aspect-video overflow-hidden rounded-[10px] border-2 transition-all ${
+              className={`relative aspect-[4/3] overflow-hidden rounded-xl border-2 transition-all ${
                 on
                   ? "border-accent shadow-[0_6px_16px_-6px_rgba(15,125,107,0.6)]"
                   : "border-line opacity-85 hover:opacity-100"
@@ -139,7 +143,7 @@ export function Showcase() {
                 preload="metadata"
                 className="h-full w-full object-cover"
               />
-              <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-night/85 to-transparent px-1.5 pb-1 pt-3 text-[10px] font-bold leading-tight text-cream">
+              <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-night/85 to-transparent px-1.5 pb-1.5 pt-4 text-[10.5px] font-bold leading-tight text-cream lg:px-2.5 lg:pb-2 lg:text-[12px]">
                 {t.label}
               </span>
             </button>
