@@ -3,7 +3,10 @@ import { randomUUID } from "crypto";
 import { stitchClips } from "@/lib/stitch";
 import { saveVideo } from "@/lib/videos";
 
-export const maxDuration = 800;
+// 300s is the ceiling on Vercel's Hobby plan — a higher value does not just get
+// clamped, it fails the deploy with "invalid maxDuration value". Raise this only
+// alongside a plan upgrade.
+export const maxDuration = 300;
 
 export async function POST(req: NextRequest) {
   if (

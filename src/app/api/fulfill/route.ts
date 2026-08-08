@@ -4,7 +4,10 @@ import { getOrder, updateOrder, countOrdersBySession } from '@/lib/orders';
 import { fulfillOrder } from '@/lib/fulfill';
 import { getStripe, photosForAmount } from '@/lib/stripe';
 
-export const maxDuration = 800;
+// 300s is the ceiling on Vercel's Hobby plan — a higher value does not just get
+// clamped, it fails the deploy with "invalid maxDuration value". Raise this only
+// alongside a plan upgrade.
+export const maxDuration = 300;
 
 // Post-funnel fulfillment: payment happened on the landing funnel's Stripe
 // checkout; customers land here with ?session_id={CHECKOUT_SESSION_ID} from the

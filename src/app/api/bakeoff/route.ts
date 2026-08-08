@@ -4,7 +4,10 @@ import { consumeClipBudget } from '@/lib/budget';
 
 fal.config({ credentials: process.env.FAL_KEY! });
 
-export const maxDuration = 800;
+// 300s is the ceiling on Vercel's Hobby plan — a higher value does not just get
+// clamped, it fails the deploy with "invalid maxDuration value". Raise this only
+// alongside a plan upgrade.
+export const maxDuration = 300;
 
 const SLIDER_PROMPT = 'Smooth horizontal camera slide from left to right (or right to left). The camera physically moves sideways across the scene — even if the scene appears flat or simple, the camera must still visibly travel laterally so elements shift and scroll across the frame. Do NOT zoom in. Do NOT push forward. Do NOT stay static. The camera slides sideways the entire duration. Visible lateral parallax motion throughout. Like a camera on a long slider rail. ABSOLUTE RULE: scene content must be exactly what is in the photo — do not add, change, or invent any object, light, material, person, or detail. Only the camera moves sideways. Photorealistic. No people. No text.';
 

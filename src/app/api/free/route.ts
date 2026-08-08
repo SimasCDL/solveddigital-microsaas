@@ -17,7 +17,10 @@ import type { Order } from '@/lib/types';
 
 fal.config({ credentials: process.env.FAL_KEY! });
 
-export const maxDuration = 800;
+// 300s is the ceiling on Vercel's Hobby plan — a higher value does not just get
+// clamped, it fails the deploy with "invalid maxDuration value". Raise this only
+// alongside a plan upgrade.
+export const maxDuration = 300;
 
 /** Upper bound on what we'll store — matches the biggest pack. */
 const MAX_PHOTOS = 40;

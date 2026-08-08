@@ -7,7 +7,10 @@ fal.config({ credentials: process.env.FAL_KEY! });
 
 // Model, prompt and per-clip QC all live in src/lib/fal.ts (generateVideo) so the
 // test page and the paid webhook can never drift apart again.
-export const maxDuration = 800;
+// 300s is the ceiling on Vercel's Hobby plan — a higher value does not just get
+// clamped, it fails the deploy with "invalid maxDuration value". Raise this only
+// alongside a plan upgrade.
+export const maxDuration = 300;
 
 export async function POST(req: NextRequest) {
   if (!process.env.ADMIN_KEY || req.headers.get('x-admin-key') !== process.env.ADMIN_KEY) {

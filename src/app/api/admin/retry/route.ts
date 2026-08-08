@@ -3,7 +3,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getOrder, updateOrder } from '@/lib/orders';
 import { fulfillOrder } from '@/lib/fulfill';
 
-export const maxDuration = 800;
+// 300s is the ceiling on Vercel's Hobby plan — a higher value does not just get
+// clamped, it fails the deploy with "invalid maxDuration value". Raise this only
+// alongside a plan upgrade.
+export const maxDuration = 300;
 
 // Support tool: re-run a failed (or stuck-in-processing) order without the
 // customer paying again. Gated by ADMIN_KEY — same key as /generate.
