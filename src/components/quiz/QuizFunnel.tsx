@@ -8,11 +8,11 @@ import { ReviewAvatars } from "@/components/site/ReviewsRow";
 import { Showcase } from "@/components/quiz/Showcase";
 import { LessonArt } from "@/components/quiz/LessonArt";
 import { BeforeAfterRail } from "@/components/sections/BeforeAfterRail";
+import { Testimonials } from "@/components/quiz/Testimonials";
 import { packCheckoutUrl, discountPct } from "@/lib/pricing";
 import {
   visibleSteps,
   diagnose,
-  costSentence,
   resolve,
   usd,
   type Answers,
@@ -437,18 +437,8 @@ function TierLadder({ d }: { d: Diagnosis }) {
           </span>
         ))}
       </div>
-      {d.tier < d.tiers.length - 1 && (
-        <p className="mt-2.5 text-[13px] leading-[1.45] text-ink-soft">
-          {["One step", "Two steps", "Three steps"][
-            d.tiers.length - 2 - d.tier
-          ] ?? "Steps"}{" "}
-          below{" "}
-          <strong className="font-semibold text-ink">
-            {d.tiers[d.tiers.length - 1]}
-          </strong>{" "}
-          — and the gap is format, not budget.
-        </p>
-      )}
+      {/* No caption under the ladder. The rungs already say it, and every line
+          here pushes the offer further down the page. */}
     </div>
   );
 }
@@ -492,28 +482,22 @@ function Result({
 
       <TierLadder d={d} />
 
-      {/* The number — derived entirely from their own answers. */}
-      <div className="mt-5 rounded-2xl border border-line bg-accent-soft p-[18px]">
-        <p className="text-[15px] leading-[1.5] text-ink">
-          <strong className="font-bold">
+      {/* Two rows, no prose. The comparison is the argument — a sentence
+          explaining it only delays the offer. */}
+      <div className="mt-4 rounded-2xl border border-line bg-accent-soft p-4">
+        <div className="flex items-baseline justify-between">
+          <span className="text-[14px] text-ink-soft">Videographer</span>
+          <span className="font-display text-[17px] font-bold text-ink">
             {usd(d.costLow)}–{usd(d.costHigh)}
-            {d.single ? "" : " a year"}
-          </strong>{" "}
-          {costSentence(d)}
-        </p>
-
-        {/* The comparison is the strongest honest number on the page, and it was
-            already being computed — there's no reason to make them do it. */}
-        <div className="mt-3.5 border-t border-accent/20 pt-3.5">
-          <div className="flex items-baseline justify-between">
-            <span className="text-[13.5px] text-ink-soft">
-              The same {d.single ? "property" : "coverage"} with Tourly
-            </span>
-            <span className="font-display text-[20px] font-bold text-accent">
-              {usd(d.tourlyTotal)}
-              {d.single ? "" : "/yr"}
-            </span>
-          </div>
+            {d.single ? "" : "/yr"}
+          </span>
+        </div>
+        <div className="mt-2.5 flex items-baseline justify-between border-t border-accent/20 pt-2.5">
+          <span className="text-[14px] font-semibold text-ink">With Tourly</span>
+          <span className="font-display text-[22px] font-bold text-accent">
+            {usd(d.tourlyTotal)}
+            {d.single ? "" : "/yr"}
+          </span>
         </div>
       </div>
 
@@ -525,14 +509,16 @@ function Result({
        * above it: it answers "will this actually look good?" at the exact moment
        * the price is asked for. The diagnosis and plan still follow underneath
        * for anyone who wants to read before deciding. */}
-      <div className="-mx-5 mt-6 sm:-mx-9">
+      <Offer d={d} checkoutUrl={checkoutUrl} label={label} expired={expired} />
+
+      <div className="-mx-5 mt-8 sm:-mx-9">
         <p className="mb-2.5 px-5 text-center text-[11px] font-bold uppercase tracking-[0.12em] text-ink-soft sm:px-9">
           Photo in, tour out
         </p>
         <BeforeAfterRail height={200} cardWidth={260} />
       </div>
 
-      <Offer d={d} checkoutUrl={checkoutUrl} label={label} expired={expired} />
+      <Testimonials />
 
       <h2 className="font-display mt-10 text-[24px] font-bold leading-[1.15] text-ink">
         What&apos;s happening with your listings
@@ -603,33 +589,21 @@ function Offer({
               : "bg-[#fdeceb] text-[#b42318]"
           }`}
         >
-          <Bolt className="h-4 w-4 shrink-0" />
-          <span className="text-[13.5px] font-bold">
-            {expired
-              ? "Launch pricing still applies today"
-              : `Your diagnostic price holds for ${label}`}
+          <Bolt className="h-[18px] w-[18px] shrink-0" />
+          <span className="text-[15px] font-bold">
+            {expired ? "Launch pricing still applies today" : "Price held for"}
           </span>
+          {!expired && (
+            <span className="font-display text-[26px] font-bold leading-none tabular-nums">
+              {label}
+            </span>
+          )}
         </div>
-        {/* Unexplained urgency reads as theatre, so say what the timer is. */}
-        {!expired && (
-          <p className="mt-2 text-center text-[12px] leading-[1.4] text-ink-soft">
-            Launch pricing, held for this session from the moment your plan was
-            built.
-          </p>
-        )}
 
-        <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.12em] text-ink-soft">
-          Recommended for your galleries
-        </p>
-        <p className="font-display mt-1.5 text-[27px] font-bold leading-tight text-ink">
-          {d.pack.name}
-        </p>
-        <p className="mt-1.5 text-[14px] leading-[1.5] text-ink-soft">
-          {d.pack.blurb} — matched to the photo count you gave.
-        </p>
-
-        <div className="mt-4 flex items-end gap-3">
-          <span className="font-display text-[38px] font-bold leading-none text-ink">
+        {/* Pack, price and discount on one line. The old card spelled all three
+            out over five separate blocks, which buried the button. */}
+        <div className="mt-4 flex items-end gap-2.5">
+          <span className="font-display text-[40px] font-bold leading-none text-ink">
             {d.pack.priceLabel}
           </span>
           <span className="pb-1 text-[17px] text-ink-soft line-through">
@@ -639,52 +613,30 @@ function Offer({
             Save {discountPct(d.pack)}%
           </span>
         </div>
-        <p className="mt-2 text-[13px] text-ink-soft">
-          One-time. No subscription. Against {usd(d.costLow)}+{" "}
-          {d.single ? "for one videographer shoot" : "a year the old way"}.
+        <p className="mt-1.5 text-[13.5px] text-ink-soft">
+          {d.pack.name} · one-time, no subscription
         </p>
 
-        <div className="mt-4 flex flex-col gap-[9px]">
-          {d.pack.features.map((f) => (
-            <span key={f} className="inline-flex items-center gap-2 text-[14px] text-ink">
-              <Check className="h-4 w-4 shrink-0 text-accent" />
-              {f}
-            </span>
-          ))}
-        </div>
+        <a
+          href={checkoutUrl}
+          className="mt-4 flex h-[58px] items-center justify-center gap-2.5 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-[17px] font-bold text-white shadow-[0_16px_34px_-12px_rgba(15,125,107,0.6)] transition-all hover:brightness-[1.06] active:scale-[0.99]"
+        >
+          Lock in {d.pack.priceLabel}
+          <Arrow className="h-[18px] w-[18px]" />
+        </a>
 
-        {/* Proof belongs next to the button. Doubt peaks at the price, and the
-            showcase they saw is two minutes behind them by now. */}
-        <div className="mt-5 flex items-center justify-center gap-2.5">
-          <ReviewAvatars size={26} />
+        <div className="mt-3 flex items-center justify-center gap-2.5">
+          <ReviewAvatars size={24} />
           <span className="text-[12.5px] font-semibold text-ink">
             1,564 tours delivered
           </span>
         </div>
 
-        <a
-          href={checkoutUrl}
-          className="mt-2.5 flex h-14 items-center justify-center gap-2.5 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-base font-bold text-white shadow-[0_16px_34px_-12px_rgba(15,125,107,0.6)] transition-all hover:brightness-[1.06] active:scale-[0.99]"
-        >
-          Lock in {d.pack.priceLabel} — get my tours
-          <Arrow className="h-[18px] w-[18px]" />
-        </a>
-
-        <div className="mt-[18px] flex items-center gap-3 rounded-[14px] border border-line bg-accent-soft px-[15px] py-3.5">
-          <Shield className="h-[26px] w-[26px] shrink-0 text-accent" />
-          <div>
-            <div className="text-[13.5px] font-bold text-ink">
-              30-day money-back guarantee
-            </div>
-            <div className="text-[12.5px] text-ink-soft">
-              Not obsessed with your video? Full refund — keep the files.
-            </div>
-          </div>
-        </div>
-
-        <p className="mt-4 text-center text-xs text-ink-soft">
-          Secure checkout · Instant delivery
+        <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-[12.5px] text-ink-soft">
+          <Shield className="h-4 w-4 shrink-0 text-accent" />
+          30-day money-back guarantee · secure checkout
         </p>
+
         <PaymentLogos />
       </div>
     </>
