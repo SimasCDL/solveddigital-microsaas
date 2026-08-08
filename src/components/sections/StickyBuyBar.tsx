@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import { Stars } from "@/components/site/Stars";
 import { Bolt, Arrow } from "@/components/site/icons";
+import { MAIN_FUNNEL, type Funnel } from "@/lib/funnels";
 
 /**
  * Bottom CTA bar, hidden until the user scrolls past the instant-buy block
  * (observed by its #buy id), then fades/slides in.
  */
-export function StickyBuyBar() {
+export function StickyBuyBar({ funnel = MAIN_FUNNEL }: { funnel?: Funnel }) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -47,10 +48,10 @@ export function StickyBuyBar() {
           </div>
         </div>
         <a
-          href="/free"
+          href={funnel.ctaHref}
           className="flex h-[54px] items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-[15.5px] font-bold text-white shadow-[0_14px_30px_-12px_rgba(15,125,107,0.6)]"
         >
-          Make your first video for free
+          {funnel.ctaLabel}
           <Arrow className="h-[18px] w-[18px]" />
         </a>
       </div>

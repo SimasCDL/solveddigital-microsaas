@@ -6,10 +6,11 @@ import { Stars } from "@/components/site/Stars";
 import { PaymentLogos } from "@/components/site/PaymentLogos";
 import { useVideoAutoplay } from "@/components/site/useVideoAutoplay";
 import { PACKS, packById, type PackId } from "@/lib/pricing";
+import { MAIN_FUNNEL, type Funnel } from "@/lib/funnels";
 
 const THUMBS = [1, 2, 3, 4];
 
-export function InstantBuy() {
+export function InstantBuy({ funnel = MAIN_FUNNEL }: { funnel?: Funnel }) {
   const ref = useRef<HTMLElement>(null);
   useVideoAutoplay(ref);
   const [pack, setPack] = useState<PackId>("p25");
@@ -21,7 +22,7 @@ export function InstantBuy() {
         <div className="flex items-center gap-2">
           <Stars />
           <span className="text-[13px] font-semibold text-ink">
-            3,000+ tours delivered for agents
+            1,564 tours delivered
           </span>
         </div>
 
@@ -130,10 +131,10 @@ export function InstantBuy() {
         </div>
 
         <a
-          href="/free"
+          href={funnel.ctaHref}
           className="mt-[18px] flex h-14 items-center justify-center gap-2.5 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-base font-bold text-white shadow-[0_16px_34px_-12px_rgba(15,125,107,0.6)]"
         >
-          Make your first video for free
+          {funnel.ctaLabel}
           <Arrow className="h-[18px] w-[18px]" />
         </a>
 

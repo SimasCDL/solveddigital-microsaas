@@ -1,9 +1,10 @@
 import { Tag, Arrow } from "@/components/site/icons";
+import { MAIN_FUNNEL, type Funnel } from "@/lib/funnels";
 
-export function PromoBar() {
+export function PromoBar({ funnel = MAIN_FUNNEL }: { funnel?: Funnel }) {
   return (
     <a
-      href="/free"
+      href={funnel.ctaHref}
       className="flex items-center justify-center gap-2 whitespace-nowrap bg-accent px-3.5 py-[11px] text-center text-[12.5px] font-semibold text-cream"
     >
       <Tag className="h-[15px] w-[15px]" />

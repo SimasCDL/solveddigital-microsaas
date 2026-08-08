@@ -1,7 +1,8 @@
 import { Check, Arrow } from "@/components/site/icons";
 import { PACKS, type Pack } from "@/lib/pricing";
+import { MAIN_FUNNEL, type Funnel } from "@/lib/funnels";
 
-function PackCard({ pack }: { pack: Pack }) {
+function PackCard({ pack, funnel }: { pack: Pack; funnel: Funnel }) {
   const hi = pack.highlighted;
   return (
     <div
@@ -41,19 +42,19 @@ function PackCard({ pack }: { pack: Pack }) {
       </div>
 
       <a
-        href="/free"
+        href={funnel.ctaHref}
         className={`mt-[22px] flex h-[52px] items-center justify-center gap-2 rounded-full text-[15px] font-medium ${
           hi ? "bg-cream text-ink" : "bg-ink text-cream"
         }`}
       >
-        Make your first video for free
+        {funnel.ctaLabel}
         <Arrow className="h-4 w-4" />
       </a>
     </div>
   );
 }
 
-export function Pricing() {
+export function Pricing({ funnel = MAIN_FUNNEL }: { funnel?: Funnel }) {
   return (
     <section id="pricing" className="bg-cream px-5 py-11">
       <div className="text-center">
@@ -71,7 +72,7 @@ export function Pricing() {
 
       <div className="mt-[22px]">
         {PACKS.map((pack) => (
-          <PackCard key={pack.id} pack={pack} />
+          <PackCard key={pack.id} pack={pack} funnel={funnel} />
         ))}
       </div>
 

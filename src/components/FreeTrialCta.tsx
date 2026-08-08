@@ -24,19 +24,25 @@ export const FREE_TRIAL_ENABLED = process.env.NEXT_PUBLIC_FREE_TRIAL === "true";
 export function FreeTrialCta({
   variant = "link",
   className = "",
+  href = "/free",
+  label,
 }: {
   variant?: "link" | "pill" | "primary";
   className?: string;
+  /** Overridden per funnel so variants can tag the click. */
+  href?: string;
+  /** Overrides the variant's default wording. */
+  label?: string;
 }) {
   if (!FREE_TRIAL_ENABLED) return null;
 
   if (variant === "primary") {
     return (
       <a
-        href="/free"
+        href={href}
         className={`group inline-flex h-16 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] px-9 text-base font-semibold tracking-tight text-white shadow-[0_14px_34px_-10px_rgba(15,125,107,0.65)] ring-1 ring-white/10 transition-all hover:brightness-[1.06] hover:shadow-[0_18px_44px_-10px_rgba(15,125,107,0.75)] active:scale-[0.99] ${className}`}
       >
-        Make your first video for free
+        {label ?? "Make your first video for free"}
         <Arrow className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
       </a>
     );
@@ -45,10 +51,10 @@ export function FreeTrialCta({
   if (variant === "pill") {
     return (
       <a
-        href="/free"
+        href={href}
         className={`inline-flex h-13 items-center justify-center gap-2 rounded-full border-2 border-accent/35 bg-paper/70 px-7 text-[0.95rem] font-semibold tracking-tight text-accent transition-colors hover:border-accent hover:bg-accent-soft ${className}`}
       >
-        Or make one for free
+        {label ?? "Or make one for free"}
         <Arrow className="h-4 w-4" />
       </a>
     );
@@ -56,10 +62,10 @@ export function FreeTrialCta({
 
   return (
     <a
-      href="/free"
+      href={href}
       className={`inline-flex items-center justify-center gap-1.5 text-[13.5px] font-semibold text-accent underline decoration-accent/30 underline-offset-2 ${className}`}
     >
-      Not sure? Make your first one for free
+      {label ?? "Not sure? Make your first one for free"}
       <Arrow className="h-3.5 w-3.5" />
     </a>
   );

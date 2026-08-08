@@ -11,27 +11,45 @@ const AVATARS = [
   "/reviews/reviewer-5.jpg",
 ];
 
+/**
+ * Just the overlapping faces. Split out so the quiz intro shows the same people
+ * as the home page hero — one avatar list, so they can't drift apart.
+ */
+export function ReviewAvatars({
+  size = 38,
+  className = "",
+}: {
+  size?: number;
+  className?: string;
+}) {
+  return (
+    <div className={`flex ${className}`}>
+      {AVATARS.map((src, i) => (
+        <span
+          key={src}
+          className="overflow-hidden rounded-full border-2 border-cream"
+          style={{
+            height: size,
+            width: size,
+            marginLeft: i === 0 ? 0 : Math.round(size * -0.34),
+            zIndex: AVATARS.length - i,
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={src} alt="" className="h-full w-full object-cover" />
+        </span>
+      ))}
+    </div>
+  );
+}
+
 /** Overlapping avatars + rating + review count. Shared by mobile & desktop heroes. */
 export function ReviewsRow({ className = "" }: { className?: string }) {
   return (
     <div
       className={`flex flex-wrap items-center justify-center gap-3 ${className}`}
     >
-      <div className="flex">
-        {AVATARS.map((src, i) => (
-          <span
-            key={src}
-            className="h-[38px] w-[38px] overflow-hidden rounded-full border-2 border-cream"
-            style={{
-              marginLeft: i === 0 ? 0 : -13,
-              zIndex: AVATARS.length - i,
-            }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={src} alt="" className="h-full w-full object-cover" />
-          </span>
-        ))}
-      </div>
+      <ReviewAvatars />
       <div className="flex items-center gap-2">
         <span className="text-lg font-bold text-ink">4.9</span>
         <Stars />

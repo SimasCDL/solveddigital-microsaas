@@ -9,20 +9,21 @@ import { ValueStack } from "@/components/desktop/ValueStack";
 import { Guarantee } from "@/components/desktop/Guarantee";
 import { Pricing } from "@/components/desktop/Pricing";
 import { Faq } from "@/components/desktop/Faq";
+import { MAIN_FUNNEL, type Funnel } from "@/lib/funnels";
 
-export function DesktopLanding() {
+export function DesktopLanding({ funnel = MAIN_FUNNEL }: { funnel?: Funnel }) {
   return (
     <>
       <PromoBar />
-      <Nav />
+      <Nav funnel={funnel} />
       <main>
-        <Hero />
+        <Hero funnel={funnel} />
         <BeforeAfter />
-        <HowItWorks />
+        <HowItWorks funnel={funnel} />
         <Sample />
-        <ValueStack />
+        <ValueStack funnel={funnel} />
         <Guarantee />
-        <Pricing />
+        <Pricing funnel={funnel} />
         <Faq />
       </main>
       <Footer />

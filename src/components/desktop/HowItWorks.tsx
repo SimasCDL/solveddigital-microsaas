@@ -1,5 +1,6 @@
 import { Container } from "@/components/site/Container";
 import { CtaButton } from "@/components/ab/CtaButton";
+import { MAIN_FUNNEL, type Funnel } from "@/lib/funnels";
 
 const PLATFORMS = ["Zillow", "MLS", "Instagram", "YouTube"];
 
@@ -24,7 +25,7 @@ const STEPS = [
   },
 ];
 
-export function HowItWorks() {
+export function HowItWorks({ funnel = MAIN_FUNNEL }: { funnel?: Funnel }) {
   return (
     <section id="how" className="py-24 sm:py-32">
       <Container className="max-w-6xl">
@@ -85,7 +86,7 @@ export function HowItWorks() {
         </div>
 
         <div className="mt-14 flex flex-col items-center gap-3">
-          <CtaButton label="Make your first video for free" href="/free" />
+          <CtaButton label={funnel.ctaLabel} href={funnel.ctaHref} />
           <p className="text-sm text-ink-soft">
             No subscription · Love it or it’s free
           </p>

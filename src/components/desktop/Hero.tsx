@@ -4,8 +4,9 @@ import { FreeTrialCta, FREE_TRIAL_ENABLED } from "@/components/FreeTrialCta";
 import { ReviewsRow } from "@/components/site/ReviewsRow";
 import { Arrow } from "@/components/site/icons";
 import { BeforeAfterRail } from "@/components/sections/BeforeAfterRail";
+import { MAIN_FUNNEL, type Funnel } from "@/lib/funnels";
 
-export function Hero() {
+export function Hero({ funnel = MAIN_FUNNEL }: { funnel?: Funnel }) {
   return (
     <section className="relative overflow-hidden pb-16">
       {/* Soft light wash behind the headline. */}
@@ -37,13 +38,17 @@ export function Hero() {
               take over further down the page. Falls back to the buy CTA if the
               offer is switched off, so the hero is never left without one. */}
           {FREE_TRIAL_ENABLED ? (
-            <FreeTrialCta variant="primary" />
+            <FreeTrialCta
+              variant="primary"
+              href={funnel.ctaHref}
+              label={funnel.ctaLabel}
+            />
           ) : (
             <CtaButton size="xl" />
           )}
           <p className="text-sm text-ink-soft">
             {FREE_TRIAL_ENABLED
-              ? "No card · ready in minutes"
+              ? funnel.ctaNote
               : "Secure checkout · Money-back guarantee"}
           </p>
         </div>

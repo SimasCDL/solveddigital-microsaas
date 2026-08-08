@@ -2,8 +2,9 @@ import { Container } from "@/components/site/Container";
 import { FreeTrialCta } from "@/components/FreeTrialCta";
 import { Check, Arrow } from "@/components/site/icons";
 import { PACKS, type Pack } from "@/lib/pricing";
+import { MAIN_FUNNEL, type Funnel } from "@/lib/funnels";
 
-function PackCard({ pack }: { pack: Pack }) {
+function PackCard({ pack, funnel }: { pack: Pack; funnel: Funnel }) {
   const highlighted = pack.highlighted;
 
   return (
@@ -50,21 +51,21 @@ function PackCard({ pack }: { pack: Pack }) {
       </ul>
 
       <a
-        href="/free"
+        href={funnel.ctaHref}
         className={`group mt-10 inline-flex h-14 items-center justify-center gap-2 rounded-full px-6 text-[1.05rem] font-medium tracking-tight transition-all active:scale-[0.99] ${
           highlighted
             ? "bg-cream text-ink hover:bg-paper"
             : "bg-ink text-cream hover:bg-ink/90"
         }`}
       >
-        Make your first video for free
+        {funnel.ctaLabel}
         <Arrow className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
       </a>
     </div>
   );
 }
 
-export function Pricing() {
+export function Pricing({ funnel = MAIN_FUNNEL }: { funnel?: Funnel }) {
   return (
     <section id="pricing" className="py-24 sm:py-32">
       <Container className="max-w-6xl">
@@ -81,7 +82,7 @@ export function Pricing() {
 
         <div className="mt-20 grid gap-8 sm:grid-cols-3">
           {PACKS.map((pack) => (
-            <PackCard key={pack.id} pack={pack} />
+            <PackCard key={pack.id} pack={pack} funnel={funnel} />
           ))}
         </div>
 
@@ -91,7 +92,7 @@ export function Pricing() {
 
         {/* Risk-reversal for someone hesitating at the packs. */}
         <p className="mt-4 text-center">
-          <FreeTrialCta />
+          <FreeTrialCta href={funnel.ctaHref} />
         </p>
       </Container>
     </section>

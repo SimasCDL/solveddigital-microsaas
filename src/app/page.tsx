@@ -1,22 +1,11 @@
-import { MobileFunnel } from "@/components/MobileFunnel";
-import { DesktopLanding } from "@/components/DesktopLanding";
-import { SmartHashScroll } from "@/components/SmartHashScroll";
+import { FunnelPage } from "@/components/FunnelPage";
+import { FUNNELS } from "@/lib/funnels";
 
 /**
- * Marketing landing — the site's front door. Desktop layout at md+, the mobile
- * sales funnel below md. Wrapped in `.tourly` so it uses Geist + the shared
- * font-display / eyebrow styles. The customer flow lives at /upload and /order.
+ * Marketing landing — the site's front door, and the control funnel every
+ * variant under /f is measured against. The customer flow lives at /upload and
+ * /order.
  */
 export default function Home() {
-  return (
-    <div className="tourly min-h-screen bg-cream text-ink">
-      <SmartHashScroll />
-      <div className="md:hidden">
-        <MobileFunnel />
-      </div>
-      <div className="hidden md:block" style={{ zoom: 0.8 }}>
-        <DesktopLanding />
-      </div>
-    </div>
-  );
+  return <FunnelPage funnel={FUNNELS.main} />;
 }

@@ -70,6 +70,73 @@ export async function sendDeliveryEmail(params: {
   });
 }
 
+/**
+ * The quiz diagnostic, mailed to the lead.
+ *
+ * The email gate promises "we'll send a copy to your inbox" — this is that copy,
+ * and it has to arrive while they're still reading the on-page result or the
+ * promise reads as a bait for the address. It doubles as the retargeting asset:
+ * their score and their number, with a live checkout link, sitting in the inbox.
+ */
+export async function sendQuizDiagnosticEmail(params: {
+  to: string;
+  archetype: string;
+  score: number;
+  costLine: string;
+  situation: string;
+  fixFirst: string;
+  plan: string[];
+  packName: string;
+  packPrice: string;
+  checkoutUrl: string;
+}): Promise<void> {
+  const resend = getResend();
+  if (!resend) { console.error("[resend] RESEND_API_KEY not set — skipping email"); return; }
+
+  const esc = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  const plan = params.plan
+    .map(
+      (p) =>
+        `<li style="color:#15130f;font-size:14px;line-height:1.6;margin:0 0 10px;">${esc(p)}</li>`,
+    )
+    .join('');
+
+  await resend.emails.send({
+    from: process.env.FROM_EMAIL!,
+    to: params.to,
+    subject: `Your listing diagnostic — ${params.archetype}`,
+    html: shell(`
+      <p style="color:#6f6a60;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;margin:0 0 8px;">Your listing marketing</p>
+      <h1 style="color:#15130f;font-size:26px;font-weight:600;letter-spacing:-0.022em;margin:0 0 6px;">${esc(params.archetype)}</h1>
+      <p style="color:#6f6a60;font-size:14px;margin:0 0 24px;">Score ${params.score}/100</p>
+
+      <div style="background:#e3f3ec;border-radius:14px;padding:18px;margin:0 0 28px;">
+        <p style="color:#15130f;font-size:15px;line-height:1.5;margin:0;">${esc(params.costLine)}</p>
+      </div>
+
+      <h2 style="color:#15130f;font-size:18px;font-weight:600;margin:0 0 10px;">What&rsquo;s happening</h2>
+      <p style="color:#6f6a60;font-size:14px;line-height:1.6;margin:0 0 24px;">${esc(params.situation)}</p>
+
+      <h2 style="color:#15130f;font-size:18px;font-weight:600;margin:0 0 10px;">What to fix first</h2>
+      <p style="color:#6f6a60;font-size:14px;line-height:1.6;margin:0 0 24px;">${esc(params.fixFirst)}</p>
+
+      <h2 style="color:#15130f;font-size:18px;font-weight:600;margin:0 0 12px;">Your 30-day plan</h2>
+      <ul style="margin:0 0 28px;padding-left:20px;">${plan}</ul>
+
+      <div style="border-top:1px solid #e7e1d6;padding-top:24px;">
+        <p style="color:#6f6a60;font-size:13px;margin:0 0 4px;">Recommended for your galleries</p>
+        <p style="color:#15130f;font-size:20px;font-weight:700;margin:0 0 16px;">${esc(params.packName)} &middot; ${esc(params.packPrice)}</p>
+        <p style="margin:0 0 12px;">
+          <a href="${params.checkoutUrl}" style="display:inline-block;background:#0f7d6b;color:#ffffff;font-weight:600;font-size:15px;padding:15px 32px;border-radius:999px;text-decoration:none;">Get my tours &rarr;</a>
+        </p>
+        <p style="color:#6f6a60;font-size:12px;margin:0;">30-day money-back guarantee. Not obsessed with your video? Full refund &mdash; keep the files.</p>
+      </div>
+    `),
+  });
+}
+
 /** Internal ops alert — goes to ADMIN_ALERT_EMAIL, never to customers. */
 export async function sendAdminAlert(subject: string, body: string): Promise<void> {
   const to = process.env.ADMIN_ALERT_EMAIL;

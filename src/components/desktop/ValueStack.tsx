@@ -1,6 +1,7 @@
 import { Container } from "@/components/site/Container";
 import { CtaButton } from "@/components/ab/CtaButton";
 import { Play, Swap, Star } from "@/components/site/icons";
+import { MAIN_FUNNEL, type Funnel } from "@/lib/funnels";
 
 const COLUMNS = [
   {
@@ -20,7 +21,7 @@ const COLUMNS = [
   },
 ];
 
-export function ValueStack() {
+export function ValueStack({ funnel = MAIN_FUNNEL }: { funnel?: Funnel }) {
   return (
     <section className="py-24 sm:py-32">
       <Container>
@@ -56,7 +57,7 @@ export function ValueStack() {
         </div>
 
         <div className="mt-14 flex justify-center">
-          <CtaButton label="Make your first video for free" href="/free" />
+          <CtaButton label={funnel.ctaLabel} href={funnel.ctaHref} />
         </div>
       </Container>
     </section>

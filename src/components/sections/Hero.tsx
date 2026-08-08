@@ -2,8 +2,9 @@ import { CtaButton } from "@/components/ab/CtaButton";
 import { FreeTrialCta, FREE_TRIAL_ENABLED } from "@/components/FreeTrialCta";
 import { ReviewsRow } from "@/components/site/ReviewsRow";
 import { Arrow } from "@/components/site/icons";
+import { MAIN_FUNNEL, type Funnel } from "@/lib/funnels";
 
-export function Hero() {
+export function Hero({ funnel = MAIN_FUNNEL }: { funnel?: Funnel }) {
   return (
     <div className="px-[22px] pt-11 text-center">
       <span className="inline-block rounded-full bg-accent-soft px-4 py-2 text-xs font-bold uppercase tracking-[0.08em] text-accent">
@@ -25,13 +26,17 @@ export function Hero() {
             take over further down the page. Falls back to the buy CTA if the
             offer is switched off, so the hero is never left without one. */}
         {FREE_TRIAL_ENABLED ? (
-          <FreeTrialCta variant="primary" />
+          <FreeTrialCta
+            variant="primary"
+            href={funnel.ctaHref}
+            label={funnel.ctaLabel}
+          />
         ) : (
           <CtaButton size="xl" label="Make my first tour" href="#buy" />
         )}
         <p className="text-[13.5px] text-ink-soft">
           {FREE_TRIAL_ENABLED
-            ? "No card · ready in minutes"
+            ? funnel.ctaNote
             : "Secure checkout · Money-back guarantee"}
         </p>
       </div>

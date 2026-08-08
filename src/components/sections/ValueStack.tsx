@@ -1,5 +1,6 @@
 import { CtaButton } from "@/components/ab/CtaButton";
 import { Play, Swap, Star } from "@/components/site/icons";
+import { MAIN_FUNNEL, type Funnel } from "@/lib/funnels";
 
 const ROWS = [
   {
@@ -19,7 +20,7 @@ const ROWS = [
   },
 ];
 
-export function ValueStack() {
+export function ValueStack({ funnel = MAIN_FUNNEL }: { funnel?: Funnel }) {
   return (
     <section className="px-5 py-11">
       <div className="text-center">
@@ -55,7 +56,7 @@ export function ValueStack() {
       ))}
 
       <div className="mt-[26px] flex justify-center">
-        <CtaButton label="Make your first video for free" href="/free" />
+        <CtaButton label={funnel.ctaLabel} href={funnel.ctaHref} />
       </div>
     </section>
   );

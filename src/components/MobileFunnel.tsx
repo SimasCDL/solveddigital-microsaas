@@ -11,29 +11,30 @@ import { Guarantee } from "@/components/sections/Guarantee";
 import { Pricing } from "@/components/sections/Pricing";
 import { Faq } from "@/components/sections/Faq";
 import { StickyBuyBar } from "@/components/sections/StickyBuyBar";
+import { MAIN_FUNNEL, type Funnel } from "@/lib/funnels";
 
 const HERO_BG =
   "linear-gradient(180deg,#d8ede7 0%,#e6f4ef 20%,#f0f8f4 52%,var(--color-cream) 100%)";
 
-export function MobileFunnel() {
+export function MobileFunnel({ funnel = MAIN_FUNNEL }: { funnel?: Funnel }) {
   return (
     <>
       <div className="mx-auto w-full max-w-[440px] overflow-hidden bg-cream">
         {/* Mint top: promo, nav, hero and the before/after carousel share it. */}
         <div style={{ background: HERO_BG }}>
-          <PromoBar />
-          <Nav />
-          <Hero />
+          <PromoBar funnel={funnel} />
+          <Nav funnel={funnel} />
+          <Hero funnel={funnel} />
           <BeforeAfter />
           <div className="h-5" />
         </div>
 
         <main>
-          <InstantBuy />
+          <InstantBuy funnel={funnel} />
           <HowItWorks />
           <Sample />
-          <ValueStack />
-          <Pricing />
+          <ValueStack funnel={funnel} />
+          <Pricing funnel={funnel} />
           <Guarantee />
           <Faq />
         </main>
@@ -41,7 +42,7 @@ export function MobileFunnel() {
         <Footer />
       </div>
 
-      <StickyBuyBar />
+      <StickyBuyBar funnel={funnel} />
     </>
   );
 }
