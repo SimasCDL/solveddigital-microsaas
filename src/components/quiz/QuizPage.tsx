@@ -12,7 +12,12 @@ import { QuizFunnel } from "@/components/quiz/QuizFunnel";
  */
 export function QuizPage() {
   return (
-    <div className="tourly relative min-h-screen bg-cream text-ink">
+    /* A flex column, which matters for two reasons beyond layout: margins do not
+       collapse through a flex container (the Shell's vertical margin was
+       otherwise escaping and pushing this whole element down, exposing the dark
+       admin `body` background as a bar across the top), and it lets the card
+       centre itself with `my-auto`. */
+    <div className="tourly relative flex min-h-screen flex-col bg-cream text-ink">
       {/* Desktop-only wash. A layer rather than a background utility so the
           mobile rendering is provably untouched. */}
       <div
@@ -25,8 +30,11 @@ export function QuizPage() {
       />
 
       {/* Width and the card itself live on the funnel's Shell, which is the only
-          thing that knows whether it's showing the wide intro or a question. */}
-      <div className="relative sm:px-6">
+          thing that knows whether it's showing the wide intro or a question.
+          flex-1 lets the Shell's `my-auto` centre a short screen without
+          clipping a tall one — auto margins collapse to zero when the child
+          outgrows the container, which `justify-center` does not. */}
+      <div className="relative flex flex-1 flex-col sm:px-6 sm:py-10">
         <QuizFunnel />
       </div>
     </div>

@@ -310,7 +310,7 @@ const Shell = function Shell({
 }) {
   return (
     <div
-      className={`mx-auto w-full max-w-[440px] px-5 pb-16 pt-6 sm:my-10 sm:rounded-[28px] sm:border sm:border-line sm:bg-cream sm:px-9 sm:pb-11 sm:pt-9 sm:shadow-[0_40px_90px_-50px_rgba(21,19,15,0.45)] ${
+      className={`mx-auto w-full max-w-[440px] px-5 pb-16 pt-6 sm:my-auto sm:rounded-[28px] sm:border sm:border-line sm:bg-cream sm:px-9 sm:pb-11 sm:pt-9 sm:shadow-[0_40px_90px_-50px_rgba(21,19,15,0.45)] ${
         wide ? "sm:max-w-[560px] lg:max-w-[940px]" : "sm:max-w-[540px]"
       }`}
     >
