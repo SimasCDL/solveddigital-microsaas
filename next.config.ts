@@ -22,6 +22,24 @@ const nextConfig: NextConfig = {
     "/api/stitch": ["./node_modules/ffmpeg-static/**"],
     "/api/qc-test": ["./node_modules/ffmpeg-static/**"],
   },
+  /**
+   * Keep the marketing assets out of the serverless bundles.
+   *
+   * `src/lib/stitch.ts` builds the ffmpeg path from `process.cwd()`, which the
+   * tracer can't follow, so it gives up and traces the ENTIRE project into every
+   * function that imports it — /api/stitch, /api/fulfill and /api/free were each
+   * carrying all 27 MB of `public/` on top of the 80 MB ffmpeg binary. That sat
+   * just under Vercel's 250 MB uncompressed function limit until a ~1 MB clip
+   * pushed it over, and the deploy started failing at "Deploying outputs" with
+   * the build itself passing.
+   *
+   * Nothing server-side reads from `public/` — Vercel serves it from the CDN —
+   * and `landing/` is a separate sub-app. The music track the ffmpeg routes DO
+   * need lives in `assets/` and is included above, so it is unaffected.
+   */
+  outputFileTracingExcludes: {
+    "*": ["./public/**/*", "./landing/**/*"],
+  },
   experimental: {
     serverActions: {
       bodySizeLimit: "50mb",
