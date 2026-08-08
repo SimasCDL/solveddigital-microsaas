@@ -16,18 +16,18 @@ interface Written {
   quote: string;
 }
 
+/**
+ * Two cards, not three. The only two faces we have are Claire and Ray, and Ray
+ * is the person in the video — putting him on a written card too would show the
+ * same customer twice. A third would need a third real face; a stock avatar
+ * between two real ones is worse than having two.
+ */
 const WRITTEN: Written[] = [
   {
-    name: "Marcus Hale",
-    avatar: "/reviews/reviewer-2.jpg",
+    name: "Claire Bennett",
+    avatar: "/reviews/claire.jpg",
     quote:
       "Sent the gallery over on a Tuesday and had the tour up the same afternoon. My seller thought I'd paid for a film crew.",
-  },
-  {
-    name: "Dani Okafor",
-    avatar: "/reviews/reviewer-4.jpg",
-    quote:
-      "I use it on every listing now, not just the expensive ones. That's the part that actually changed things for me.",
   },
 ];
 
@@ -83,7 +83,7 @@ export function Testimonials() {
         What agents say
       </p>
 
-      <div className="mt-4 grid gap-3 lg:grid-cols-3">
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
         {WRITTEN.map((t) => (
           <div
             key={t.name}
