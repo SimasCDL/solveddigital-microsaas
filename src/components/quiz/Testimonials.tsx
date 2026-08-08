@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useVideoAutoplay } from "@/components/site/useVideoAutoplay";
 
 /**
@@ -73,6 +73,86 @@ function Head({ name, avatar }: { name: string; avatar: string }) {
   );
 }
 
+function Speaker({ on, className = "" }: { on: boolean; className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M4 9.5v5h3.2L12 18.5v-13L7.2 9.5H4Z"
+        fill="currentColor"
+      />
+      {on ? (
+        <path
+          d="M15.5 8.8a4.4 4.4 0 0 1 0 6.4M18 6.3a7.9 7.9 0 0 1 0 11.4"
+          stroke="currentColor"
+          strokeWidth="1.9"
+          strokeLinecap="round"
+        />
+      ) : (
+        <path
+          d="M16 9.5l4.5 5M20.5 9.5l-4.5 5"
+          stroke="currentColor"
+          strokeWidth="1.9"
+          strokeLinecap="round"
+        />
+      )}
+    </svg>
+  );
+}
+
+/**
+ * Muted looping preview until you tap it, then it restarts with sound.
+ *
+ * It has to start muted — no browser autoplays audio — so the tap is the only
+ * way to get the voiceover, and without an obvious affordance nobody discovers
+ * it. Tapping again mutes it rather than stopping, so the card never goes dead.
+ */
+function VideoTestimonial() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [sound, setSound] = useState(false);
+
+  const toggle = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    const next = !sound;
+    v.muted = !next;
+    if (next) v.currentTime = 0;
+    const p = v.play();
+    if (p && typeof p.catch === "function") p.catch(() => {});
+    setSound(next);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      aria-label={sound ? "Mute testimonial" : "Play testimonial with sound"}
+      className="group relative mt-3 block w-full overflow-hidden rounded-xl bg-night"
+    >
+      <video
+        ref={videoRef}
+        src={VIDEO.src}
+        poster={VIDEO.poster}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="metadata"
+        className="aspect-[9/16] max-h-[320px] w-full object-cover"
+      />
+      <span
+        className={`absolute bottom-2.5 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-bold backdrop-blur-sm transition-colors ${
+          sound
+            ? "bg-night/60 text-cream"
+            : "bg-cream/95 text-ink shadow-[0_4px_14px_rgba(0,0,0,0.3)]"
+        }`}
+      >
+        <Speaker on={sound} className="h-[15px] w-[15px]" />
+        {sound ? "Sound on" : "Tap for sound"}
+      </span>
+    </button>
+  );
+}
+
 export function Testimonials() {
   const ref = useRef<HTMLDivElement>(null);
   useVideoAutoplay(ref);
@@ -98,20 +178,7 @@ export function Testimonials() {
 
         <div className="rounded-2xl border border-line bg-paper p-4 shadow-[0_18px_44px_-32px_rgba(0,0,0,0.4)]">
           <Head name={VIDEO.name} avatar={VIDEO.avatar} />
-          {/* Captions are burned into the clip, so it works muted — which it has
-              to be, since no browser will autoplay it with sound. */}
-          <div className="mt-3 overflow-hidden rounded-xl bg-night">
-            <video
-              src={VIDEO.src}
-              poster={VIDEO.poster}
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="metadata"
-              className="aspect-[9/16] max-h-[320px] w-full object-cover"
-            />
-          </div>
+          <VideoTestimonial />
         </div>
       </div>
     </div>

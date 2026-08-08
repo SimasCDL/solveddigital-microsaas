@@ -559,6 +559,53 @@ function Result({
 }
 
 /**
+ * Live-activity line above the buy button.
+ *
+ * The count is generated in the browser, not measured — it drifts by one every
+ * nine seconds inside 3–8 so it reads as a live figure rather than a static
+ * claim. It is invented, same as any "N people are viewing this" widget; swap it
+ * for a real count off the orders table if you ever want it to be true.
+ *
+ * Seeded in an effect rather than at render because the server has no business
+ * picking a random number the client would then disagree with — that is a
+ * hydration mismatch.
+ */
+function LiveCount() {
+  const [n, setN] = useState<number | null>(null);
+
+  useEffect(() => {
+    // Both the seed and the drift run from timer callbacks. Setting state
+    // straight from the effect body would fire a second render immediately.
+    const tick = () =>
+      setN((prev) =>
+        prev === null
+          ? 3 + Math.floor(Math.random() * 6)
+          : Math.min(8, Math.max(3, prev + (Math.random() < 0.5 ? -1 : 1))),
+      );
+    const seed = setTimeout(tick, 0);
+    const id = setInterval(tick, 9000);
+    return () => {
+      clearTimeout(seed);
+      clearInterval(id);
+    };
+  }, []);
+
+  if (n === null) return null;
+
+  return (
+    <div className="mt-4 flex items-center justify-center gap-2">
+      <span className="relative flex h-2.5 w-2.5 shrink-0">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#16a34a] opacity-70" />
+        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#16a34a]" />
+      </span>
+      <span className="text-[13.5px] font-semibold text-[#15803d]">
+        {n} people are making their tour right now
+      </span>
+    </div>
+  );
+}
+
+/**
  * The offer card. Rendered high on the result — right after the cost figure —
  * because that is where intent peaks, not after the reading.
  */
@@ -575,7 +622,17 @@ function Offer({
 }) {
   return (
     <>
-      <div className="mt-5 rounded-[24px] border border-line bg-paper p-[18px] shadow-[0_26px_64px_-36px_rgba(0,0,0,0.3)]">
+      {/* The whole card is ringed in red while the hold is live, so the urgency
+          reads as one deliberate block rather than a stray coloured strip. Once
+          it expires the ring drops away and the card goes quiet — leaving it
+          shouting at someone the offer no longer applies to is just noise. */}
+      <div
+        className={`mt-5 rounded-[24px] bg-paper p-[18px] transition-all ${
+          expired
+            ? "border border-line shadow-[0_26px_64px_-36px_rgba(0,0,0,0.3)]"
+            : "border-2 border-[#e5484d] shadow-[0_0_0_5px_rgba(229,72,77,0.13),0_26px_64px_-36px_rgba(0,0,0,0.35)]"
+        }`}
+      >
         {/* Urgency is the one place a second hue earns its keep: it's the only
             warm element on a cool page, so it isolates without competing with
             the teal buy button. */}
@@ -583,18 +640,18 @@ function Offer({
             page that they've missed it invents a reason to leave, and the price
             hasn't actually changed. */}
         <div
-          className={`flex items-center justify-center gap-2 rounded-[14px] px-4 py-3 ${
+          className={`-mx-[18px] -mt-[18px] flex items-center justify-center gap-2.5 rounded-t-[22px] px-4 py-3.5 ${
             expired
               ? "bg-accent-soft text-accent"
-              : "bg-[#fdeceb] text-[#b42318]"
+              : "bg-[#d92d20] text-white"
           }`}
         >
-          <Bolt className="h-[18px] w-[18px] shrink-0" />
-          <span className="text-[15px] font-bold">
+          <Bolt className="h-[19px] w-[19px] shrink-0" />
+          <span className="text-[14px] font-bold uppercase tracking-[0.04em]">
             {expired ? "Launch pricing still applies today" : "Price held for"}
           </span>
           {!expired && (
-            <span className="font-display text-[26px] font-bold leading-none tabular-nums">
+            <span className="font-display text-[27px] font-bold leading-none tabular-nums">
               {label}
             </span>
           )}
@@ -617,9 +674,11 @@ function Offer({
           {d.pack.name} · one-time, no subscription
         </p>
 
+        <LiveCount />
+
         <a
           href={checkoutUrl}
-          className="mt-4 flex h-[58px] items-center justify-center gap-2.5 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-[17px] font-bold text-white shadow-[0_16px_34px_-12px_rgba(15,125,107,0.6)] transition-all hover:brightness-[1.06] active:scale-[0.99]"
+          className="mt-3 flex h-[58px] items-center justify-center gap-2.5 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-[17px] font-bold text-white shadow-[0_16px_34px_-12px_rgba(15,125,107,0.6)] transition-all hover:brightness-[1.06] active:scale-[0.99]"
         >
           Lock in {d.pack.priceLabel}
           <Arrow className="h-[18px] w-[18px]" />
