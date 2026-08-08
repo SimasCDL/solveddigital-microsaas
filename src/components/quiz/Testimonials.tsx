@@ -33,7 +33,9 @@ const WRITTEN: Written[] = [
 
 const VIDEO = {
   name: "Ray Whitfield",
-  avatar: "/reviews/reviewer-1.jpg",
+  // Cropped from the clip itself, so the avatar is actually the person talking
+  // rather than one of the generic reviewer stock faces.
+  avatar: "/reviews/ray.jpg",
   src: "/reviews/ugc-1.mp4",
   poster: "/reviews/ugc-1.jpg",
 };
