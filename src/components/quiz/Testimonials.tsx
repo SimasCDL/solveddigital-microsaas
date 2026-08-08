@@ -6,10 +6,8 @@ import { useVideoAutoplay } from "@/components/site/useVideoAutoplay";
 /**
  * Social proof under the offer.
  *
- * ⚠️ The two written quotes below are PLACEHOLDER COPY. They are not from real
- * customers. Swap them for genuine ones before running traffic — attributing
- * invented quotes to named people is an FTC endorsement problem, not just a
- * taste one. The video is the only real testimonial here.
+ * The two written quotes are example copy for the concept build — swap them for
+ * real customer ones before this takes live traffic. The video is genuine.
  */
 
 interface Written {
