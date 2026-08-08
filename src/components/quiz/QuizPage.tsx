@@ -3,14 +3,12 @@ import { QuizFunnel } from "@/components/quiz/QuizFunnel";
 /**
  * Page shell for the diagnostic funnel.
  *
- * Below `sm` this renders nothing at all — the funnel fills the screen exactly
- * as it does on a phone today, because that's the layout the traffic actually
- * sees and it isn't worth risking for a desktop that barely converts.
+ * Below `sm` this adds nothing at all — the funnel fills the screen exactly as
+ * it does on a phone today, because that's the layout the traffic actually sees
+ * and it isn't worth risking for a desktop that converts far less.
  *
- * From `sm` up the same 440px column would otherwise sit stranded in the middle
- * of an empty field, so it gets a soft wash behind it and a card around it. The
- * column width is deliberately unchanged: widening it on desktop would reflow
- * every screen and give us a layout nobody has looked at.
+ * From `sm` up it provides the wash the card sits on. The card and its width are
+ * the Shell's job, since only the funnel knows which screen is showing.
  */
 export function QuizPage() {
   return (
@@ -26,10 +24,10 @@ export function QuizPage() {
         }}
       />
 
-      <div className="relative mx-auto w-full max-w-[460px] sm:px-6 sm:py-10">
-        <div className="sm:overflow-hidden sm:rounded-[28px] sm:border sm:border-line sm:bg-cream sm:shadow-[0_40px_90px_-50px_rgba(21,19,15,0.45)]">
-          <QuizFunnel />
-        </div>
+      {/* Width and the card itself live on the funnel's Shell, which is the only
+          thing that knows whether it's showing the wide intro or a question. */}
+      <div className="relative sm:px-6">
+        <QuizFunnel />
       </div>
     </div>
   );

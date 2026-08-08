@@ -46,13 +46,11 @@ export function Showcase() {
   useVideoAutoplay(rootRef);
 
   const [active, setActive] = useState(0);
-  const [loaded, setLoaded] = useState(false);
 
   const select = (i: number) => {
     if (i === active) return;
     // Switch immediately — gating the swap behind a timer makes the tap feel
     // dead and queues competing timeouts if someone taps through the row fast.
-    setLoaded(false);
     setActive(i);
     mainRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   };
@@ -62,16 +60,21 @@ export function Showcase() {
   /**
    * Drive the source change on one persistent element instead of remounting.
    *
-   * Remounting made the swap visibly jump: the new clip would begin buffering
-   * and advancing while still transparent, so revealing it crossfaded the
-   * poster (frame 0) into a shot already a second in — which reads as the clip
-   * skipping backwards before it starts. Rewinding to 0 here and only revealing
-   * on `playing` means the first frame you see is the first frame that plays.
+   * `load()` is the important part: changing `src` on an element that is already
+   * playing does not reliably restart it on its own, and an earlier version that
+   * skipped it left the clip stalled. Rewinding to 0 keeps the first frame shown
+   * and the first frame played identical, so the swap never appears to jump.
+   *
+   * The element is always visible. A previous attempt held it at opacity 0 until
+   * `playing` fired, which meant any clip that failed to emit that event stayed
+   * invisible forever — the video's own poster covers the load just as well and
+   * cannot fail that way.
    */
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
     v.muted = true;
+    v.load();
     v.currentTime = 0;
     const p = v.play();
     if (p && typeof p.catch === "function") p.catch(() => {});
@@ -79,9 +82,8 @@ export function Showcase() {
 
   return (
     <div ref={rootRef}>
-      {/* Main player */}
-      {/* The poster sits on the container, so the new shot is on screen the
-          instant you tap and the video fades in over it once it can play. */}
+      {/* Main player. The poster also sits on the container so there is never a
+          bare dark box between tapping a clip and the new frame painting. */}
       <div
         ref={mainRef}
         className="relative aspect-video overflow-hidden rounded-2xl bg-night bg-cover bg-center"
@@ -96,9 +98,7 @@ export function Showcase() {
           loop
           playsInline
           preload="auto"
-          onPlaying={() => setLoaded(true)}
-          className="absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ease-out"
-          style={{ opacity: loaded ? 1 : 0 }}
+          className="absolute inset-0 h-full w-full object-cover"
         />
 
         <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-accent px-3 py-1.5 text-[11.5px] font-bold uppercase tracking-[0.04em] text-cream">
@@ -110,10 +110,11 @@ export function Showcase() {
         {item.label} · tap a clip to play it here
       </p>
 
-      {/* Thumbnails */}
-      <div className="mt-2.5 grid grid-cols-3 gap-2">
-        {ITEMS.slice(1).map((t, i) => {
-          const idx = i + 1;
+      {/* Every clip gets a thumb, including whichever one is currently playing.
+          Showing only the inactive ones left the opening clip unreachable once
+          you moved off it. */}
+      <div className="mt-2.5 grid grid-cols-4 gap-1.5">
+        {ITEMS.map((t, idx) => {
           const on = idx === active;
           return (
             <button

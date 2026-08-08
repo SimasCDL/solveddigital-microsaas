@@ -68,13 +68,18 @@ const ALL_STEPS: Step[] = [
     // reads as their own conclusion. Worded to fit one property or fifty, since
     // we don't know which they are yet.
     question: "What's the hardest part of marketing a property right now?",
+    // Five short options, not six sentences. This is the highest-drop-off screen
+    // in the funnel — the visitor has invested nothing yet, so every extra line
+    // of reading here is paid for in abandonment. The old "marketing doesn't
+    // match what the property deserves" overlapped almost entirely with the
+    // photos option and was the one worth losing. The "not sure" escape stays:
+    // without it, anyone who doesn't recognise themselves just leaves.
     choices: [
-      { id: "slow", label: "It sits longer than it should before offers come in" },
-      { id: "photos", label: "The photos don't do the property justice" },
-      { id: "cost", label: "Video costs too much to be worth it" },
-      { id: "time", label: "I don't have time to make content for it" },
-      { id: "expect", label: "The marketing doesn't match what the property deserves" },
-      { id: "unsure", label: "Not sure — it just feels like I'm leaving money on the table" },
+      { id: "slow", label: "It sits on the market too long" },
+      { id: "photos", label: "The photos don't do it justice" },
+      { id: "cost", label: "Video costs too much" },
+      { id: "time", label: "I've no time to make content" },
+      { id: "unsure", label: "Not sure — it just feels off" },
     ],
   },
   {
@@ -204,7 +209,6 @@ const PAIN_POINTS: Record<string, number> = {
   photos: 8,
   cost: 10,
   time: 8,
-  expect: 6,
   unsure: 4,
 };
 
@@ -299,12 +303,11 @@ export interface Diagnosis {
  * their own stated problem get ignored by the "personalised" result.
  */
 const PAIN_ECHO: Record<string, string> = {
-  slow: "You said it sits longer than it should before offers come in.",
-  photos: "You said the photos don't do the property justice.",
-  cost: "You said video costs too much to be worth it.",
-  time: "You said there's no time to make content for it.",
-  expect: "You said the marketing doesn't match what the property deserves.",
-  unsure: "You weren't sure what's wrong — only that something's being left on the table.",
+  slow: "You said it sits on the market too long.",
+  photos: "You said the photos don't do it justice.",
+  cost: "You said video costs too much.",
+  time: "You said there's no time to make the content.",
+  unsure: "You weren't sure what's wrong — only that something feels off.",
 };
 
 const GOAL_PHRASE: Record<string, string> = {

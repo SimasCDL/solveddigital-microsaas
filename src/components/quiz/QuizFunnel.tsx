@@ -7,6 +7,7 @@ import { PaymentLogos } from "@/components/site/PaymentLogos";
 import { ReviewAvatars } from "@/components/site/ReviewsRow";
 import { Showcase } from "@/components/quiz/Showcase";
 import { LessonArt } from "@/components/quiz/LessonArt";
+import { BeforeAfterRail } from "@/components/sections/BeforeAfterRail";
 import { packCheckoutUrl, discountPct } from "@/lib/pricing";
 import {
   visibleSteps,
@@ -287,15 +288,32 @@ export function QuizFunnel({ initial }: { initial?: QuizInitialState } = {}) {
 
 /* ---------------------------------------------------------------------- */
 
+/**
+ * The card every screen sits in.
+ *
+ * Below `sm` it is not a card at all — no border, no radius, full-bleed — so the
+ * phone rendering is exactly what it was. The card, and the width, only exist
+ * from `sm` up.
+ *
+ * `wide` is for the intro alone. A question screen is a list of options and
+ * reads badly stretched across 900px, but the intro has media to place, so it
+ * earns the extra width and the two-column layout that comes with it.
+ */
 const Shell = function Shell({
   children,
+  wide = false,
   ref,
 }: {
   children: React.ReactNode;
+  wide?: boolean;
   ref?: React.Ref<HTMLDivElement>;
 }) {
   return (
-    <div className="mx-auto w-full max-w-[440px] px-5 pb-16 pt-6">
+    <div
+      className={`mx-auto w-full max-w-[440px] px-5 pb-16 pt-6 sm:my-10 sm:rounded-[28px] sm:border sm:border-line sm:bg-cream sm:px-9 sm:pb-11 sm:pt-9 sm:shadow-[0_40px_90px_-50px_rgba(21,19,15,0.45)] ${
+        wide ? "sm:max-w-[560px] lg:max-w-[940px]" : "sm:max-w-[540px]"
+      }`}
+    >
       <div ref={ref} />
       <div className="mb-7 flex items-center justify-center gap-[11px]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -311,52 +329,66 @@ const Shell = function Shell({
 
 function Intro({ onStart, ref }: { onStart: () => void; ref?: React.Ref<HTMLDivElement> }) {
   return (
-    <Shell ref={ref}>
-      <span className="inline-block rounded-full bg-accent-soft px-4 py-2 text-[11px] font-bold uppercase tracking-[0.1em] text-accent">
-        Free listing diagnostic
-      </span>
-      {/* Cold Meta traffic arrives with a wrong belief — that listing video runs
-          hundreds per property. That belief is true of videographers and false
-          of us, so the hook asks the question rather than claiming a loss the
-          numbers can't back. Kept to two lines so the player and CTA clear the
-          fold on a 375px in-app browser. */}
-      <h1 className="font-display mt-3.5 text-[30px] font-bold leading-[1.1] tracking-[-0.02em] text-ink text-balance">
-        What does a listing video actually cost?
-      </h1>
-      <p className="mt-3 text-[14.5px] leading-[1.5] text-ink-soft">
-        6 quick questions — your marketing score, the real market rate, and the
-        pack that fits your gallery.
-      </p>
-
-      {/* Proof line sits above the player: it qualifies the clips you're about
-          to watch, and keeps the CTA tight under them. Same faces as the home
-          page hero, so the ad → landing → quiz run shows one set of people. */}
-      <div className="mt-4 flex items-center gap-3">
-        <ReviewAvatars size={30} />
-        <div className="flex flex-col leading-none">
-          <Stars />
-          <span className="mt-1 text-[13px] font-semibold text-ink">
-            1,564 tours delivered
+    <Shell wide ref={ref}>
+      {/*
+       * One column on phones, two from `lg`.
+       *
+       * Mobile keeps its DOM order — copy, proof, player, CTA — so the phone
+       * layout is untouched. On desktop the grid pulls the player into its own
+       * column and the copy and CTA stack beside it, which fills the width
+       * instead of stranding a phone-shaped card in the middle of the screen.
+       */}
+      <div className="flex flex-col lg:grid lg:grid-cols-[1.02fr_1fr] lg:grid-rows-[auto_auto] lg:items-center lg:gap-x-12">
+        <div className="lg:col-start-1 lg:row-start-1">
+          <span className="inline-block rounded-full bg-accent-soft px-4 py-2 text-[11px] font-bold uppercase tracking-[0.1em] text-accent">
+            Free listing diagnostic
           </span>
+          {/* Cold Meta traffic arrives with a wrong belief — that listing video
+              runs hundreds per property. That belief is true of videographers
+              and false of us, so the hook asks the question rather than claiming
+              a loss the numbers can't back. Kept to two lines so the player and
+              CTA clear the fold on a 375px in-app browser. */}
+          <h1 className="font-display mt-3.5 text-[30px] font-bold leading-[1.1] tracking-[-0.02em] text-ink text-balance sm:text-[34px] lg:text-[40px]">
+            What does a listing video actually cost?
+          </h1>
+          <p className="mt-3 text-[14.5px] leading-[1.5] text-ink-soft sm:text-[15.5px] lg:mt-4 lg:text-[16.5px] lg:leading-[1.55]">
+            6 quick questions — your marketing score, the real market rate, and
+            the pack that fits your gallery.
+          </p>
+
+          {/* Proof qualifies the clips you're about to watch. Same faces as the
+              home page hero, so the ad → landing → quiz run shows one set of
+              people. */}
+          <div className="mt-4 flex items-center gap-3 lg:mt-6">
+            <ReviewAvatars size={30} />
+            <div className="flex flex-col leading-none">
+              <Stars />
+              <span className="mt-1 text-[13px] font-semibold text-ink">
+                1,564 tours delivered
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Show the work before asking for two minutes. */}
+        <div className="mt-4 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:mt-0">
+          <Showcase />
+        </div>
+
+        <div className="lg:col-start-1 lg:row-start-2 lg:mt-8">
+          <button
+            type="button"
+            onClick={onStart}
+            className="mt-5 flex h-14 w-full items-center justify-center gap-2.5 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-base font-bold text-white shadow-[0_16px_34px_-12px_rgba(15,125,107,0.6)] transition-all hover:brightness-[1.06] active:scale-[0.99] lg:mt-0 lg:h-[60px] lg:text-[17px]"
+          >
+            Start the diagnostic
+            <Arrow className="h-[18px] w-[18px]" />
+          </button>
+          <p className="mt-3 text-[13px] text-ink-soft">
+            Takes about 2 minutes · No card needed to see your result
+          </p>
         </div>
       </div>
-
-      {/* Show the work before asking for two minutes. */}
-      <div className="mt-4">
-        <Showcase />
-      </div>
-
-      <button
-        type="button"
-        onClick={onStart}
-        className="mt-5 flex h-14 w-full items-center justify-center gap-2.5 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-base font-bold text-white shadow-[0_16px_34px_-12px_rgba(15,125,107,0.6)] transition-all hover:brightness-[1.06] active:scale-[0.99]"
-      >
-        Start the diagnostic
-        <Arrow className="h-[18px] w-[18px]" />
-      </button>
-      <p className="mt-3 text-[13px] text-ink-soft">
-        Takes about 2 minutes · No card needed to see your result
-      </p>
     </Shell>
   );
 }
@@ -485,7 +517,24 @@ function Result({
         </div>
       </div>
 
-      <h2 className="font-display mt-8 text-[24px] font-bold leading-[1.15] text-ink">
+      {/* Proof, then the offer, then the reading.
+       *
+       * The number above is the peak of the whole funnel — that is where intent
+       * is highest, so the buy button belongs here rather than three sections of
+       * prose later. The same before/after rail the home page uses sits directly
+       * above it: it answers "will this actually look good?" at the exact moment
+       * the price is asked for. The diagnosis and plan still follow underneath
+       * for anyone who wants to read before deciding. */}
+      <div className="-mx-5 mt-6 sm:-mx-9">
+        <p className="mb-2.5 px-5 text-center text-[11px] font-bold uppercase tracking-[0.12em] text-ink-soft sm:px-9">
+          Photo in, tour out
+        </p>
+        <BeforeAfterRail height={200} cardWidth={260} />
+      </div>
+
+      <Offer d={d} checkoutUrl={checkoutUrl} label={label} expired={expired} />
+
+      <h2 className="font-display mt-10 text-[24px] font-bold leading-[1.15] text-ink">
         What&apos;s happening with your listings
       </h2>
       <p className="mt-3 text-[15px] leading-[1.6] text-ink-soft">
@@ -516,8 +565,31 @@ function Result({
         ))}
       </div>
 
-      {/* ---- Offer ---- */}
-      <div className="mt-9 rounded-[24px] border border-line bg-paper p-[18px] shadow-[0_26px_64px_-36px_rgba(0,0,0,0.3)]">
+      {/* No free-trial escape hatch here on purpose: checkout is the only exit
+          from this funnel. The guarantee in the offer carries the risk
+          reversal. */}
+    </Shell>
+  );
+}
+
+/**
+ * The offer card. Rendered high on the result — right after the cost figure —
+ * because that is where intent peaks, not after the reading.
+ */
+function Offer({
+  d,
+  checkoutUrl,
+  label,
+  expired,
+}: {
+  d: Diagnosis;
+  checkoutUrl: string;
+  label: string;
+  expired: boolean;
+}) {
+  return (
+    <>
+      <div className="mt-5 rounded-[24px] border border-line bg-paper p-[18px] shadow-[0_26px_64px_-36px_rgba(0,0,0,0.3)]">
         {/* Urgency is the one place a second hue earns its keep: it's the only
             warm element on a cool page, so it isolates without competing with
             the teal buy button. */}
@@ -615,9 +687,6 @@ function Result({
         </p>
         <PaymentLogos />
       </div>
-
-      {/* No free-trial escape hatch here on purpose: checkout is the only exit
-          from this funnel. The guarantee above carries the risk reversal. */}
-    </Shell>
+    </>
   );
 }
