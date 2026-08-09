@@ -1,17 +1,33 @@
 /**
- * The listing-marketing diagnostic — content and scoring for the /f/quiz funnel.
+ * The listing-marketing diagnostic: content and scoring for the /tour funnel.
  *
  * Shape is modelled on the MoleculeData diagnostic: questions with teaching
  * interstitials folded in as steps, so the problem gets installed while the
  * visitor is still answering rather than in a wall of copy at the end.
  *
- * Every number shown in the result is derived from the visitor's own answers and
- * the $300–$1,000 videographer range the marketing site already quotes. Nothing
- * here invents a statistic — an agent will spot a made-up days-on-market figure
+ * POSITIONING (read this before editing any string here). The visitor did not
+ * arrive looking for a video. They arrived to find out how to market a listing
+ * in this market, and that is all this funnel is until the result screen. So:
+ *
+ *   - No price appears anywhere before the result. A price mid-quiz turns a
+ *     diagnostic into an ad, and the visitor re-reads every earlier screen as
+ *     one.
+ *   - The interstitials pay out. Each one hands over something usable on its
+ *     own, sourced to somebody who is not us, because the promise on the way in
+ *     was that they would learn something.
+ *   - The product is never named in a question. "If every listing went out with
+ *     a tour" pre-supposes the answer and tells them what is being sold three
+ *     screens early.
+ *
+ * Every number shown in the result derives from the visitor's own answers and
+ * the $300-$1,000 videographer range the marketing site already quotes. Nothing
+ * here invents a statistic; third-party figures come from `@/lib/proof`, which
+ * carries their attribution. An agent spots a made-up days-on-market figure
  * immediately, and the funnel loses them for good when they do.
  */
 
 import { PACKS, packForPhotoCount, type Pack } from "@/lib/pricing";
+import { SELLERS_EXPECT, type ProofPoint } from "@/lib/proof";
 
 export interface Choice {
   id: string;
@@ -31,17 +47,44 @@ export interface QuestionStep extends BaseStep {
   kind: "question";
   question: Dynamic<string>;
   choices: Dynamic<Choice[]>;
+  /**
+   * An attributed industry figure, rendered small and quiet under the options.
+   *
+   * This is the difference between a form and a briefing. A question screen on
+   * its own asks the visitor to rate how badly they are doing, which is a thing
+   * people leave rather than answer. The same screen with a sourced figure at
+   * the bottom reads as reading material that happens to ask a question, and
+   * the figure does the arguing so we never have to.
+   *
+   * Deliberately not on every screen. On all eight it becomes furniture and
+   * stops being read.
+   */
+  proof?: ProofPoint;
 }
 
 /** Which diagram the funnel renders under a lesson. Kept as a tag rather than a
  *  component so this stays a plain data module with no JSX. */
-export type LessonVisual = "cost" | "feed";
+export type LessonVisual = "gap" | "feed";
 
 export interface LessonStep extends BaseStep {
   kind: "lesson";
+  /** Eyebrow above the title. Frames the screen as a finding, not a pitch. */
+  eyebrow?: string;
   title: string;
   body: (a: Answers) => string;
   visual?: LessonVisual;
+  /**
+   * The payout. One instruction they can act on tonight without buying
+   * anything.
+   *
+   * This is the part that makes the whole funnel honest. The landing page
+   * promises they will learn how to market a listing; if every interstitial
+   * only softens them up for the offer, the promise was bait and the result
+   * screen is where they realise it. A takeaway that works standalone is also
+   * the strongest possible setup for the offer, because it proves we know the
+   * job before we ask for money.
+   */
+  takeaway?: string;
 }
 
 export type Step = QuestionStep | LessonStep;
@@ -79,8 +122,14 @@ const ALL_STEPS: Step[] = [
       { id: "photos", label: "The photos don't do it justice" },
       { id: "cost", label: "Video costs too much" },
       { id: "time", label: "I've no time to make content" },
-      { id: "unsure", label: "Not sure — it just feels off" },
+      { id: "unsure", label: "Not sure, it just feels off" },
     ],
+    // The first screen is the one that has to establish this is a briefing
+    // rather than a lead form, so the strongest figure we have goes here. It is
+    // also the only one that reframes the whole quiz before they answer it:
+    // marketing is not a cost they choose to absorb, it is something sellers
+    // are already grading them on.
+    proof: SELLERS_EXPECT,
   },
   {
     kind: "question",
@@ -108,26 +157,32 @@ const ALL_STEPS: Step[] = [
   },
   {
     kind: "lesson",
-    id: "lesson_cost",
-    visual: "cost",
-    title: "This is why video doesn't make it onto every property.",
-    body: (a) => {
-      const c = videographerCost(a);
-      if (c.single) {
-        return (
-          `A videographer runs ${usd(c.low)}–${usd(c.high)} for a single property, ` +
-          `on top of the photographer you're already paying. For one sale that's a ` +
-          `real decision — which is why most homes go to market with stills and hope, ` +
-          `even when the property could carry far more.`
-        );
-      }
-      return (
-        `At ${c.perYear} listings a year, covering each one with a videographer runs ` +
-        `${usd(c.low)}–${usd(c.high)}. That's the real reason video gets saved for the ` +
-        `expensive properties — the cost scales with every listing you take on, so the ` +
-        `ordinary ones go out with photos and hope.`
-      );
-    },
+    id: "lesson_gap",
+    visual: "gap",
+    eyebrow: "What the research says",
+    /**
+     * Was a price comparison. It is now the single most valuable screen in the
+     * funnel and mentions no price at all.
+     *
+     * The old version put our own cost chart in front of someone who had
+     * answered three questions and been promised a diagnostic. It converted the
+     * screen into an ad, and everything after it read as one. This version
+     * hands them a genuine finding about their own market and lets the finding
+     * sell: a demand number and a supply number that do not match. An agent
+     * does not need the conclusion spelled out, and spelling it out is what
+     * would make them suspicious of it.
+     */
+    title: "The gap almost nobody in your market is filling.",
+    body: () =>
+      "Sellers grade your marketing before they grade you. Ask any of them what " +
+      "they looked at before the listing appointment and it is your last few " +
+      "listings, not your credentials. What the research keeps finding is that " +
+      "most of them now expect motion, and almost none of the agents pitching " +
+      "against you are giving it to them. Demand went up. Supply did not.",
+    takeaway:
+      "Try this on your next listing appointment: open with what you will do to " +
+      "market the property, before you talk about price or commission. It is the " +
+      "part sellers came to hear and the part most agents leave until last.",
   },
   {
     kind: "question",
@@ -144,17 +199,41 @@ const ALL_STEPS: Step[] = [
     kind: "lesson",
     id: "lesson_feed",
     visual: "feed",
+    eyebrow: "Where it actually gets found",
     title: "Buyers scroll before they ever browse.",
+    /**
+     * Kept, tightened, and given a payout. The angle was already right: it is
+     * the only screen that explains why the format matters at all, and it does
+     * it without asking anyone to believe a number.
+     *
+     * Shorter than it was. This lands about halfway through, which is where
+     * people start deciding whether the rest is worth it, and a six-line
+     * paragraph at that exact point is what makes them decide it is not.
+     */
     body: () =>
-      "A property now gets discovered in a feed, not on a portal — and a feed rewards " +
-      "motion. A still gallery asks someone to stop and tap through. A moving tour " +
-      "earns the stop by itself, which is why the same property performs differently " +
-      "depending only on the format it went out in.",
+      "A property gets discovered in a feed now, not on a portal, and a feed " +
+      "rewards motion. A still gallery asks someone to stop and tap through. " +
+      "Something that moves earns the stop on its own. Same property, same " +
+      "photos, different result, decided only by the format it went out in.",
+    takeaway:
+      "Free win tonight: whatever you post next, lead with the shot that has " +
+      "depth in it, a hallway or a view through a doorway, not the front " +
+      "elevation. Depth is what stops a thumb. Every agent in your market opens " +
+      "with the front of the house.",
   },
   {
     kind: "question",
     id: "photos",
-    question: "How many photos does the gallery have?",
+    /**
+     * Was "How many photos does the gallery have?", which reads like a form
+     * field written by somebody who has never spoken to an agent. Split by
+     * branch: an agent is thinking about what their photographer hands back,
+     * and a single seller has no photographer and no "gallery".
+     */
+    question: (a) =>
+      isMultiListing(a)
+        ? "How many photos does your photographer usually deliver?"
+        : "How many photos do you have of the property?",
     choices: [
       { id: "p10", label: "Under 15" },
       { id: "p20", label: "15–25" },
@@ -167,26 +246,44 @@ const ALL_STEPS: Step[] = [
     id: "goal",
     /**
      * Future-pacing, and deliberately last. They picture the outcome and commit
-     * to one, and the 30-day plan is then framed as the route to the thing they
-     * just chose — their goal, not our pitch.
+     * to one, and the plan is then framed as the route to the thing they just
+     * chose: their goal, not our pitch.
+     *
+     * The old wording was "If every listing went out with a tour". That names
+     * the product two screens before the result and turns the last question
+     * into the pitch, so the answer they give is an answer to an ad. Asking
+     * about the marketing being handled well keeps the frame the landing page
+     * set, and the answer stays theirs.
      */
     question: (a) =>
       isMultiListing(a)
-        ? "If every listing went out with a tour, what would that win you?"
-        : "If your listing went out with a tour, what would that win you?",
+        ? "If every listing you took was marketed properly, what would you want it to win you?"
+        : "If this property were marketed properly, what would you want it to win you?",
     choices: (a) =>
       isMultiListing(a)
         ? [
-            { id: "listings", label: "More listings — it's what I'd pitch to win them" },
-            { id: "faster", label: "Faster sales — fewer days on market" },
-            { id: "offers", label: "Better offers — the property shows at its best" },
-            { id: "time", label: "My time back — no shoots to schedule" },
+            {
+              id: "listings",
+              label: "More listings. It is what I would pitch to win them",
+            },
+            { id: "faster", label: "Faster sales, fewer days on market" },
+            {
+              id: "offers",
+              label: "Better offers, because it shows at its best",
+            },
+            { id: "time", label: "My time back, with nothing to schedule" },
           ]
         : [
             { id: "faster", label: "A faster sale" },
-            { id: "offers", label: "Stronger offers — it shows at its best" },
+            {
+              id: "offers",
+              label: "Stronger offers, because it shows at its best",
+            },
             { id: "viewings", label: "More viewings booked" },
-            { id: "confidence", label: "Knowing it's being marketed properly" },
+            {
+              id: "confidence",
+              label: "Knowing it is being marketed properly",
+            },
           ],
   },
 ];
@@ -200,10 +297,20 @@ export function visibleSteps(a: Answers): Step[] {
 const PER_YEAR: Record<string, number> = { v1: 12, v2: 30, v3: 72, v4: 120 };
 
 /** Midpoint photo count per band — feeds the pack recommendation. */
-const PHOTO_COUNT: Record<string, number> = { p10: 12, p20: 22, p35: 35, p50: 45 };
+const PHOTO_COUNT: Record<string, number> = {
+  p10: 12,
+  p20: 22,
+  p35: 35,
+  p50: 45,
+};
 
 /** Maturity points. Lower total = more headroom, which the result leans on. */
-const TODAY_POINTS: Record<string, number> = { none: 0, photos: 12, phone: 24, pro: 38 };
+const TODAY_POINTS: Record<string, number> = {
+  none: 0,
+  photos: 12,
+  phone: 24,
+  pro: 38,
+};
 const PAIN_POINTS: Record<string, number> = {
   slow: 6,
   photos: 8,
@@ -215,6 +322,24 @@ const PAIN_POINTS: Record<string, number> = {
 export function usd(n: number): string {
   return `$${Math.round(n).toLocaleString("en-US")}`;
 }
+
+/**
+ * One videographer, one property, at the conservative end of the market.
+ *
+ * The result screen compares a single number against a single number, because
+ * that is the comparison the buyer is actually making at that moment: this
+ * property, this week, one way or the other. A range against a range makes the
+ * reader do arithmetic at the exact point they were about to decide, and the
+ * annual figure the old card showed compared a year of their listings against a
+ * year of ours, which is a bigger and less believable claim than the one we
+ * need.
+ *
+ * $500 sits low inside the $300-$1,000 range the marketing site quotes and the
+ * lesson screens teach. Understating the comparison costs a little contrast and
+ * buys the thing worth more: an agent who has actually paid a videographer
+ * recognises the number instead of arguing with it.
+ */
+export const VIDEOGRAPHER_TYPICAL = 500;
 
 /** What covering their listings costs at market rate — annual, or per-property. */
 export function videographerCost(a: Answers) {
@@ -255,11 +380,21 @@ const TIERS_MULTI = [
   "Steady marketer",
   "Full-funnel operator",
 ];
+/**
+ * The single-property ladder.
+ *
+ * "Well-marketed listing" sat one rung below the top, which is a contradiction
+ * the reader notices before they notice their score: if it is well marketed,
+ * what is the rung above it, and why am I being sold something? A ladder only
+ * works when each rung is obviously short of the next one. These are phrased as
+ * how much marketing the property is getting, not as a verdict on whether it is
+ * good enough, so the gap is a quantity rather than an insult.
+ */
 const TIERS_SINGLE = [
-  "Under-marketed listing",
+  "Under-marketed",
   "Standard listing",
-  "Well-marketed listing",
-  "Fully marketed listing",
+  "Ahead of the block",
+  "Fully marketed",
 ];
 
 export function tiers(single: boolean): string[] {
@@ -307,8 +442,35 @@ const PAIN_ECHO: Record<string, string> = {
   photos: "You said the photos don't do it justice.",
   cost: "You said video costs too much.",
   time: "You said there's no time to make the content.",
-  unsure: "You weren't sure what's wrong — only that something feels off.",
+  unsure: "You weren't sure what's wrong, only that something feels off.",
 };
+
+/**
+ * The pain echo on its own.
+ *
+ * `diagnose()` glues it to the situation paragraph, but the nurture emails open
+ * on it as a standalone line, and reading their own words back in the first
+ * sentence is what separates a follow-up from a broadcast. Exported rather than
+ * copied so the two can never disagree about what the visitor said.
+ */
+export function painEcho(a: Answers): string {
+  return PAIN_ECHO[a.pain] ?? "";
+}
+
+/**
+ * The exact option they tapped, word for word.
+ *
+ * Quoting the choice beats restating it. "You said video costs too much" is a
+ * template filling a slot, and it reads like one; «you picked "Video costs too
+ * much"» is a quote of something they actually did, which is both true and
+ * obviously true to the reader. Pulled from ALL_STEPS so it cannot drift from
+ * the wording on the screen they tapped it on.
+ */
+export function painLabel(a: Answers): string {
+  const q = ALL_STEPS.find((s) => s.id === "pain");
+  if (!q || q.kind !== "question") return "";
+  return resolve(q.choices, a).find((c) => c.id === a.pain)?.label ?? "";
+}
 
 const GOAL_PHRASE: Record<string, string> = {
   listings: "winning more listings",

@@ -58,7 +58,12 @@ const VIDEO = {
 /** Solid badge, not an outline — at 17px an outlined tick reads as a smudge. */
 function Verified({ className = "" }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" aria-label="Verified">
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-label="Verified"
+    >
       <circle cx="12" cy="12" r="11" fill="currentColor" />
       <path
         d="M7.4 12.3l3.1 3.1 6.1-6.3"
@@ -73,7 +78,12 @@ function Verified({ className = "" }: { className?: string }) {
 
 function Speaker({ on, className = "" }: { on: boolean; className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
       <path d="M4 9.5v5h3.2L12 18.5v-13L7.2 9.5H4Z" fill="currentColor" />
       {on ? (
         <path
@@ -127,7 +137,9 @@ function Head({ name, avatar }: { name: string; avatar: string }) {
 
 function Quote({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mt-3.5 text-[15px] leading-[1.55] text-ink-soft">{children}</p>
+    <p className="mt-3.5 text-[15px] leading-[1.55] text-ink-soft">
+      {children}
+    </p>
   );
 }
 
@@ -171,16 +183,39 @@ function VideoTestimonial() {
         preload="metadata"
         className="aspect-[4/5] w-full object-cover"
       />
-      <span
-        className={`absolute bottom-2.5 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-bold backdrop-blur-sm transition-colors ${
-          sound
-            ? "bg-night/60 text-cream"
-            : "bg-cream/95 text-ink shadow-[0_4px_14px_rgba(0,0,0,0.3)]"
-        }`}
-      >
-        <Speaker on={sound} className="h-[15px] w-[15px]" />
-        {sound ? "Sound on" : "Tap for sound"}
-      </span>
+      {/*
+       * No browser will autoplay audio, so the tap is the only route to the
+       * voiceover and the affordance has to carry that on its own.
+       *
+       * While muted it gets the full treatment: a scrim so the badge survives
+       * whatever frame is behind it, a pulsing ring around a large speaker
+       * button, and the label. Motion is what earns the tap here, and the video
+       * underneath is already moving, so a static pill loses to its own
+       * background. Once the sound is on all of it collapses to a small corner
+       * chip, because at that point it is a mute control and nothing more.
+       */}
+      {!sound && (
+        <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-night/70 via-transparent to-night/25" />
+      )}
+
+      {sound ? (
+        <span className="absolute bottom-2.5 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-night/60 px-3 py-1.5 text-[12px] font-bold text-cream backdrop-blur-sm">
+          <Speaker on className="h-[15px] w-[15px]" />
+          Sound on
+        </span>
+      ) : (
+        <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3">
+          <span className="relative flex h-[54px] w-[54px] items-center justify-center">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cream/45" />
+            <span className="relative flex h-[54px] w-[54px] items-center justify-center rounded-full bg-cream text-ink shadow-[0_8px_24px_rgba(0,0,0,0.45)]">
+              <Speaker on={false} className="h-6 w-6" />
+            </span>
+          </span>
+          <span className="rounded-full bg-cream/95 px-3.5 py-1.5 text-[12.5px] font-bold text-ink shadow-[0_4px_14px_rgba(0,0,0,0.3)]">
+            Tap to hear it
+          </span>
+        </span>
+      )}
     </button>
   );
 }
@@ -199,11 +234,24 @@ export function Testimonials() {
       ref={ref}
       className="mt-9 lg:relative lg:left-1/2 lg:w-screen lg:max-w-[1120px] lg:-translate-x-1/2 lg:px-8"
     >
+      {/* "What agents say" is a section label. "Word on the street" is how the
+          job actually talks about reputation, and it frames the block as
+          something overheard rather than something we collected and arranged. */}
       <p className="text-center text-[11px] font-bold uppercase tracking-[0.12em] text-ink-soft">
-        What agents say
+        Word on the street
       </p>
 
       <div className="mt-4 grid gap-3.5 lg:grid-cols-3">
+        {/* The video goes first, and it is the only one of the three that is a
+            real customer. Burying the strongest and most verifiable proof in
+            position three meant most readers never reached it: on mobile the
+            cards stack, so third is roughly two screens below the button. */}
+        <Shell>
+          <Head name={VIDEO.name} avatar={VIDEO.avatar} />
+          <Quote>{VIDEO.quote}</Quote>
+          <VideoTestimonial />
+        </Shell>
+
         {CARDS.map((c) => (
           <Shell key={c.name}>
             <Head name={c.name} avatar={c.avatar} />
@@ -218,12 +266,6 @@ export function Testimonials() {
             </div>
           </Shell>
         ))}
-
-        <Shell>
-          <Head name={VIDEO.name} avatar={VIDEO.avatar} />
-          <Quote>{VIDEO.quote}</Quote>
-          <VideoTestimonial />
-        </Shell>
       </div>
     </div>
   );

@@ -96,7 +96,7 @@ export default function QuestionsPage() {
               }`}
               note={
                 s.kind === "lesson"
-                  ? "Not a question. Problem-agitation wearing a step number, shown after the answer that makes it relevant."
+                  ? "Not a question. Teaching that pays out: an attributed finding plus one thing they can use tonight without buying anything."
                   : undefined
               }
             >
@@ -122,7 +122,7 @@ export default function QuestionsPage() {
 
           <Frame
             label={`${STEPS.length + 4} · Result + checkout`}
-            note="Scroll it — score, the cost figure from their own answers, 30-day plan, then the offer with the countdown."
+            note="The only screen that names the product. Score, the per-property comparison, then the offer with the countdown."
           >
             <QuizFunnel
               initial={{
@@ -153,8 +153,8 @@ export default function QuestionsPage() {
               isolate without competing with the buy button.
             </li>
             <li>
-              <strong className="text-slate-900">Cream, not navy.</strong>{" "}
-              Warm neutral reads as &ldquo;home&rdquo;; indigo reads fintech.
+              <strong className="text-slate-900">Cream, not navy.</strong> Warm
+              neutral reads as &ldquo;home&rdquo;; indigo reads fintech.
               Category congruence beats borrowed styling.
             </li>
             <li>

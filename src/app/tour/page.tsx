@@ -10,9 +10,9 @@ import { QuizPage } from "@/components/quiz/QuizPage";
  * of it are still crawled.
  */
 export const metadata: Metadata = {
-  title: "What does a listing video actually cost? — Tourly",
+  title: "How to market your listings in today's market — Tourly",
   description:
-    "Answer 6 quick questions and get a personalised listing plan: your marketing score, the real market rate for video, and the pack that fits your gallery.",
+    "A free 2-minute diagnostic for agents: your listing marketing score, the one gap costing you the most, and what the agents winning listings are doing differently.",
   robots: { index: false, follow: true },
 };
 

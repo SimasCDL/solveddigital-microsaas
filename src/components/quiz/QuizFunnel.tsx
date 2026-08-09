@@ -5,16 +5,18 @@ import { Shield, Arrow, Bolt } from "@/components/site/icons";
 import { Stars } from "@/components/site/Stars";
 import { PaymentLogos } from "@/components/site/PaymentLogos";
 import { ReviewAvatars } from "@/components/site/ReviewsRow";
-import { Showcase } from "@/components/quiz/Showcase";
 import { LessonArt } from "@/components/quiz/LessonArt";
+import { ProofNote } from "@/components/quiz/ProofNote";
 import { BeforeAfterRail } from "@/components/sections/BeforeAfterRail";
 import { Testimonials } from "@/components/quiz/Testimonials";
 import { packCheckoutUrl, discountPct } from "@/lib/pricing";
+import { track } from "@/lib/track";
 import {
   visibleSteps,
   diagnose,
   resolve,
   usd,
+  VIDEOGRAPHER_TYPICAL,
   type Answers,
   type Diagnosis,
 } from "@/lib/quiz";
@@ -62,7 +64,8 @@ function useOfferCountdown(active: boolean) {
     let end: number;
     try {
       const saved = Number(localStorage.getItem(OFFER_KEY));
-      end = !saved || Number.isNaN(saved) || saved < Date.now() ? fresh() : saved;
+      end =
+        !saved || Number.isNaN(saved) || saved < Date.now() ? fresh() : saved;
     } catch {
       end = Date.now() + OFFER_SECONDS * 1000;
     }
@@ -124,7 +127,13 @@ export function QuizFunnel({ initial }: { initial?: QuizInitialState } = {}) {
   const steps = useMemo(() => visibleSteps(answers), [answers]);
   const total = steps.length;
   const step = steps[Math.min(index, total - 1)];
-  const stepsLeft = total - index - 1;
+
+  /**
+   * Straight arithmetic, no flattery. Starting a visitor at a padded 20% is a
+   * lie they catch on the second screen, when it moves by less than the first
+   * one did, and the whole bar stops meaning anything after that.
+   */
+  const pctComplete = Math.round(((index + 1) / total) * 100);
 
   // Each step is its own screen, so the next one has to start at the top. Off in
   // preview, where a dozen mounted funnels would fight over the page scroll.
@@ -134,12 +143,32 @@ export function QuizFunnel({ initial }: { initial?: QuizInitialState } = {}) {
     topRef.current?.scrollIntoView({ block: "start" });
   }, [index, phase, isPreview]);
 
+  // One effect covers every screen change, so instrumenting the whole funnel
+  // costs a single call site instead of one per transition. Off in preview,
+  // where a dozen mounted funnels would each report a visit.
+  useEffect(() => {
+    if (isPreview) return;
+    if (phase === "steps") {
+      track("step_view", { stepId: step?.id, stepIndex: index + 1 });
+    } else if (phase === "intro") track("quiz_start");
+    else if (phase === "email") track("gate_view");
+    else if (phase === "analyzing") track("lead");
+    else if (phase === "result") track("result_view");
+  }, [phase, index, step?.id, isPreview]);
+
   const advance = () => {
     if (index + 1 < total) setIndex(index + 1);
     else setPhase("email");
   };
 
   const answer = (id: string) => {
+    if (!isPreview) {
+      track("step_answer", {
+        stepId: step.id,
+        stepIndex: index + 1,
+        answer: id,
+      });
+    }
     setAnswers((a) => ({ ...a, [step.id]: id }));
     advance();
   };
@@ -161,7 +190,8 @@ export function QuizFunnel({ initial }: { initial?: QuizInitialState } = {}) {
     setTimeout(() => setPhase("result"), 2200);
   };
 
-  if (phase === "intro") return <Intro onStart={() => setPhase("steps")} ref={topRef} />;
+  if (phase === "intro")
+    return <Intro onStart={() => setPhase("steps")} ref={topRef} />;
 
   if (phase === "analyzing") return <Analyzing ref={topRef} />;
 
@@ -171,11 +201,23 @@ export function QuizFunnel({ initial }: { initial?: QuizInitialState } = {}) {
   if (phase === "email")
     return (
       <Shell ref={topRef}>
+        {/*
+         * "Your listing plan is ready" implied a deliverable was already built,
+         * which invites the reader to wonder what it is and whether they are
+         * about to be sold it. The honest and quieter version is that the thing
+         * they just did has finished: their answers are scored, and the result
+         * is on the other side of this field.
+         *
+         * Nothing here mentions a video. They have not been told that is the
+         * answer yet, and finding out at the email gate would read as a bait
+         * switch at the exact moment we ask them to trust us with an address.
+         */}
         <h2 className="font-display text-center text-[27px] font-bold leading-tight text-ink">
-          Your listing plan is ready.
+          Your diagnostic is done.
         </h2>
-        <p className="mx-auto mt-2.5 max-w-[20rem] text-center text-[15px] leading-[1.5] text-ink-soft">
-          See it right here — and we&apos;ll send a copy to your inbox.
+        <p className="mx-auto mt-2.5 max-w-[21rem] text-center text-[15px] leading-[1.5] text-ink-soft">
+          See your score and what to fix first. We&apos;ll email you a copy so
+          you still have it after you close this.
         </p>
 
         <input
@@ -191,7 +233,7 @@ export function QuizFunnel({ initial }: { initial?: QuizInitialState } = {}) {
           onClick={submitEmail}
           className="mt-3 flex h-14 w-full items-center justify-center gap-2.5 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-base font-bold text-white shadow-[0_16px_34px_-12px_rgba(15,125,107,0.6)] transition-all hover:brightness-[1.06] active:scale-[0.99]"
         >
-          Get my listing plan
+          Show me my result
           <Arrow className="h-[18px] w-[18px]" />
         </button>
 
@@ -203,7 +245,7 @@ export function QuizFunnel({ initial }: { initial?: QuizInitialState } = {}) {
             className="mt-[3px] h-4 w-4 shrink-0 accent-[#0f7d6b]"
           />
           <span>
-            Send me my listing plan by email. I&apos;ve read the{" "}
+            Email me my result and marketing plan. I&apos;ve read the{" "}
             <a href="/privacy" className="underline decoration-ink-soft/40">
               privacy policy
             </a>
@@ -214,7 +256,7 @@ export function QuizFunnel({ initial }: { initial?: QuizInitialState } = {}) {
         {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
         <p className="mt-6 text-center text-[13px] text-ink-soft">
-          Join the agents already marketing every listing with video
+          No spam. Unsubscribe in one click, any time.
         </p>
       </Shell>
     );
@@ -222,18 +264,31 @@ export function QuizFunnel({ initial }: { initial?: QuizInitialState } = {}) {
   // --- Question / lesson steps -------------------------------------------
   return (
     <Shell ref={topRef}>
+      {/*
+       * Progress is stated as work banked, never as work remaining.
+       *
+       * "7 steps left" is a chore counter. It is read at the exact moment the
+       * visitor is deciding whether this is worth two minutes, and it answers
+       * "no" for them: they have done one thing and seven remain. Percent
+       * complete describes the identical position with the sign flipped, and it
+       * only ever goes up. It also stops rewarding the skim, because there is
+       * no countdown to watch tick toward an exit.
+       *
+       * Hiding it entirely tested worse in every funnel that has tried it: a
+       * bar with no number reads as an unknown length, and people do not start
+       * things of unknown length. The label is what turns the bar into a
+       * promise the intro already made.
+       */}
       <div className="flex items-center justify-between text-[13px] text-ink-soft">
-        <span>Question {index + 1}</span>
-        <span>
-          {stepsLeft === 0
-            ? "Last one"
-            : `${stepsLeft} step${stepsLeft === 1 ? "" : "s"} left`}
+        <span>{step.kind === "lesson" ? "Your diagnostic" : "Diagnostic"}</span>
+        <span className="font-semibold tabular-nums text-ink">
+          {pctComplete}% complete
         </span>
       </div>
       <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-line">
         <div
           className="h-full rounded-full bg-accent transition-[width] duration-300 ease-out"
-          style={{ width: `${((index + 1) / total) * 100}%` }}
+          style={{ width: `${pctComplete}%` }}
         />
       </div>
 
@@ -266,16 +321,42 @@ export function QuizFunnel({ initial }: { initial?: QuizInitialState } = {}) {
               </button>
             ))}
           </div>
+
+          {step.proof && <ProofNote point={step.proof} />}
         </>
       ) : (
         <>
-          <h2 className="font-display mt-8 text-center text-[25px] font-bold leading-[1.18] text-ink">
+          {step.eyebrow && (
+            <p className="mt-8 text-center text-[11px] font-bold uppercase tracking-[0.14em] text-accent">
+              {step.eyebrow}
+            </p>
+          )}
+          <h2
+            className={`font-display text-center text-[25px] font-bold leading-[1.18] text-ink ${
+              step.eyebrow ? "mt-2.5" : "mt-8"
+            }`}
+          >
             {step.title}
           </h2>
           <p className="mt-4 text-center text-[15px] leading-[1.6] text-ink-soft">
             {step.body(answers)}
           </p>
-          <LessonArt kind={step.visual} answers={answers} />
+          <LessonArt kind={step.visual} />
+
+          {/* The payout, and the reason this screen is not an ad.
+              Left-aligned and rule-separated rather than boxed in accent: this
+              is a note handed over, not a callout selling the note. */}
+          {step.takeaway && (
+            <div className="mt-5 border-l-2 border-accent pl-4">
+              <p className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-accent">
+                Take this with you
+              </p>
+              <p className="mt-1.5 text-[14.5px] leading-[1.55] text-ink">
+                {step.takeaway}
+              </p>
+            </div>
+          )}
+
           <button
             type="button"
             onClick={advance}
@@ -344,78 +425,82 @@ const Shell = function Shell({
   );
 };
 
-function Intro({ onStart, ref }: { onStart: () => void; ref?: React.Ref<HTMLDivElement> }) {
+/**
+ * The intro.
+ *
+ * This screen carries the repositioning on its own, so what is NOT here matters
+ * more than what is.
+ *
+ * The showcase player is gone. Four tour clips above the fold answered a
+ * question nobody had asked yet and gave away the ending: anyone who watched
+ * them knew within two seconds that this was a company selling listing videos,
+ * which meant the six questions that followed were a sales form and got treated
+ * like one. The clips were also the single most expensive thing on the page for
+ * mobile ad traffic, and they were competing with the only control that
+ * matters.
+ *
+ * What replaces it is nothing. Headline, promise, one button. The visitor's
+ * whole model of this page should be "somebody is about to tell me how to
+ * market a listing", and every element removed from this screen makes that
+ * model easier to hold. The product gets introduced on the result screen, after
+ * they have been paid back twice for their attention.
+ *
+ * Proof sits BELOW the button now rather than above it. Above, it is a claim
+ * they have no reason to care about yet, and it pushes the button down. Below,
+ * it is reassurance collected on the way past, in the position where somebody
+ * who has already decided glances for a reason not to.
+ */
+function Intro({
+  onStart,
+  ref,
+}: {
+  onStart: () => void;
+  ref?: React.Ref<HTMLDivElement>;
+}) {
   return (
-    <Shell wide ref={ref}>
-      {/*
-       * One column on phones, two from `lg`.
-       *
-       * Mobile keeps its DOM order — copy, proof, player, CTA — so the phone
-       * layout is untouched. On desktop the grid pulls the player into its own
-       * column and the copy and CTA stack beside it, which fills the width
-       * instead of stranding a phone-shaped card in the middle of the screen.
-       */}
-      {/*
-       * `contents` is doing the real work here. On desktop the copy and the CTA
-       * have to be one stacked column beside the media; on mobile the media has
-       * to sit between them. Splitting them across two grid rows put the button
-       * in a row the taller media column stretched, which is what left that
-       * canyon of empty space under the proof line.
-       *
-       * So they live in one wrapper that is a grid item at lg and dissolves into
-       * its parent below it, letting `order` interleave all three on mobile.
-       */}
-      <div className="flex flex-col lg:grid lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-x-14">
-        <div className="contents lg:block">
-          <div className="order-1 lg:order-none">
-          <span className="inline-block rounded-full bg-accent-soft px-4 py-2 text-[11px] font-bold uppercase tracking-[0.1em] text-accent [@media(min-width:1450px)_and_(min-height:860px)]:px-5 [@media(min-width:1450px)_and_(min-height:860px)]:py-2.5 [@media(min-width:1450px)_and_(min-height:860px)]:text-[12.5px]">
-            Free listing diagnostic
-          </span>
-          {/* Cold Meta traffic arrives with a wrong belief — that listing video
-              runs hundreds per property. That belief is true of videographers
-              and false of us, so the hook asks the question rather than claiming
-              a loss the numbers can't back. Kept to two lines so the player and
-              CTA clear the fold on a 375px in-app browser. */}
-          <h1 className="font-display mt-3.5 text-[30px] font-bold leading-[1.1] tracking-[-0.02em] text-ink text-balance sm:text-[34px] lg:text-[40px] [@media(min-width:1450px)_and_(min-height:860px)]:mt-5 [@media(min-width:1450px)_and_(min-height:860px)]:text-[52px]">
-            What does a listing video actually cost?
-          </h1>
-          <p className="mt-3 text-[14.5px] leading-[1.5] text-ink-soft sm:text-[15.5px] lg:mt-4 lg:text-[16.5px] lg:leading-[1.55] [@media(min-width:1450px)_and_(min-height:860px)]:mt-5 [@media(min-width:1450px)_and_(min-height:860px)]:text-[19px]">
-            6 quick questions — your marketing score, the real market rate, and
-            the pack that fits your gallery.
-          </p>
+    <Shell ref={ref}>
+      <div className="text-center">
+        <span className="inline-block rounded-full bg-accent-soft px-4 py-2 text-[11px] font-bold uppercase tracking-[0.1em] text-accent [@media(min-width:1450px)_and_(min-height:860px)]:px-5 [@media(min-width:1450px)_and_(min-height:860px)]:py-2.5 [@media(min-width:1450px)_and_(min-height:860px)]:text-[12.5px]">
+          Free listing diagnostic
+        </span>
 
-          {/* Proof qualifies the clips you're about to watch. Same faces as the
-              home page hero, so the ad → landing → quiz run shows one set of
-              people. */}
-          <div className="mt-4 flex items-center gap-3 lg:mt-6">
-            <ReviewAvatars size={30} />
-            <div className="flex flex-col leading-none">
-              <Stars />
-              <span className="mt-1 text-[13px] font-semibold text-ink">
-                1,564 tours delivered
-              </span>
-              </div>
-            </div>
+        {/* The old headline asked what a listing video costs, which answers the
+            question of what we sell before asking whether they want it. This one
+            makes a promise about their job instead of ours. Kept to three short
+            lines so the button clears the fold on a 375px in-app browser. */}
+        <h1 className="font-display mt-4 text-[32px] font-bold leading-[1.08] tracking-[-0.02em] text-ink text-balance sm:text-[38px] lg:text-[44px] [@media(min-width:1450px)_and_(min-height:860px)]:mt-6 [@media(min-width:1450px)_and_(min-height:860px)]:text-[56px]">
+          How to market your listings in today&apos;s market
+        </h1>
+
+        <p className="mx-auto mt-4 max-w-[30rem] text-[15px] leading-[1.55] text-ink-soft text-balance sm:text-[16.5px] lg:text-[17.5px] [@media(min-width:1450px)_and_(min-height:860px)]:mt-6 [@media(min-width:1450px)_and_(min-height:860px)]:max-w-[38rem] [@media(min-width:1450px)_and_(min-height:860px)]:text-[20px]">
+          Six questions, and you get your listing marketing score, the one gap
+          costing you the most right now, and what the agents winning listings
+          are doing differently.
+        </p>
+
+        <button
+          type="button"
+          onClick={onStart}
+          className="mt-7 flex h-14 w-full items-center justify-center gap-2.5 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-base font-bold text-white shadow-[0_16px_34px_-12px_rgba(15,125,107,0.6)] transition-all hover:brightness-[1.06] active:scale-[0.99] lg:h-[60px] lg:text-[17px] [@media(min-width:1450px)_and_(min-height:860px)]:mt-9 [@media(min-width:1450px)_and_(min-height:860px)]:h-[70px] [@media(min-width:1450px)_and_(min-height:860px)]:text-[19px]"
+        >
+          Start the diagnostic
+          <Arrow className="h-[18px] w-[18px] [@media(min-width:1450px)_and_(min-height:860px)]:h-5 [@media(min-width:1450px)_and_(min-height:860px)]:w-5" />
+        </button>
+
+        <p className="mt-3 text-[13px] text-ink-soft [@media(min-width:1450px)_and_(min-height:860px)]:mt-4 [@media(min-width:1450px)_and_(min-height:860px)]:text-[14.5px]">
+          Takes about 2 minutes · No card needed
+        </p>
+
+        {/* Same faces as the home page hero, so the ad, landing and quiz run
+            shows one consistent set of people. */}
+        <div className="mt-8 flex items-center justify-center gap-3 [@media(min-width:1450px)_and_(min-height:860px)]:mt-11">
+          <ReviewAvatars size={30} />
+          <div className="flex flex-col items-start leading-none">
+            <Stars />
+            <span className="mt-1 text-[13px] font-semibold text-ink">
+              1,564 tours delivered
+            </span>
           </div>
-
-          <div className="order-3 lg:order-none lg:mt-9">
-            <button
-              type="button"
-              onClick={onStart}
-              className="mt-5 flex h-14 w-full items-center justify-center gap-2.5 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-base font-bold text-white shadow-[0_16px_34px_-12px_rgba(15,125,107,0.6)] transition-all hover:brightness-[1.06] active:scale-[0.99] lg:mt-0 lg:h-[60px] lg:text-[17px] [@media(min-width:1450px)_and_(min-height:860px)]:h-[70px] [@media(min-width:1450px)_and_(min-height:860px)]:text-[19px]"
-            >
-              Start the diagnostic
-              <Arrow className="h-[18px] w-[18px] [@media(min-width:1450px)_and_(min-height:860px)]:h-5 [@media(min-width:1450px)_and_(min-height:860px)]:w-5" />
-            </button>
-            <p className="mt-3 text-[13px] text-ink-soft [@media(min-width:1450px)_and_(min-height:860px)]:mt-4 [@media(min-width:1450px)_and_(min-height:860px)]:text-[14.5px]">
-              Takes about 2 minutes · No card needed to see your result
-            </p>
-          </div>
-        </div>
-
-        {/* Show the work before asking for two minutes. */}
-        <div className="order-2 mt-4 lg:order-none lg:mt-0">
-          <Showcase />
         </div>
       </div>
     </Shell>
@@ -427,7 +512,7 @@ function Analyzing({ ref }: { ref?: React.Ref<HTMLDivElement> }) {
     <Shell ref={ref}>
       <div className="flex flex-col items-center py-24">
         <div className="h-12 w-12 animate-spin rounded-full border-[3px] border-line border-t-accent" />
-        <p className="mt-6 text-[15px] text-ink-soft">Building your listing plan…</p>
+        <p className="mt-6 text-[15px] text-ink-soft">Scoring your answers…</p>
       </div>
     </Shell>
   );
@@ -457,9 +542,7 @@ function TierLadder({ d }: { d: Diagnosis }) {
           <span
             key={t}
             className={`flex-1 text-center text-[10px] leading-[1.25] ${
-              i === d.tier
-                ? "font-bold text-accent"
-                : "text-ink-soft/70"
+              i === d.tier ? "font-bold text-accent" : "text-ink-soft/70"
             }`}
           >
             {t}
@@ -513,19 +596,29 @@ function Result({
 
       {/* Two rows, no prose. The comparison is the argument — a sentence
           explaining it only delays the offer. */}
+      {/*
+       * One number against one number, per property.
+       *
+       * This card previously showed a videographer range against an annual
+       * Tourly total, which asked the reader to compare a spread with a sum and
+       * to accept a year-sized claim in the same breath as their first price.
+       * Two flat figures for the same job is the comparison they are actually
+       * making, and it is the only framing where the second number matches the
+       * button underneath it exactly.
+       */}
       <div className="mt-4 rounded-2xl border border-line bg-accent-soft p-4">
         <div className="flex items-baseline justify-between">
           <span className="text-[14px] text-ink-soft">Videographer</span>
           <span className="font-display text-[17px] font-bold text-ink">
-            {usd(d.costLow)}–{usd(d.costHigh)}
-            {d.single ? "" : "/yr"}
+            {usd(VIDEOGRAPHER_TYPICAL)}
           </span>
         </div>
         <div className="mt-2.5 flex items-baseline justify-between border-t border-accent/20 pt-2.5">
-          <span className="text-[14px] font-semibold text-ink">With Tourly</span>
+          <span className="text-[14px] font-semibold text-ink">
+            With Tourly
+          </span>
           <span className="font-display text-[22px] font-bold text-accent">
-            {usd(d.tourlyTotal)}
-            {d.single ? "" : "/yr"}
+            {d.pack.priceLabel}
           </span>
         </div>
       </div>
@@ -642,9 +735,7 @@ function Offer({
             hasn't actually changed. */}
         <div
           className={`-mx-[18px] -mt-[18px] flex items-center justify-center gap-2.5 rounded-t-[22px] px-4 py-3.5 ${
-            expired
-              ? "bg-accent-soft text-accent"
-              : "bg-[#d92d20] text-white"
+            expired ? "bg-accent-soft text-accent" : "bg-[#d92d20] text-white"
           }`}
         >
           <Bolt className="h-[19px] w-[19px] shrink-0" />
@@ -696,48 +787,46 @@ function Offer({
 
         <LiveCount />
 
-        {/* A real tour output, as close to the button as it can get.
-            At the moment of payment the objection is "will this look cheap",
-            not "is this expensive" — so the last thing seen before clicking is
-            the finished product, not another claim about it. The before/after
-            rail further down answers a different question. */}
-        <div className="relative mt-3 overflow-hidden rounded-2xl bg-night">
-          <video
-            src="/clips/exterior-tour.mp4"
-            poster="/clips/exterior-tour.jpg"
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            className="h-[150px] w-full object-cover sm:h-[180px]"
-          />
-          <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-night/65 px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[0.06em] text-cream backdrop-blur-sm">
-            Made from photos
-          </span>
-        </div>
+        {/* The tour clip that used to sit here is gone. The Photo in, tour out
+            rail directly below the card shows the same output, and showing it
+            twice inside 400px made the second one read as filler rather than
+            proof. Removing it also pulls the button up by ~180px, which is the
+            single cheapest conversion gain available on this screen. */}
 
         <a
           href={checkoutUrl}
+          onClick={() => track("checkout_click")}
           className="mt-3 flex h-[58px] items-center justify-center gap-2.5 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-[17px] font-bold text-white shadow-[0_16px_34px_-12px_rgba(15,125,107,0.6)] transition-all hover:brightness-[1.06] active:scale-[0.99]"
         >
           Lock in {d.pack.priceLabel}
           <Arrow className="h-[18px] w-[18px]" />
         </a>
 
+        {/* Same lockup as the intro: faces, stars, count. It was faces and count
+            only, which made the two screens look like two different companies
+            quoting two different proofs. The stars are also what turns a
+            delivery number into a rating. */}
         <div className="mt-3 flex items-center justify-center gap-2.5">
           <ReviewAvatars size={24} />
-          <span className="text-[12.5px] font-semibold text-ink">
-            1,564 tours delivered
-          </span>
+          <div className="flex flex-col items-start leading-none">
+            <Stars className="h-[13px] w-[13px]" />
+            <span className="mt-1 text-[12.5px] font-semibold text-ink">
+              1,564 tours delivered
+            </span>
+          </div>
         </div>
 
+        <PaymentLogos />
+
+        {/* The guarantee sits under the cards, not over them.
+            Above, it separated the button from the payment marks and read as a
+            disclaimer attached to the price. Below, it is the last line in the
+            card and closes the risk question after the payment methods have
+            already answered the safety one. */}
         <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-[12.5px] text-ink-soft">
           <Shield className="h-4 w-4 shrink-0 text-accent" />
           30-day money-back guarantee · secure checkout
         </p>
-
-        <PaymentLogos />
       </div>
     </>
   );
