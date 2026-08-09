@@ -239,10 +239,14 @@ export function QuizFunnel({ initial }: { initial?: QuizInitialState } = {}) {
 
       {step.kind === "question" ? (
         <>
-          <h2 className="font-display mt-7 text-[25px] font-bold leading-[1.15] text-ink">
+          <h2 className="font-display mt-7 text-[25px] font-bold leading-[1.15] text-ink sm:mt-9 sm:text-[31px] lg:text-[35px] [@media(min-width:1450px)_and_(min-height:860px)]:text-[42px]">
             {resolve(step.question, answers)}
           </h2>
-          <div className="mt-5 flex flex-col gap-2.5">
+          {/* Short laptops get the tighter spacing back — five options at the
+              roomy desktop padding overflow a 720px-tall viewport by ~40px, and
+              a question screen that scrolls for one row is worse than one with
+              slightly less air. */}
+          <div className="mt-5 flex flex-col gap-2.5 sm:mt-7 sm:gap-3 [@media(min-width:640px)_and_(max-height:780px)]:mt-5 [@media(min-width:640px)_and_(max-height:780px)]:gap-2.5">
             {resolve(step.choices, answers).map((c, i) => (
               <button
                 key={c.id}
@@ -251,12 +255,12 @@ export function QuizFunnel({ initial }: { initial?: QuizInitialState } = {}) {
                 /* Options stay quiet: the accent is reserved for the one action
                    that moves money. A page where everything is teal has no
                    primary action at all. */
-                className="flex items-center gap-3.5 rounded-2xl border border-line bg-paper p-4 text-left transition-colors hover:border-accent hover:bg-accent-soft/50"
+                className="flex items-center gap-3.5 rounded-2xl border border-line bg-paper p-4 text-left transition-colors hover:border-accent hover:bg-accent-soft/50 sm:gap-4 sm:p-5 [@media(min-width:640px)_and_(max-height:780px)]:p-4 [@media(min-width:1450px)_and_(min-height:860px)]:p-6"
               >
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-line text-[12px] font-bold text-ink-soft">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-line text-[12px] font-bold text-ink-soft sm:h-8 sm:w-8 sm:text-[13px] [@media(min-width:1450px)_and_(min-height:860px)]:h-9 [@media(min-width:1450px)_and_(min-height:860px)]:w-9 [@media(min-width:1450px)_and_(min-height:860px)]:text-[14px]">
                   {String.fromCharCode(65 + i)}
                 </span>
-                <span className="text-[15px] font-medium leading-[1.35] text-ink">
+                <span className="text-[15px] font-medium leading-[1.35] text-ink sm:text-[16.5px] [@media(min-width:1450px)_and_(min-height:860px)]:text-[18.5px]">
                   {c.label}
                 </span>
               </button>
@@ -289,14 +293,14 @@ export function QuizFunnel({ initial }: { initial?: QuizInitialState } = {}) {
 /* ---------------------------------------------------------------------- */
 
 /**
- * The card every screen sits in.
+ * The container every screen sits in.
  *
- * Below `sm` it is not a card at all — no border, no radius, full-bleed — so the
- * phone rendering is exactly what it was. The card, and the width, only exist
- * from `sm` up.
+ * There is no card. An earlier version boxed the funnel into a phone-width panel
+ * on desktop, which just looked like a mobile emulator parked on a big screen —
+ * the page is the page, and the background runs edge to edge behind it.
  *
  * `wide` is for the intro alone. A question screen is a list of options and
- * reads badly stretched across 900px, but the intro has media to place, so it
+ * reads badly stretched across 1100px, but the intro has media to place, so it
  * earns the extra width and the two-column layout that comes with it.
  */
 const Shell = function Shell({
@@ -310,15 +314,28 @@ const Shell = function Shell({
 }) {
   return (
     <div
-      className={`mx-auto w-full max-w-[440px] px-5 pb-16 pt-6 sm:my-auto sm:rounded-[28px] sm:border sm:border-line sm:bg-cream sm:px-9 sm:pb-11 sm:pt-9 sm:shadow-[0_40px_90px_-50px_rgba(21,19,15,0.45)] ${
-        wide ? "sm:max-w-[560px] lg:max-w-[940px]" : "sm:max-w-[540px]"
+      /* `my-auto` centres a short screen in the viewport and collapses to zero
+         when the content outgrows it, so a long result page still scrolls from
+         the top instead of being clipped.
+         The big-screen step up is gated on width AND height together: widening
+         the container also widens the media column, and a 16:9 player gets
+         taller as it gets wider. Keyed on width alone it would overflow a
+         1280x720 laptop, which is exactly the screen that can least afford it. */
+      className={`mx-auto w-full max-w-[440px] px-5 pb-16 pt-6 sm:px-8 sm:pb-20 sm:pt-10 lg:my-auto lg:pb-14 lg:pt-10 ${
+        wide
+          ? "sm:max-w-[620px] lg:max-w-[1120px] [@media(min-width:1450px)_and_(min-height:860px)]:max-w-[1380px]"
+          : "sm:max-w-[620px] [@media(min-width:1450px)_and_(min-height:860px)]:max-w-[760px]"
       }`}
     >
       <div ref={ref} />
-      <div className="mb-7 flex items-center justify-center gap-[11px]">
+      <div className="mb-7 flex items-center justify-center gap-[11px] sm:mb-9 [@media(min-width:1450px)_and_(min-height:860px)]:mb-11 [@media(min-width:1450px)_and_(min-height:860px)]:gap-3.5">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/tourly-mark.png" alt="" className="h-[22px] w-auto" />
-        <span className="font-display text-[21px] font-bold tracking-[-0.02em] text-ink">
+        <img
+          src="/tourly-mark.png"
+          alt=""
+          className="h-[22px] w-auto [@media(min-width:1450px)_and_(min-height:860px)]:h-[28px]"
+        />
+        <span className="font-display text-[21px] font-bold tracking-[-0.02em] text-ink [@media(min-width:1450px)_and_(min-height:860px)]:text-[27px]">
           Tourly
         </span>
       </div>
@@ -338,9 +355,20 @@ function Intro({ onStart, ref }: { onStart: () => void; ref?: React.Ref<HTMLDivE
        * column and the copy and CTA stack beside it, which fills the width
        * instead of stranding a phone-shaped card in the middle of the screen.
        */}
-      <div className="flex flex-col lg:grid lg:grid-cols-[1.02fr_1fr] lg:grid-rows-[auto_auto] lg:items-center lg:gap-x-12">
-        <div className="lg:col-start-1 lg:row-start-1">
-          <span className="inline-block rounded-full bg-accent-soft px-4 py-2 text-[11px] font-bold uppercase tracking-[0.1em] text-accent">
+      {/*
+       * `contents` is doing the real work here. On desktop the copy and the CTA
+       * have to be one stacked column beside the media; on mobile the media has
+       * to sit between them. Splitting them across two grid rows put the button
+       * in a row the taller media column stretched, which is what left that
+       * canyon of empty space under the proof line.
+       *
+       * So they live in one wrapper that is a grid item at lg and dissolves into
+       * its parent below it, letting `order` interleave all three on mobile.
+       */}
+      <div className="flex flex-col lg:grid lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-x-14">
+        <div className="contents lg:block">
+          <div className="order-1 lg:order-none">
+          <span className="inline-block rounded-full bg-accent-soft px-4 py-2 text-[11px] font-bold uppercase tracking-[0.1em] text-accent [@media(min-width:1450px)_and_(min-height:860px)]:px-5 [@media(min-width:1450px)_and_(min-height:860px)]:py-2.5 [@media(min-width:1450px)_and_(min-height:860px)]:text-[12.5px]">
             Free listing diagnostic
           </span>
           {/* Cold Meta traffic arrives with a wrong belief — that listing video
@@ -348,10 +376,10 @@ function Intro({ onStart, ref }: { onStart: () => void; ref?: React.Ref<HTMLDivE
               and false of us, so the hook asks the question rather than claiming
               a loss the numbers can't back. Kept to two lines so the player and
               CTA clear the fold on a 375px in-app browser. */}
-          <h1 className="font-display mt-3.5 text-[30px] font-bold leading-[1.1] tracking-[-0.02em] text-ink text-balance sm:text-[34px] lg:text-[40px]">
+          <h1 className="font-display mt-3.5 text-[30px] font-bold leading-[1.1] tracking-[-0.02em] text-ink text-balance sm:text-[34px] lg:text-[40px] [@media(min-width:1450px)_and_(min-height:860px)]:mt-5 [@media(min-width:1450px)_and_(min-height:860px)]:text-[52px]">
             What does a listing video actually cost?
           </h1>
-          <p className="mt-3 text-[14.5px] leading-[1.5] text-ink-soft sm:text-[15.5px] lg:mt-4 lg:text-[16.5px] lg:leading-[1.55]">
+          <p className="mt-3 text-[14.5px] leading-[1.5] text-ink-soft sm:text-[15.5px] lg:mt-4 lg:text-[16.5px] lg:leading-[1.55] [@media(min-width:1450px)_and_(min-height:860px)]:mt-5 [@media(min-width:1450px)_and_(min-height:860px)]:text-[19px]">
             6 quick questions — your marketing score, the real market rate, and
             the pack that fits your gallery.
           </p>
@@ -366,27 +394,28 @@ function Intro({ onStart, ref }: { onStart: () => void; ref?: React.Ref<HTMLDivE
               <span className="mt-1 text-[13px] font-semibold text-ink">
                 1,564 tours delivered
               </span>
+              </div>
             </div>
+          </div>
+
+          <div className="order-3 lg:order-none lg:mt-9">
+            <button
+              type="button"
+              onClick={onStart}
+              className="mt-5 flex h-14 w-full items-center justify-center gap-2.5 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-base font-bold text-white shadow-[0_16px_34px_-12px_rgba(15,125,107,0.6)] transition-all hover:brightness-[1.06] active:scale-[0.99] lg:mt-0 lg:h-[60px] lg:text-[17px] [@media(min-width:1450px)_and_(min-height:860px)]:h-[70px] [@media(min-width:1450px)_and_(min-height:860px)]:text-[19px]"
+            >
+              Start the diagnostic
+              <Arrow className="h-[18px] w-[18px] [@media(min-width:1450px)_and_(min-height:860px)]:h-5 [@media(min-width:1450px)_and_(min-height:860px)]:w-5" />
+            </button>
+            <p className="mt-3 text-[13px] text-ink-soft [@media(min-width:1450px)_and_(min-height:860px)]:mt-4 [@media(min-width:1450px)_and_(min-height:860px)]:text-[14.5px]">
+              Takes about 2 minutes · No card needed to see your result
+            </p>
           </div>
         </div>
 
         {/* Show the work before asking for two minutes. */}
-        <div className="mt-4 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:mt-0">
+        <div className="order-2 mt-4 lg:order-none lg:mt-0">
           <Showcase />
-        </div>
-
-        <div className="lg:col-start-1 lg:row-start-2 lg:mt-8">
-          <button
-            type="button"
-            onClick={onStart}
-            className="mt-5 flex h-14 w-full items-center justify-center gap-2.5 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-base font-bold text-white shadow-[0_16px_34px_-12px_rgba(15,125,107,0.6)] transition-all hover:brightness-[1.06] active:scale-[0.99] lg:mt-0 lg:h-[60px] lg:text-[17px]"
-          >
-            Start the diagnostic
-            <Arrow className="h-[18px] w-[18px]" />
-          </button>
-          <p className="mt-3 text-[13px] text-ink-soft">
-            Takes about 2 minutes · No card needed to see your result
-          </p>
         </div>
       </div>
     </Shell>
@@ -629,22 +658,41 @@ function Offer({
           )}
         </div>
 
-        {/* Pack, price and discount on one line. The old card spelled all three
-            out over five separate blocks, which buried the button. */}
-        <div className="mt-4 flex items-end gap-2.5">
-          <span className="font-display text-[40px] font-bold leading-none text-ink">
-            {d.pack.priceLabel}
-          </span>
-          <span className="pb-1 text-[17px] text-ink-soft line-through">
-            {d.pack.wasLabel}
-          </span>
-          <span className="mb-1 rounded-full bg-[#fdeceb] px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.04em] text-[#b42318]">
-            Save {discountPct(d.pack)}%
-          </span>
+        {/* The pack as a hero, not a thumbnail.
+            `mix-blend-multiply` is what makes it look cut out without an alpha
+            channel: the render's background is clipped to pure white, and white
+            multiplied against the card's white background disappears, while the
+            box and its contact shadow survive. Sharper than a matted PNG and it
+            cannot leave a halo — but it only works because the card underneath
+            is pure white. On any other surface this needs a real alpha PNG. */}
+        {/* Pack on the left, price on the right — the product and what it costs
+            read as one line item rather than a stacked poster, which is what a
+            checkout is supposed to look like. */}
+        <div className="mt-3 flex items-center gap-4">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/pack-box.jpg"
+            alt="The Listing Tour pack"
+            className="w-[46%] max-w-[240px] shrink-0 mix-blend-multiply"
+          />
+
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-end gap-x-2.5 gap-y-1">
+              <span className="font-display text-[40px] font-bold leading-none text-ink sm:text-[46px]">
+                {d.pack.priceLabel}
+              </span>
+              <span className="pb-1 text-[18px] text-ink-soft line-through">
+                {d.pack.wasLabel}
+              </span>
+            </div>
+            <span className="mt-2 inline-block rounded-full bg-[#fdeceb] px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.04em] text-[#b42318]">
+              Save {discountPct(d.pack)}%
+            </span>
+            <p className="mt-2 text-[13.5px] leading-[1.4] text-ink-soft">
+              {d.pack.name} · one-time, no subscription
+            </p>
+          </div>
         </div>
-        <p className="mt-1.5 text-[13.5px] text-ink-soft">
-          {d.pack.name} · one-time, no subscription
-        </p>
 
         <LiveCount />
 

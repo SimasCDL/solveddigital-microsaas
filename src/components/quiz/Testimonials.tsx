@@ -4,30 +4,38 @@ import { useRef, useState } from "react";
 import { useVideoAutoplay } from "@/components/site/useVideoAutoplay";
 
 /**
- * Social proof under the offer.
+ * Social proof under the offer, built to the reference layout: a white card, a
+ * header row of avatar + name + verified badge, the quote, then media.
+ *
+ * Mixed card types on purpose — the reference does the same. One quote with a
+ * photo, one text-only, one video. Three identical cards read as a template;
+ * varied ones read as real reviews that happened to arrive differently.
  *
  * The two written quotes are example copy for the concept build — swap them for
  * real customer ones before this takes live traffic. The video is genuine.
  */
 
-interface Written {
+interface Card {
   name: string;
   avatar: string;
   quote: string;
+  photo: string;
 }
 
-/**
- * Two cards, not three. The only two faces we have are Claire and Ray, and Ray
- * is the person in the video — putting him on a written card too would show the
- * same customer twice. A third would need a third real face; a stock avatar
- * between two real ones is worse than having two.
- */
-const WRITTEN: Written[] = [
+const CARDS: Card[] = [
   {
-    name: "Claire Bennett",
-    avatar: "/reviews/claire.jpg",
+    name: "Erin Walsh",
+    avatar: "/reviews/agent-1.jpg",
     quote:
       "Sent the gallery over on a Tuesday and had the tour up the same afternoon. My seller thought I'd paid for a film crew.",
+    photo: "/reviews/agent-1-photo.jpg",
+  },
+  {
+    name: "Marcus Hale",
+    avatar: "/reviews/marcus.jpg",
+    quote:
+      "I use it on every listing now, not just the expensive ones. That's the part that actually changed things for me.",
+    photo: "/reviews/marcus-photo.jpg",
   },
 ];
 
@@ -38,19 +46,24 @@ const VIDEO = {
   avatar: "/reviews/ray.jpg",
   src: "/reviews/ugc-1.mp4",
   poster: "/reviews/ugc-1.jpg",
+  // Condensed from what he actually says on camera — the burned-in captions run:
+  // sat on Zillow six weeks / barely any showings / everyone kept saying the
+  // market's slow / the listings that sell all have video tours / this site
+  // turns your photos into a walkthrough video / look like we hired a film crew
+  // / two weeks later, sold. Unlike the two written cards, this one is real.
+  quote:
+    "It sat on Zillow six weeks with barely any showings and everyone kept telling me the market was slow. Turns out the listings that sell all have video tours. Ran my photos through this — looked like we'd hired a film crew. Sold two weeks later.",
 };
 
+/** Solid badge, not an outline — at 17px an outlined tick reads as a smudge. */
 function Verified({ className = "" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" aria-label="Verified">
+      <circle cx="12" cy="12" r="11" fill="currentColor" />
       <path
-        d="M12 2.5l2.2 1.6 2.7-.3 1 2.5 2.4 1.2-.7 2.6.7 2.6-2.4 1.2-1 2.5-2.7-.3L12 21.5l-2.2-1.6-2.7.3-1-2.5-2.4-1.2.7-2.6-.7-2.6 2.4-1.2 1-2.5 2.7.3L12 2.5Z"
-        fill="currentColor"
-      />
-      <path
-        d="M8.6 12.1l2.3 2.3 4.5-4.6"
-        stroke="#faf8f3"
-        strokeWidth="2"
+        d="M7.4 12.3l3.1 3.1 6.1-6.3"
+        stroke="#ffffff"
+        strokeWidth="2.6"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -58,28 +71,10 @@ function Verified({ className = "" }: { className?: string }) {
   );
 }
 
-function Head({ name, avatar }: { name: string; avatar: string }) {
-  return (
-    <div className="flex items-center gap-2.5">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={avatar}
-        alt=""
-        className="h-9 w-9 shrink-0 rounded-full object-cover"
-      />
-      <span className="text-[14.5px] font-bold text-ink">{name}</span>
-      <Verified className="h-[15px] w-[15px] text-accent" />
-    </div>
-  );
-}
-
 function Speaker({ on, className = "" }: { on: boolean; className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M4 9.5v5h3.2L12 18.5v-13L7.2 9.5H4Z"
-        fill="currentColor"
-      />
+      <path d="M4 9.5v5h3.2L12 18.5v-13L7.2 9.5H4Z" fill="currentColor" />
       {on ? (
         <path
           d="M15.5 8.8a4.4 4.4 0 0 1 0 6.4M18 6.3a7.9 7.9 0 0 1 0 11.4"
@@ -96,6 +91,43 @@ function Speaker({ on, className = "" }: { on: boolean; className?: string }) {
         />
       )}
     </svg>
+  );
+}
+
+/**
+ * `h-full` plus a flex column, with the media pushed down by `mt-auto`, is what
+ * keeps the three cards identical in height. The grid stretches them to the
+ * tallest, and bottom-aligning the media means a shorter quote opens a little
+ * air above its photo rather than leaving a ragged card.
+ */
+function Shell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex h-full flex-col rounded-[20px] bg-paper p-[18px] shadow-[0_10px_30px_-14px_rgba(21,19,15,0.22)] ring-1 ring-line/70">
+      {children}
+    </div>
+  );
+}
+
+function Head({ name, avatar }: { name: string; avatar: string }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={avatar}
+        alt=""
+        className="h-10 w-10 shrink-0 rounded-full object-cover"
+      />
+      <span className="text-[15.5px] font-bold tracking-[-0.01em] text-ink">
+        {name}
+      </span>
+      <Verified className="h-[17px] w-[17px] shrink-0 text-accent" />
+    </div>
+  );
+}
+
+function Quote({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="mt-3.5 text-[15px] leading-[1.55] text-ink-soft">{children}</p>
   );
 }
 
@@ -126,7 +158,7 @@ function VideoTestimonial() {
       type="button"
       onClick={toggle}
       aria-label={sound ? "Mute testimonial" : "Play testimonial with sound"}
-      className="group relative mt-3 block w-full overflow-hidden rounded-xl bg-night"
+      className="relative mt-auto block w-full overflow-hidden rounded-[14px] bg-night"
     >
       <video
         ref={videoRef}
@@ -137,7 +169,7 @@ function VideoTestimonial() {
         loop
         playsInline
         preload="metadata"
-        className="aspect-[9/16] max-h-[320px] w-full object-cover"
+        className="aspect-[4/5] w-full object-cover"
       />
       <span
         className={`absolute bottom-2.5 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-bold backdrop-blur-sm transition-colors ${
@@ -158,28 +190,40 @@ export function Testimonials() {
   useVideoAutoplay(ref);
 
   return (
-    <div ref={ref} className="mt-9">
+    /* Breaks out of the result's 620px reading column. Three cards inside that
+       width come out ~176px each, which is too narrow for a quote and a photo —
+       the grid needs room the rest of the page doesn't. `left-1/2` plus a
+       negative half-translate on a `w-screen` element re-centres it against the
+       viewport rather than the parent. */
+    <div
+      ref={ref}
+      className="mt-9 lg:relative lg:left-1/2 lg:w-screen lg:max-w-[1120px] lg:-translate-x-1/2 lg:px-8"
+    >
       <p className="text-center text-[11px] font-bold uppercase tracking-[0.12em] text-ink-soft">
         What agents say
       </p>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        {WRITTEN.map((t) => (
-          <div
-            key={t.name}
-            className="rounded-2xl border border-line bg-paper p-4 shadow-[0_18px_44px_-32px_rgba(0,0,0,0.4)]"
-          >
-            <Head name={t.name} avatar={t.avatar} />
-            <p className="mt-3 text-[14.5px] leading-[1.5] text-ink-soft">
-              {t.quote}
-            </p>
-          </div>
+      <div className="mt-4 grid gap-3.5 lg:grid-cols-3">
+        {CARDS.map((c) => (
+          <Shell key={c.name}>
+            <Head name={c.name} avatar={c.avatar} />
+            <Quote>{c.quote}</Quote>
+            <div className="mt-auto overflow-hidden rounded-[14px] bg-line/40 pt-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={c.photo}
+                alt=""
+                className="aspect-[4/5] w-full object-cover"
+              />
+            </div>
+          </Shell>
         ))}
 
-        <div className="rounded-2xl border border-line bg-paper p-4 shadow-[0_18px_44px_-32px_rgba(0,0,0,0.4)]">
+        <Shell>
           <Head name={VIDEO.name} avatar={VIDEO.avatar} />
+          <Quote>{VIDEO.quote}</Quote>
           <VideoTestimonial />
-        </div>
+        </Shell>
       </div>
     </div>
   );

@@ -7,8 +7,9 @@ import { QuizFunnel } from "@/components/quiz/QuizFunnel";
  * it does on a phone today, because that's the layout the traffic actually sees
  * and it isn't worth risking for a desktop that converts far less.
  *
- * From `sm` up it provides the wash the card sits on. The card and its width are
- * the Shell's job, since only the funnel knows which screen is showing.
+ * From `sm` up it lays the wash down full-bleed, edge to edge. The funnel sits
+ * directly on it with no panel around it; width is the Shell's job, since only
+ * the funnel knows whether it's showing the wide intro or a question.
  */
 export function QuizPage() {
   return (
@@ -29,12 +30,7 @@ export function QuizPage() {
         }}
       />
 
-      {/* Width and the card itself live on the funnel's Shell, which is the only
-          thing that knows whether it's showing the wide intro or a question.
-          flex-1 lets the Shell's `my-auto` centre a short screen without
-          clipping a tall one — auto margins collapse to zero when the child
-          outgrows the container, which `justify-center` does not. */}
-      <div className="relative flex flex-1 flex-col sm:px-6 sm:py-10">
+      <div className="relative flex flex-1 flex-col">
         <QuizFunnel />
       </div>
     </div>

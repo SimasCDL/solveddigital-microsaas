@@ -114,10 +114,11 @@ export function Showcase() {
           Showing only the inactive ones left the opening clip unreachable once
           you moved off it.
 
-          Four across on a phone and 2x2 from lg. A second row on mobile would
-          push the CTA past the in-app browser fold, so the phone gets its size
-          from a taller crop instead; desktop has the width to spare. */}
-      <div className="mt-2.5 grid grid-cols-4 gap-2 lg:grid-cols-2 lg:gap-2.5">
+          One row of four everywhere. A 2x2 grid made them bigger but added ~140px
+          of height, and the desktop intro has to fit a viewport without
+          scrolling — the media column is the only place that height can come
+          from. */}
+      <div className="mt-2.5 grid grid-cols-4 gap-2 lg:gap-2.5">
         {ITEMS.map((t, idx) => {
           const on = idx === active;
           return (
