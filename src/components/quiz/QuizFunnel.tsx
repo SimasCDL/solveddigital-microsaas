@@ -696,6 +696,27 @@ function Offer({
 
         <LiveCount />
 
+        {/* A real tour output, as close to the button as it can get.
+            At the moment of payment the objection is "will this look cheap",
+            not "is this expensive" — so the last thing seen before clicking is
+            the finished product, not another claim about it. The before/after
+            rail further down answers a different question. */}
+        <div className="relative mt-3 overflow-hidden rounded-2xl bg-night">
+          <video
+            src="/clips/exterior-tour.mp4"
+            poster="/clips/exterior-tour.jpg"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            className="h-[150px] w-full object-cover sm:h-[180px]"
+          />
+          <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-night/65 px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[0.06em] text-cream backdrop-blur-sm">
+            Made from photos
+          </span>
+        </div>
+
         <a
           href={checkoutUrl}
           className="mt-3 flex h-[58px] items-center justify-center gap-2.5 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-[17px] font-bold text-white shadow-[0_16px_34px_-12px_rgba(15,125,107,0.6)] transition-all hover:brightness-[1.06] active:scale-[0.99]"
