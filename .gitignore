@@ -44,3 +44,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .claude/settings.local.json
+
+# Generated nurture-email previews (regenerate from /emails)
+email-preview-*.html
+
+# Local media & design-sync scratch (hundreds of MB, never belongs in git)
+.ds-sync/
+ds-bundle/
+videos/
+before after/

@@ -4,6 +4,7 @@ import { getStripe, photosForAmount } from "@/lib/stripe";
 import { getOrder, updateOrder } from "@/lib/orders";
 import { fulfillOrder } from "@/lib/fulfill";
 import { sendTelegram } from "@/lib/telegram";
+import { stopSequence, sendRecovery } from "@/lib/sequence";
 import type Stripe from "stripe";
 
 // A pack's photo cap is fixed by the Stripe Price the customer paid for — NOT
@@ -106,6 +107,33 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
+  /**
+   * Abandoned checkout.
+   *
+   * Stripe expires an unfinished Checkout Session (24h for a Payment Link) and
+   * fires this. It is the only signal we get that somebody reached the payment
+   * page and did not pay, and those are the hottest leads in the funnel.
+   *
+   * The address is there because the quiz link sets `prefilled_email`, which
+   * Stripe records on the session even when nobody types anything.
+   */
+  if (event.type === "checkout.session.expired") {
+    const s = event.data.object as Stripe.Checkout.Session;
+    const abandonedEmail =
+      s.customer_details?.email ?? s.customer_email ?? null;
+    if (abandonedEmail) {
+      after(async () => {
+        const sent = await sendRecovery(abandonedEmail);
+        if (sent) {
+          await sendTelegram(
+            `🛒 *Abandoned checkout*\n📧 ${abandonedEmail}\n↩️ recovery email sent`,
+          ).catch(() => {});
+        }
+      });
+    }
+    return NextResponse.json({ received: true });
+  }
+
   if (event.type !== "checkout.session.completed") {
     return NextResponse.json({ received: true });
   }
@@ -137,6 +165,25 @@ export async function POST(req: NextRequest) {
   }
 
   after(() => notifyPurchase(session, order?.photoUrls?.length ?? 0));
+
+  // Take the buyer out of the nurture sequence and cancel anything already
+  // sitting in Resend's scheduler. This has to happen for EVERY completed
+  // checkout, not just ones carrying an order: pay-first Payment Link purchases
+  // have no order yet, and those customers are exactly the ones who came from
+  // the quiz. The address Stripe collected is the one to match on, since it is
+  // what they typed at checkout.
+  const buyerEmail =
+    session.customer_details?.email ??
+    session.customer_email ??
+    order?.email ??
+    null;
+  if (buyerEmail) {
+    after(() =>
+      stopSequence(buyerEmail, "purchased").catch((err) =>
+        console.error("[webhook] stopSequence failed:", err),
+      ),
+    );
+  }
 
   // Did this payment actually kick off fulfillment? A paid checkout that carries
   // an order reference but fulfills NOTHING is a customer who paid and got

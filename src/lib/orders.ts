@@ -1,14 +1,14 @@
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
-import type { Order } from './types';
-import { sbFetch, supabaseConfigured } from './supabase';
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
+import type { Order } from "./types";
+import { sbFetch, supabaseConfigured } from "./supabase";
 
 // Orders live in Supabase (table `orders`) so support can look any customer up
 // in the dashboard. The local copy is a best-effort cache/fallback — it uses the
 // OS temp dir because serverless filesystems (Vercel) are read-only except /tmp,
 // and all local writes are non-fatal so a read-only FS never breaks an order.
-const LOCAL_DIR = path.join(os.tmpdir(), 'tourly-orders');
+const LOCAL_DIR = path.join(os.tmpdir(), "tourly-orders");
 
 interface OrderRow {
   id: string;
@@ -17,7 +17,7 @@ interface OrderRow {
   photo_urls: string[];
   video_urls: string[];
   music: boolean;
-  status: Order['status'];
+  status: Order["status"];
   stripe_session_id: string | null;
   error_message: string | null;
   created_at: string;
@@ -56,15 +56,20 @@ function writeLocal(order: Order) {
   // Best-effort only — never let a read-only FS (serverless) break the request.
   try {
     if (!fs.existsSync(LOCAL_DIR)) fs.mkdirSync(LOCAL_DIR, { recursive: true });
-    fs.writeFileSync(path.join(LOCAL_DIR, `${order.id}.json`), JSON.stringify(order));
+    fs.writeFileSync(
+      path.join(LOCAL_DIR, `${order.id}.json`),
+      JSON.stringify(order),
+    );
   } catch (err) {
-    console.error('[orders] local write skipped (read-only FS?):', err);
+    console.error("[orders] local write skipped (read-only FS?):", err);
   }
 }
 
 function readLocal(orderId: string): Order | null {
   try {
-    return JSON.parse(fs.readFileSync(path.join(LOCAL_DIR, `${orderId}.json`), 'utf-8'));
+    return JSON.parse(
+      fs.readFileSync(path.join(LOCAL_DIR, `${orderId}.json`), "utf-8"),
+    );
   } catch {
     return null;
   }
@@ -75,13 +80,13 @@ export async function createOrder(order: Order): Promise<Order> {
   writeLocal(order);
   if (supabaseConfigured()) {
     try {
-      await sbFetch('/orders', {
-        method: 'POST',
-        headers: { Prefer: 'resolution=merge-duplicates' },
+      await sbFetch("/orders", {
+        method: "POST",
+        headers: { Prefer: "resolution=merge-duplicates" },
         body: JSON.stringify(toRow(order)),
       });
     } catch (err) {
-      console.error('[orders] Supabase create failed, local copy kept:', err);
+      console.error("[orders] Supabase create failed, local copy kept:", err);
     }
   }
   return order;
@@ -90,33 +95,71 @@ export async function createOrder(order: Order): Promise<Order> {
 export async function getOrder(orderId: string): Promise<Order | null> {
   if (supabaseConfigured()) {
     try {
-      const res = await sbFetch(`/orders?id=eq.${encodeURIComponent(orderId)}&select=*&limit=1`);
+      const res = await sbFetch(
+        `/orders?id=eq.${encodeURIComponent(orderId)}&select=*&limit=1`,
+      );
       const rows: OrderRow[] = await res.json();
       if (rows.length) return fromRow(rows[0]);
     } catch (err) {
-      console.error('[orders] Supabase read failed, trying local:', err);
+      console.error("[orders] Supabase read failed, trying local:", err);
     }
   }
   return readLocal(orderId);
 }
 
-export async function updateOrder(orderId: string, updates: Partial<Order>): Promise<Order> {
+export async function updateOrder(
+  orderId: string,
+  updates: Partial<Order>,
+): Promise<Order> {
   const existing = await getOrder(orderId);
   if (!existing) throw new Error(`Order ${orderId} not found`);
-  const updated: Order = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  const updated: Order = {
+    ...existing,
+    ...updates,
+    updatedAt: new Date().toISOString(),
+  };
   writeLocal(updated);
   if (supabaseConfigured()) {
     try {
-      await sbFetch('/orders', {
-        method: 'POST',
-        headers: { Prefer: 'resolution=merge-duplicates' },
+      await sbFetch("/orders", {
+        method: "POST",
+        headers: { Prefer: "resolution=merge-duplicates" },
         body: JSON.stringify(toRow(updated)),
       });
     } catch (err) {
-      console.error('[orders] Supabase update failed, local copy kept:', err);
+      console.error("[orders] Supabase update failed, local copy kept:", err);
     }
   }
   return updated;
+}
+
+/**
+ * Has this address ever placed a real (non-free, paid-for) order?
+ *
+ * The nurture cron's independent check that somebody bought, used as a backstop
+ * for a Stripe webhook that never landed. Free-preview orders carry a `free:`
+ * marker in `stripe_session_id`, so requiring a session id that is not one is
+ * what separates a customer from someone who tried the free trial.
+ *
+ * Fails closed on error (reports "no purchase"), because the cost of a wrong
+ * `false` is one more marketing email, while a wrong `true` silently ends a
+ * live sequence for someone who never bought anything.
+ */
+export async function hasPaidOrderFor(email: string): Promise<boolean> {
+  if (!supabaseConfigured()) return false;
+  try {
+    const res = await sbFetch(
+      `/orders?email=eq.${encodeURIComponent(email.trim().toLowerCase())}` +
+        `&stripe_session_id=not.is.null&status=neq.pending_payment&select=stripe_session_id`,
+    );
+    const rows: Array<{ stripe_session_id: string | null }> = await res.json();
+    return rows.some(
+      (r) => r.stripe_session_id && !r.stripe_session_id.startsWith("free:"),
+    );
+  } catch (err) {
+    console.error("[orders] paid-order lookup failed:", err);
+    return false;
+  }
 }
 
 /** How many orders (any status except pending_payment) already used this Stripe
@@ -125,22 +168,30 @@ export async function countOrdersBySession(sessionId: string): Promise<number> {
   if (supabaseConfigured()) {
     try {
       const res = await sbFetch(
-        `/orders?stripe_session_id=eq.${encodeURIComponent(sessionId)}&status=neq.pending_payment&select=id`
+        `/orders?stripe_session_id=eq.${encodeURIComponent(sessionId)}&status=neq.pending_payment&select=id`,
       );
       const rows: Array<{ id: string }> = await res.json();
       return rows.length;
     } catch (err) {
-      console.error('[orders] Supabase session count failed, scanning local:', err);
+      console.error(
+        "[orders] Supabase session count failed, scanning local:",
+        err,
+      );
     }
   }
   try {
-    const files = fs.readdirSync(LOCAL_DIR).filter(f => f.endsWith('.json'));
+    const files = fs.readdirSync(LOCAL_DIR).filter((f) => f.endsWith(".json"));
     let count = 0;
     for (const f of files) {
       try {
-        const o: Order = JSON.parse(fs.readFileSync(path.join(LOCAL_DIR, f), 'utf-8'));
-        if (o.stripeSessionId === sessionId && o.status !== 'pending_payment') count++;
-      } catch { /* not an order file */ }
+        const o: Order = JSON.parse(
+          fs.readFileSync(path.join(LOCAL_DIR, f), "utf-8"),
+        );
+        if (o.stripeSessionId === sessionId && o.status !== "pending_payment")
+          count++;
+      } catch {
+        /* not an order file */
+      }
     }
     return count;
   } catch {

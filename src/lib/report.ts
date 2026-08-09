@@ -1,4 +1,7 @@
 import { getStripe } from "./stripe";
+import { funnelCounts, type FunnelStage } from "./quizEvents";
+import { sendsInWindow } from "./nurtureSends";
+import { convertedInWindow, leadCounts } from "./leads";
 
 /**
  * Daily report — pulls traffic/behavior from Microsoft Clarity and
@@ -173,12 +176,86 @@ async function fetchDevices(
   }
 }
 
+/**
+ * The quiz funnel as two lines and one instruction.
+ *
+ * The point is to name the leak, not to print the funnel. A wall of per-step
+ * percentages is the thing nobody reads twice, so this shows the shape, then
+ * the single worst drop, and nothing else.
+ */
+function quizSection(stages: FunnelStage[]): string[] {
+  if (stages.length < 2) return [];
+
+  const at = (step: string) =>
+    stages.find((s) => s.step === step)?.sessions ?? 0;
+  const pct = (a: number, b: number) => (b ? Math.round((a / b) * 100) : 0);
+
+  const L: string[] = ["*QUIZ FUNNEL* (24h)"];
+  L.push(
+    stages
+      .map((s) => `${s.label} ${s.sessions}`)
+      .join(" → ")
+      .slice(0, 320),
+  );
+
+  // The three rates that mean different things and have different fixes:
+  // whether the ad matched the page, whether the gate is worth the address,
+  // and whether the offer lands.
+  const landed = at("intro");
+  const started = stages.find((s) => s.step.startsWith("step_"))?.sessions ?? 0;
+  L.push(
+    `▶️ Start ${pct(started, landed)}% · ✉️ Gate ${pct(at("submit"), at("email"))}% · 🛒 Buy ${pct(at("checkout"), at("result"))}%`,
+  );
+
+  /**
+   * The worst drop, looking only at the quiz body.
+   *
+   * The gates are excluded deliberately. Result → checkout is the largest drop
+   * in any funnel that has a price on it, so naming it every day is a fact
+   * about arithmetic rather than a finding, and it would bury the drop that
+   * actually moved. Between two questions there is no reason to lose anyone, so
+   * that is where a number worth acting on shows up.
+   */
+  const body = (s: FunnelStage) =>
+    s.step === "intro" || s.step.startsWith("step_") || s.step === "email";
+  let worst: { from: FunnelStage; to: FunnelStage } | null = null;
+  for (let i = 1; i < stages.length; i++) {
+    if (!body(stages[i]) || !body(stages[i - 1])) continue;
+    if (!worst || stages[i].keptPct < worst.to.keptPct) {
+      worst = { from: stages[i - 1], to: stages[i] };
+    }
+  }
+
+  if (worst && worst.to.keptPct < 90) {
+    const lost = worst.from.sessions - worst.to.sessions;
+    L.push(
+      `🩸 Worst in-quiz drop: *${worst.from.label} → ${worst.to.label}* — lost ${lost} (${100 - worst.to.keptPct}%)`,
+    );
+  } else {
+    // Nothing anomalous inside the quiz means the constraint has moved to a
+    // gate, and the report should say which one rather than go quiet.
+    const gate = pct(at("submit"), at("email"));
+    const buy = pct(at("checkout"), at("result"));
+    L.push(
+      buy < gate
+        ? "👉 Quiz body is clean. The offer is the constraint, not the questions."
+        : "👉 Quiz body is clean. The email gate is the constraint.",
+    );
+  }
+  return L;
+}
+
 export async function buildReport(): Promise<string> {
-  const [day, week, sales7, devices] = await Promise.all([
+  const [day, week, sales7, devices, quiz, emailsSent, converted, leads] =
+    await Promise.all([
     fetchClarity(1).catch(() => null),
     fetchSales(24).catch(() => null),
     fetchSales(24 * 7).catch(() => null),
     fetchDevices(1).catch(() => null),
+    funnelCounts(24).catch(() => [] as FunnelStage[]),
+    sendsInWindow(24).catch(() => 0),
+    convertedInWindow(24).catch(() => 0),
+    leadCounts().catch(() => null),
   ]);
 
   const date = new Intl.DateTimeFormat("en-GB", {
@@ -202,6 +279,24 @@ export async function buildReport(): Promise<string> {
     `👁 Landing ${landing}  →  🛒 Checkout ${checkouts} (${coPct}%)  →  💳 Buys ${buys} · ${rev}`,
   );
   L.push("");
+
+  // QUIZ FUNNEL — the one section that names where to work next.
+  const qs = quizSection(quiz);
+  if (qs.length) {
+    L.push(...qs);
+    L.push("");
+  }
+
+  // EMAIL — sends that landed today, and who bought after getting one.
+  if (emailsSent || converted || leads?.active) {
+    L.push("*EMAIL*");
+    L.push(
+      `📧 Sent ${emailsSent} · 💰 Converted ${converted}` +
+        (leads ? ` · 👥 ${leads.active} on sequence` : ""),
+    );
+    if (leads?.unsubscribed) L.push(`🚪 Unsubscribed total ${leads.unsubscribed}`);
+    L.push("");
+  }
 
   // BEHAVIOR
   L.push("*BEHAVIOR* (Clarity)");

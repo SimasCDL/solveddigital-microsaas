@@ -1,4 +1,4 @@
-import { Resend } from 'resend';
+import { Resend } from "resend";
 
 // Lazy singleton — constructing Resend at module load throws "Missing API key"
 // during Vercel's build (env vars aren't present then). Build it on first send.
@@ -8,7 +8,7 @@ function getResend(): Resend | null {
   return (_resend ??= new Resend(process.env.RESEND_API_KEY));
 }
 
-const appUrl = () => process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+const appUrl = () => process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
 // Tourly email shell — mirrors the funnel's design tokens (cream/ink/teal),
 // inline styles only (email clients strip everything else).
@@ -34,7 +34,10 @@ export async function sendDeliveryEmail(params: {
   const orderUrl = `${appUrl()}/order/${params.orderId}`;
 
   const resend = getResend();
-  if (!resend) { console.error("[resend] RESEND_API_KEY not set — skipping email"); return; }
+  if (!resend) {
+    console.error("[resend] RESEND_API_KEY not set — skipping email");
+    return;
+  }
 
   const body = params.preview
     ? `
@@ -61,7 +64,9 @@ export async function sendDeliveryEmail(params: {
   await resend.emails.send({
     from: process.env.FROM_EMAIL!,
     to: params.to,
-    subject: params.preview ? `Your free preview is ready` : `Your video tour is ready`,
+    subject: params.preview
+      ? `Your free preview is ready`
+      : `Your video tour is ready`,
     html: shell(`${body}
       <p style="color:#6f6a60;font-size:12px;margin:28px 0 0;border-top:1px solid #e7e1d6;padding-top:16px;">
         Order #${params.orderId} &middot; Your videos stay available on this page for 7 days.
@@ -91,17 +96,20 @@ export async function sendQuizDiagnosticEmail(params: {
   checkoutUrl: string;
 }): Promise<void> {
   const resend = getResend();
-  if (!resend) { console.error("[resend] RESEND_API_KEY not set — skipping email"); return; }
+  if (!resend) {
+    console.error("[resend] RESEND_API_KEY not set — skipping email");
+    return;
+  }
 
   const esc = (s: string) =>
-    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
   const plan = params.plan
     .map(
       (p) =>
         `<li style="color:#15130f;font-size:14px;line-height:1.6;margin:0 0 10px;">${esc(p)}</li>`,
     )
-    .join('');
+    .join("");
 
   await resend.emails.send({
     from: process.env.FROM_EMAIL!,
@@ -137,21 +145,111 @@ export async function sendQuizDiagnosticEmail(params: {
   });
 }
 
+/**
+ * Send (or schedule) one step of the nurture sequence.
+ *
+ * Differs from the transactional senders above in three ways that all exist to
+ * keep this out of the promotions tab and out of spam:
+ *
+ * - A real `text/plain` alternative goes with every send. An HTML-only bulk
+ *   email is one of the cheapest spam signals there is.
+ * - `List-Unsubscribe` plus `List-Unsubscribe-Post` give Gmail and Yahoo the
+ *   one-click unsubscribe button in the header. Since February 2024 bulk
+ *   senders without it get throttled, and a header unsubscribe is far better
+ *   for the sender than the alternative, which is the recipient hitting "report
+ *   spam" because it was the easier button to find.
+ * - `scheduledAt` hands the delay to Resend. Returning the id is what makes the
+ *   send cancellable when the person buys before it fires.
+ *
+ * Returns the Resend id, or null if nothing was sent.
+ */
+export async function sendNurtureEmail(params: {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+  unsubUrl: string;
+  step: number;
+  /** ISO 8601. Omit to send immediately. */
+  scheduledAt?: string;
+}): Promise<string | null> {
+  const resend = getResend();
+  if (!resend) {
+    console.error("[resend] RESEND_API_KEY not set — skipping email");
+    return null;
+  }
+
+  // A named human in the From line, falling back to the transactional sender.
+  // These emails are written in the first person and a no-reply address in the
+  // header contradicts the first sentence.
+  const from = process.env.NURTURE_FROM_EMAIL || process.env.FROM_EMAIL!;
+
+  const { data, error } = await resend.emails.send({
+    from,
+    to: params.to,
+    replyTo: process.env.REPLY_TO_EMAIL || from,
+    subject: params.subject,
+    html: params.html,
+    text: params.text,
+    headers: {
+      "List-Unsubscribe": `<${params.unsubUrl}>`,
+      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+    },
+    tags: [{ name: "sequence", value: `quiz_step_${params.step}` }],
+    ...(params.scheduledAt ? { scheduledAt: params.scheduledAt } : {}),
+  });
+
+  if (error) {
+    console.error(`[nurture] step ${params.step} send failed:`, error);
+    return null;
+  }
+  return data?.id ?? null;
+}
+
+/**
+ * Cancel scheduled sends that have not fired yet.
+ *
+ * Best effort by design. Resend answers an error for an email that has already
+ * gone out or does not exist, and neither is worth failing a webhook over: the
+ * caller is a Stripe handler that must still return 200, or an unsubscribe that
+ * must still confirm. Every id is attempted even if an earlier one throws.
+ */
+export async function cancelScheduledEmails(ids: string[]): Promise<void> {
+  const resend = getResend();
+  if (!resend || !ids.length) return;
+  await Promise.all(
+    ids.map((id) =>
+      resend.emails
+        .cancel(id)
+        .catch((err) => console.error(`[nurture] cancel ${id} failed:`, err)),
+    ),
+  );
+}
+
 /** Internal ops alert — goes to ADMIN_ALERT_EMAIL, never to customers. */
-export async function sendAdminAlert(subject: string, body: string): Promise<void> {
+export async function sendAdminAlert(
+  subject: string,
+  body: string,
+): Promise<void> {
   const to = process.env.ADMIN_ALERT_EMAIL;
   if (!to) {
-    console.error(`[alert] ADMIN_ALERT_EMAIL not set — dropping alert: ${subject}\n${body}`);
+    console.error(
+      `[alert] ADMIN_ALERT_EMAIL not set — dropping alert: ${subject}\n${body}`,
+    );
     return;
   }
   const resend = getResend();
-  if (!resend) { console.error("[resend] RESEND_API_KEY not set — skipping email"); return; }
+  if (!resend) {
+    console.error("[resend] RESEND_API_KEY not set — skipping email");
+    return;
+  }
   await resend.emails.send({
     from: process.env.FROM_EMAIL!,
     to,
     subject: `[Tourly ops] ${subject}`,
     html: `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;">${body
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;')}</pre>`,
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")}</pre>`,
   });
 }
 
@@ -160,7 +258,10 @@ export async function sendFailureEmail(params: {
   orderId: string;
 }): Promise<void> {
   const resend = getResend();
-  if (!resend) { console.error("[resend] RESEND_API_KEY not set — skipping email"); return; }
+  if (!resend) {
+    console.error("[resend] RESEND_API_KEY not set — skipping email");
+    return;
+  }
   await resend.emails.send({
     from: process.env.FROM_EMAIL!,
     to: params.to,
@@ -169,9 +270,11 @@ export async function sendFailureEmail(params: {
       <h1 style="color:#15130f;font-size:24px;font-weight:600;letter-spacing:-0.022em;margin:0 0 12px;">We ran into an issue</h1>
       <p style="color:#6f6a60;font-size:15px;line-height:1.6;margin:0;">
         Something went wrong while generating your video for order #${params.orderId}.
-        Our team has been notified${process.env.NEXT_PUBLIC_FREE_MODE === 'true'
-          ? ' and we&rsquo;ll make it right — just reply to this email and we&rsquo;ll regenerate your tour.'
-          : ' and you will receive a full refund within 3&ndash;5 business days.'}
+        Our team has been notified${
+          process.env.NEXT_PUBLIC_FREE_MODE === "true"
+            ? " and we&rsquo;ll make it right — just reply to this email and we&rsquo;ll regenerate your tour."
+            : " and you will receive a full refund within 3&ndash;5 business days."
+        }
       </p>
     `),
   });
