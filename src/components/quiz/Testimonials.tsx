@@ -32,7 +32,9 @@ const CARDS: Card[] = [
   },
   {
     name: "Marcus Hale",
-    avatar: "/reviews/marcus.jpg",
+    // Back to a default reviewer avatar. His card photo below still shows him at
+    // his desk, so the face is present where it counts.
+    avatar: "/reviews/reviewer-2.jpg",
     quote:
       "I use it on every listing now, not just the expensive ones. That's the part that actually changed things for me.",
     photo: "/reviews/marcus-photo.jpg",
