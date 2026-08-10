@@ -25,6 +25,29 @@ export interface ProofPoint {
   claim: string;
   /** Rendered as the citation line. Must name the organisation. */
   source: string;
+  /**
+   * What the source actually is, in the words a citation would use.
+   *
+   * A bare organisation name reads as a logo somebody typed. "Member research
+   * on seller expectations" reads as a document that exists, because it names
+   * the kind of thing it is. This is the cheapest available credibility and it
+   * costs no accuracy, provided it stays a description rather than a title we
+   * invented: never write a report name or a year we have not verified.
+   */
+  context: string;
+  /**
+   * Path to the source organisation's own mark, under /public/proof.
+   *
+   * A logo is worth more than any amount of typographic styling here, because
+   * it is the one element on the screen the reader recognises from outside our
+   * funnel. Only ever the real mark of the organisation that actually produced
+   * the figure. Borrowing a recognisable logo for research that body did not
+   * publish is false attribution and trademark misuse, and it collapses the
+   * moment one reader searches for the claim.
+   */
+  logo?: string;
+  /** Alt text for the mark. */
+  logoAlt?: string;
   confidence: "primary" | "cited";
 }
 
@@ -40,6 +63,9 @@ export const SELLERS_EXPECT: ProofPoint = {
   claim:
     "of sellers say they are more likely to hire an agent who markets with video.",
   source: "National Association of REALTORS®",
+  context: "Member research on seller expectations",
+  logo: "/proof/nar-realtor.png",
+  logoAlt: "REALTOR®",
   confidence: "cited",
 };
 
@@ -54,6 +80,7 @@ export const AGENT_ADOPTION: ProofPoint = {
   stat: "~1 in 10",
   claim: "agents actually put video on their listings.",
   source: "Industry research, cited across NAR reporting",
+  context: "Agent adoption of listing video",
   confidence: "cited",
 };
 

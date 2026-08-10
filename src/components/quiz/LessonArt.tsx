@@ -15,12 +15,15 @@ function Card({
   eyebrow,
   caption,
   source,
+  sourceLogo,
   children,
 }: {
   eyebrow: string;
   caption?: string;
   /** Attribution line. Present on anything quoting a third-party figure. */
   source?: string;
+  /** The source organisation's own mark, shown beside the attribution. */
+  sourceLogo?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -38,9 +41,15 @@ function Card({
           to add. Separated by a rule so it reads as provenance rather than as
           more of our own copy. */}
       {source && (
-        <p className="mt-3.5 border-t border-line pt-3 text-[11px] leading-[1.4] text-ink-soft/80">
-          Source: {source}
-        </p>
+        <div className="mt-3.5 flex items-center gap-2.5 border-t border-line pt-3">
+          {sourceLogo && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={sourceLogo} alt="" className="h-7 w-auto shrink-0" />
+          )}
+          <p className="text-[11px] leading-[1.4] text-ink-soft/80">
+            Source: {source}
+          </p>
+        </div>
       )}
     </div>
   );
@@ -63,14 +72,17 @@ function Card({
 function GapArt() {
   const rows = [
     {
-      label: "Sellers who want it",
+      // Both labels name video outright. "Sellers who want it / Agents who do
+      // it" made the reader hunt the paragraph above for an antecedent, and a
+      // chart you have to decode is a chart nobody is persuaded by.
+      label: "Sellers who expect video",
       stat: SELLERS_EXPECT.stat,
       width: 73,
       bar: "bg-accent",
       text: "text-accent",
     },
     {
-      label: "Agents who do it",
+      label: "Agents who deliver it",
       stat: AGENT_ADOPTION.stat,
       width: 10,
       bar: "bg-ink/80",
@@ -83,6 +95,7 @@ function GapArt() {
       eyebrow="Demand vs supply"
       caption="That distance is the whole opportunity."
       source={SELLERS_EXPECT.source}
+      sourceLogo={SELLERS_EXPECT.logo}
     >
       <div className="mt-4 flex flex-col gap-[18px]">
         {rows.map((r) => (
@@ -108,46 +121,7 @@ function GapArt() {
   );
 }
 
-function Play({ className = "" }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden="true"
-    >
-      <path d="M9 6.5v11a.6.6 0 0 0 .92.5l8.2-5.5a.6.6 0 0 0 0-1l-8.2-5.5A.6.6 0 0 0 9 6.5Z" />
-    </svg>
-  );
-}
-
-/**
- * A feed with two stills and a tour in it. The cards above and below are cropped
- * by the frame so it reads as mid-scroll rather than as a finished list.
- */
-function FeedArt() {
-  return (
-    <Card
-      eyebrow="In the feed"
-      caption="Two stills and one that moves. Only one of them stops a thumb."
-    >
-      <div className="relative mx-auto mt-4 h-[176px] w-[186px] overflow-hidden rounded-[20px] border border-line bg-cream">
-        <div className="absolute -top-7 left-3.5 right-3.5 h-[62px] rounded-xl bg-line/60" />
-
-        <div className="absolute left-3.5 right-3.5 top-[57px] flex h-[62px] items-center justify-center rounded-xl border-2 border-accent bg-accent-soft shadow-[0_8px_18px_-10px_rgba(15,125,107,0.7)]">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-cream">
-            <Play className="ml-[1px] h-4 w-4" />
-          </span>
-        </div>
-
-        <div className="absolute -bottom-7 left-3.5 right-3.5 h-[62px] rounded-xl bg-line/60" />
-      </div>
-    </Card>
-  );
-}
-
 export function LessonArt({ kind }: { kind?: LessonVisual }) {
   if (kind === "gap") return <GapArt />;
-  if (kind === "feed") return <FeedArt />;
   return null;
 }

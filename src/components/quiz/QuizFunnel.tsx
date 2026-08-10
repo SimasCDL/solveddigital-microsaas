@@ -7,6 +7,7 @@ import { PaymentLogos } from "@/components/site/PaymentLogos";
 import { ReviewAvatars } from "@/components/site/ReviewsRow";
 import { LessonArt } from "@/components/quiz/LessonArt";
 import { ProofNote } from "@/components/quiz/ProofNote";
+import { IntroTestimonials } from "@/components/quiz/IntroTestimonials";
 import { BeforeAfterRail } from "@/components/sections/BeforeAfterRail";
 import { Testimonials } from "@/components/quiz/Testimonials";
 import { packCheckoutUrl, discountPct } from "@/lib/pricing";
@@ -491,17 +492,34 @@ function Intro({
           Takes about 2 minutes · No card needed
         </p>
 
-        {/* Same faces as the home page hero, so the ad, landing and quiz run
-            shows one consistent set of people. */}
-        <div className="mt-8 flex items-center justify-center gap-3 [@media(min-width:1450px)_and_(min-height:860px)]:mt-11">
-          <ReviewAvatars size={30} />
-          <div className="flex flex-col items-start leading-none">
-            <Stars />
-            <span className="mt-1 text-[13px] font-semibold text-ink">
-              1,564 tours delivered
-            </span>
-          </div>
-        </div>
+        {/*
+         * Flipped: the quote leads, the rating supports it, and the delivery
+         * count is gone.
+         *
+         * "1,564 tours delivered" was the single worst line on the entry
+         * screen under the new positioning. It answers a question nobody has
+         * asked, using a unit the visitor has not been introduced to. Somebody
+         * who arrived to learn how to market a listing reads "tours" and either
+         * skips it as noise or works out they are on a sales page, which is
+         * exactly the realisation the rest of this screen is built to delay.
+         *
+         * What replaces it has to be about the outcome, not the format. The
+         * quote never mentions filming, a video or a tour, because at this
+         * point neither do we.
+         */}
+        <IntroTestimonials />
+
+        {/* Just the line, centred, one row.
+            The avatar stack went because the carousel above it now shows five
+            faces with names and countries attached. Five more anonymous faces
+            underneath was the same claim made twice, and the weaker version
+            was sitting closest to the fold.
+            The three markets are the three we actually buy traffic in, so an
+            agent in Brisbane or Calgary is not reading a US-only claim and
+            deciding this is not for them. */}
+        <p className="mt-5 text-center text-[12.5px] leading-[1.4] text-ink-soft">
+          Trusted by agents in the US, Canada and Australia
+        </p>
       </div>
     </Shell>
   );
@@ -779,8 +797,13 @@ function Offer({
             <span className="mt-2 inline-block rounded-full bg-[#fdeceb] px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.04em] text-[#b42318]">
               Save {discountPct(d.pack)}%
             </span>
+            {/* The pack size is gone. "Up to 40 photos" reads as a limit being
+                imposed at the exact moment the price is being accepted, and the
+                photo count was already settled by their own answer two screens
+                ago. "One-time" stays: the subscription objection is the live
+                one on a $112 impulse purchase. */}
             <p className="mt-2 text-[13.5px] leading-[1.4] text-ink-soft">
-              {d.pack.name} · one-time, no subscription
+              One-time. No subscription.
             </p>
           </div>
         </div>

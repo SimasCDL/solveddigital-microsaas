@@ -1,12 +1,11 @@
 /**
  * Small white payment-method chips (visual only).
  *
- * Grouped into three explicit rows rather than left to wrap. Wrapping sorted
+ * Grouped into two explicit rows rather than left to wrap. Wrapping sorted
  * them by whatever width was left over, which put Shop Pay and UnionPay on
  * their own bottom line and made the two most obscure marks the most
- * prominent thing in the block. The order below is the order a buyer scans for
- * reassurance: the cards they hold, then the wallets they pay with, then the
- * rest.
+ * prominent thing in the block, and a lone chip on a third row looked like a
+ * layout bug. Two rows: the cards they hold, then everything they can tap.
  */
 export function PaymentLogos() {
   const chip =
@@ -126,9 +125,6 @@ export function PaymentLogos() {
             </text>
           </svg>
         </span>
-      </div>
-
-      <div className={row}>
         <span className={chip}>
           <svg width="30" height="18" viewBox="0 0 30 18" aria-label="UnionPay">
             <rect x="0.5" y="1" width="9" height="16" rx="2" fill="#E21836" />

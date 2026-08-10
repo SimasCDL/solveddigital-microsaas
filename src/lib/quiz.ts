@@ -173,16 +173,23 @@ const ALL_STEPS: Step[] = [
      * would make them suspicious of it.
      */
     title: "The gap almost nobody in your market is filling.",
+    /**
+     * Three short sentences, and the word "video" appears in the first one.
+     *
+     * The previous version ran six lines and never said what the gap was in, so
+     * the chart underneath read as "sellers who want it" with no antecedent. A
+     * reader who has to hold an unexplained "it" across two paragraphs stops
+     * reading. Naming video here is safe: it is presented as what SELLERS
+     * expect, not as what we sell, and no price or product follows it.
+     */
     body: () =>
-      "Sellers grade your marketing before they grade you. Ask any of them what " +
-      "they looked at before the listing appointment and it is your last few " +
-      "listings, not your credentials. What the research keeps finding is that " +
-      "most of them now expect motion, and almost none of the agents pitching " +
-      "against you are giving it to them. Demand went up. Supply did not.",
+      "Sellers judge your marketing before they judge you. Most of them now " +
+      "expect video on their listing. Almost none of the agents you compete " +
+      "with actually deliver it.",
     takeaway:
-      "Try this on your next listing appointment: open with what you will do to " +
-      "market the property, before you talk about price or commission. It is the " +
-      "part sellers came to hear and the part most agents leave until last.",
+      "Try this at your next listing appointment: open with how you will market " +
+      "the property, before price or commission comes up. It is what the seller " +
+      "came to hear, and it is the part most agents leave until last.",
   },
   {
     kind: "question",
@@ -198,9 +205,11 @@ const ALL_STEPS: Step[] = [
   {
     kind: "lesson",
     id: "lesson_feed",
-    visual: "feed",
     eyebrow: "Where it actually gets found",
     title: "Buyers scroll before they ever browse.",
+    // No diagram. The abstract feed mock illustrated a sentence that was already
+    // clear, and it pushed the takeaway and the button below the fold on a
+    // phone for no gain.
     /**
      * Kept, tightened, and given a payout. The angle was already right: it is
      * the only screen that explains why the format matters at all, and it does
@@ -211,15 +220,21 @@ const ALL_STEPS: Step[] = [
      * paragraph at that exact point is what makes them decide it is not.
      */
     body: () =>
-      "A property gets discovered in a feed now, not on a portal, and a feed " +
-      "rewards motion. A still gallery asks someone to stop and tap through. " +
-      "Something that moves earns the stop on its own. Same property, same " +
-      "photos, different result, decided only by the format it went out in.",
+      "Properties get discovered in a feed, not on a portal, and the same feed " +
+      "rewards motion. A gallery that moves earns the stop on its own. Same " +
+      "property, same photos, but different results, decided only by the format " +
+      "it was delivered in.",
+    /**
+     * The diagram that sat here is gone, so the takeaway is now the only thing
+     * between the paragraph and the button and has to carry the screen on its
+     * own. Two lines instead of one: the instruction, then the reason it works.
+     * The reason is what makes it feel like advice rather than a tip list.
+     */
     takeaway:
-      "Free win tonight: whatever you post next, lead with the shot that has " +
-      "depth in it, a hallway or a view through a doorway, not the front " +
-      "elevation. Depth is what stops a thumb. Every agent in your market opens " +
-      "with the front of the house.",
+      "Whatever you post next, open on a shot with depth in it. A hallway, or a " +
+      "view through a doorway into another room. Depth is what makes a thumb " +
+      "stop, and almost every agent in your market opens with the front of the " +
+      "house instead.",
   },
   {
     kind: "question",
