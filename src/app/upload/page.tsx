@@ -67,7 +67,10 @@ export default function UploadPage() {
         // manufacture a conversion. The webhook sends the same event with the
         // same id, so this is a de-duped backup for whichever path is slower —
         // or the only one firing, if META_CAPI_TOKEN is not set.
-        if (sessionId && d?.paid && typeof d.amount === "number") {
+        // Fire for any verified paid session. trackPurchaseOnce drops the value
+        // itself when it is zero (100%-off coupon), so the conversion is still
+        // reported while the bogus revenue figure is not.
+        if (sessionId && d?.paid) {
           trackPurchaseOnce(sessionId, d.amount, d.currency ?? "usd");
         }
       })
