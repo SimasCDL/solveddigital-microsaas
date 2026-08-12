@@ -272,7 +272,7 @@ export async function sendFailureEmail(params: {
         Something went wrong while generating your video for order #${params.orderId}.
         Our team has been notified${
           process.env.NEXT_PUBLIC_FREE_MODE === "true"
-            ? " and we&rsquo;ll make it right — just reply to this email and we&rsquo;ll regenerate your tour."
+            ? ` and we&rsquo;ll make it right. <a href="${appUrl()}/help" style="color:#15130f;">Tell us here</a> and we&rsquo;ll regenerate your tour.`
             : " and you will receive a full refund within 3&ndash;5 business days."
         }
       </p>

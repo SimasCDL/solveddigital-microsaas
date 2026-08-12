@@ -58,7 +58,9 @@ export async function POST(req: NextRequest) {
       const used = await countOrdersBySession(sessionId);
       if (used >= usesForAmount(session.amount_total)) {
         return NextResponse.json(
-          { error: 'This purchase has already been used. If that doesn’t seem right, reply to your confirmation email.' },
+          // Not "reply to your confirmation email" — nothing reads that inbox, and
+        // this is a customer who paid and is being refused. /help reaches a phone.
+        { error: 'This purchase has already been used. If that doesn’t seem right, tell us at /help and we’ll sort it out.' },
           { status: 402 }
         );
       }
