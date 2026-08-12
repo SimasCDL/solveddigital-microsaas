@@ -22,10 +22,16 @@ const sha256 = (v: string) =>
  * Test Events while testing (remove it for production).
  */
 export async function sendMetaEventServerSide(params: {
-  eventName: 'Lead' | 'StartTrial';
+  eventName: 'Lead' | 'StartTrial' | 'Purchase';
+  /** Dedupe key, matched against the browser pixel's eventID. Order id for
+   *  Lead/StartTrial; the Stripe session id for Purchase, because a pay-first
+   *  checkout has no order yet at the moment the money lands. */
   orderId: string;
   email?: string;
   eventSourceUrl?: string;
+  /** Purchase only. Meta needs both to report revenue and optimise on value. */
+  value?: number;
+  currency?: string;
 }): Promise<void> {
   const token = process.env.META_CAPI_TOKEN;
   const pixelId = process.env.META_PIXEL_ID || '1711786899965347';
@@ -42,6 +48,17 @@ export async function sendMetaEventServerSide(params: {
     user_data,
   };
   if (params.eventSourceUrl) event.event_source_url = params.eventSourceUrl;
+
+  // A Sales campaign optimising on Purchase needs the money on the event, or
+  // Meta records the conversion with no revenue and ROAS reads as zero. Sent
+  // only when we actually know the amount — a Purchase with value 0 is worse
+  // than one with no value at all, because Meta believes the zero.
+  if (params.value !== undefined && params.currency) {
+    event.custom_data = {
+      value: params.value,
+      currency: params.currency.toUpperCase(),
+    };
+  }
 
   const body: Record<string, unknown> = { data: [event] };
   if (process.env.META_TEST_EVENT_CODE) {

@@ -17,7 +17,15 @@ export async function GET(req: NextRequest) {
     if (session.payment_status !== 'paid') {
       return NextResponse.json({ maxPhotos: 40, paid: false });
     }
-    return NextResponse.json({ maxPhotos: photosForAmount(session.amount_total), paid: true });
+    // amount/currency feed the browser Purchase pixel on the upload page. The
+    // webhook reports the same sale server-side with event_id = session id, so
+    // Meta de-dupes the two rather than counting the revenue twice.
+    return NextResponse.json({
+      maxPhotos: photosForAmount(session.amount_total),
+      paid: true,
+      amount: (session.amount_total ?? 0) / 100,
+      currency: session.currency ?? 'usd',
+    });
   } catch {
     return NextResponse.json({ maxPhotos: 40, paid: false });
   }

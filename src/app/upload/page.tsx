@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { trackPurchaseOnce } from "@/components/MetaPixel";
 
 const MAX_PHOTOS = 40;
 
@@ -61,6 +62,14 @@ export default function UploadPage() {
       .then((d) => {
         if (d?.maxPhotos) setMaxPhotos(d.maxPhotos);
         if (SKIP_CHECKOUT) setAccess(d?.paid ? "ok" : "denied");
+        // Report the sale the moment the customer lands back from Stripe. Only
+        // on a server-verified paid session, so a hand-typed ?session_id cannot
+        // manufacture a conversion. The webhook sends the same event with the
+        // same id, so this is a de-duped backup for whichever path is slower —
+        // or the only one firing, if META_CAPI_TOKEN is not set.
+        if (sessionId && d?.paid && typeof d.amount === "number") {
+          trackPurchaseOnce(sessionId, d.amount, d.currency ?? "usd");
+        }
       })
       .catch(() => {
         if (SKIP_CHECKOUT) setAccess("denied");

@@ -62,9 +62,10 @@ const inFlight = new Set<string>();
  * the order "sent" while the pixel was still loading and the event would be lost.
  */
 function trackOnce(
-  event: "Lead" | "StartTrial",
+  event: "Lead" | "StartTrial" | "Purchase",
   orderId: string,
   contentName: string,
+  extra?: { value: number; currency: string },
 ): void {
   if (typeof window === "undefined" || !orderId) return;
   const guard = `${event}:${orderId}`;
@@ -81,7 +82,17 @@ function trackOnce(
   let tries = 0;
   const fire = () => {
     if (typeof window.fbq === "function") {
-      window.fbq("track", event, { content_name: contentName }, { eventID: orderId });
+      window.fbq(
+        "track",
+        event,
+        {
+          content_name: contentName,
+          ...(extra
+            ? { value: extra.value, currency: extra.currency.toUpperCase() }
+            : {}),
+        },
+        { eventID: orderId },
+      );
       try {
         localStorage.setItem(key, "1");
       } catch {}
@@ -107,3 +118,19 @@ export const trackLeadOnce = (orderId: string) =>
  *  signal the paid campaigns are optimizing against. */
 export const trackStartTrialOnce = (orderId: string) =>
   trackOnce("StartTrial", orderId, "free_video_tour");
+
+/**
+ * Money received — the event a Sales campaign optimises on.
+ *
+ * Keyed on the Stripe SESSION id, not an order id, because the pay-first funnel
+ * takes payment before an order exists. The webhook reports the same sale
+ * server-side with the same id, so whichever arrives second is de-duped by Meta
+ * rather than doubling the revenue.
+ *
+ * Fired from /upload, which is where Stripe's success URL lands the customer.
+ */
+export const trackPurchaseOnce = (
+  sessionId: string,
+  value: number,
+  currency: string,
+) => trackOnce("Purchase", sessionId, "video_tour_pack", { value, currency });

@@ -5,6 +5,7 @@ import { getOrder, updateOrder } from "@/lib/orders";
 import { fulfillOrder } from "@/lib/fulfill";
 import { sendTelegram } from "@/lib/telegram";
 import { stopSequence, sendRecovery } from "@/lib/sequence";
+import { sendMetaEventServerSide } from "@/lib/meta";
 import type Stripe from "stripe";
 
 // A pack's photo cap is fixed by the Stripe Price the customer paid for — NOT
@@ -165,6 +166,30 @@ export async function POST(req: NextRequest) {
   }
 
   after(() => notifyPurchase(session, order?.photoUrls?.length ?? 0));
+
+  // Purchase, reported from the money landing rather than from a page view.
+  //
+  // This is the event a Sales campaign optimises on, and the webhook is the only
+  // place that is both authoritative about the amount and guaranteed to run. The
+  // pay-first funnel takes payment on a Stripe Payment Link, so there is no order
+  // yet here and the customer may never open a page again — a browser-only
+  // Purchase would simply be missed for those. `event_id` is the session id so
+  // the /upload pixel de-dupes against this instead of double-counting.
+  //
+  // Distinct from the `Lead` fired in fulfillOrder: Lead marks a tour being
+  // built, Purchase marks money received, and in the pay-first flow they are
+  // different moments. Both are kept so the existing Lead-optimised campaigns
+  // keep their signal while the new Sales campaigns get a real revenue event.
+  after(() =>
+    sendMetaEventServerSide({
+      eventName: "Purchase",
+      orderId: session.id,
+      email: session.customer_details?.email ?? session.customer_email ?? undefined,
+      value: (session.amount_total ?? 0) / 100,
+      currency: session.currency ?? "usd",
+      eventSourceUrl: `${process.env.NEXT_PUBLIC_APP_URL || ""}/upload`,
+    }).catch((err) => console.error("[webhook] Meta Purchase failed:", err)),
+  );
 
   // Take the buyer out of the nurture sequence and cancel anything already
   // sitting in Resend's scheduler. This has to happen for EVERY completed
