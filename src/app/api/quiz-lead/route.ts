@@ -143,6 +143,18 @@ export async function POST(req: NextRequest) {
         if (lead.status === "active") await startSequence(lead);
       } catch (err) {
         console.error("[quiz-lead] sequence start failed:", err);
+        // Loud, because this failure is otherwise invisible from the outside.
+        // The visitor still gets their diagnostic (sent above, before any DB
+        // call) and the lead still reaches Telegram, so every surface anyone
+        // actually watches looks healthy while the follow-up sequence is being
+        // dropped on the floor. That is exactly how the missing `quiz_leads`
+        // table ran for days: eleven emails owed to five real leads, and the
+        // only trace was a Vercel log line.
+        await sendTelegram(
+          `🚨 *Lead NOT persisted* — nurture sequence did not start\n` +
+            `📧 ${email}\n` +
+            `⚠️ ${String(err).slice(0, 300)}`,
+        ).catch(() => {});
       }
     });
 
