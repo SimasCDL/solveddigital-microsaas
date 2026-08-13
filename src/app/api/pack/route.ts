@@ -14,7 +14,14 @@ export async function GET(req: NextRequest) {
 
   try {
     const session = await getStripe().checkout.sessions.retrieve(sessionId);
-    if (session.payment_status !== 'paid') {
+    // 'no_payment_required' is a 100%-off coupon — a real, entitled customer.
+    // /api/fulfill has always accepted both; this route only accepted 'paid',
+    // so a free-coupon buyer was shown the locked uploader and could not
+    // deliver their photos at all. Keep the two in agreement.
+    if (
+      session.payment_status !== 'paid' &&
+      session.payment_status !== 'no_payment_required'
+    ) {
       return NextResponse.json({ maxPhotos: 40, paid: false });
     }
     // amount/currency feed the browser Purchase pixel on the upload page. The
