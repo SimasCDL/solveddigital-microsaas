@@ -37,6 +37,8 @@ export default function UploadPage() {
   const [dragging, setDragging] = useState(false);
   const [music, setMusic] = useState(true);
   const [error, setError] = useState("");
+  /** Whether the current error came from the server and warrants a /help link. */
+  const [showHelp, setShowHelp] = useState(false);
   const [step, setStep] = useState<"form" | "uploading" | "redirecting">(
     "form",
   );
@@ -99,6 +101,7 @@ export default function UploadPage() {
     if (!files.length) return setError("Add your listing photos first.");
     if (!email) return setError("Add your email so we can send your tour.");
     setError("");
+    setShowHelp(false);
     setStep("uploading");
     try {
       const formData = new FormData();
@@ -109,7 +112,15 @@ export default function UploadPage() {
         method: "POST",
         body: formData,
       });
-      if (!uploadRes.ok) throw new Error("Upload failed — please try again.");
+      // Surface what the server actually said, the way the /api/fulfill call
+      // below already does. The blanket "please try again" hid a locked upload
+      // provider for days: retrying was useless advice, and the customer had no
+      // way to know they should ask for help instead.
+      if (!uploadRes.ok) {
+        const body = await uploadRes.json().catch(() => null);
+        setShowHelp(true);
+        throw new Error(body?.error || "Upload failed — please try again.");
+      }
       const { orderId } = await uploadRes.json();
       setStep("redirecting");
 
@@ -360,7 +371,24 @@ export default function UploadPage() {
               </div>
             </div>
 
-            {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+            {/* Server-side failures get a real link to /help. This is the screen
+                where the customer has already paid, so an error they cannot act
+                on is the worst thing we can show them. Client-side validation
+                ("add your photos first") is self-explanatory and gets no link. */}
+            {error && (
+              <p className="mt-3 text-sm text-red-600">
+                {error}
+                {showHelp && (
+                  <>
+                    {" "}
+                    <a href="/help" className="font-semibold underline">
+                      Contact us here
+                    </a>
+                    .
+                  </>
+                )}
+              </p>
+            )}
 
             {/* CTA — the funnel's shiny accent button */}
             <button
