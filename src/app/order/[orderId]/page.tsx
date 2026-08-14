@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { trackLeadOnce, trackStartTrialOnce } from "@/components/MetaPixel";
 import { FullTourUpsell } from "@/components/FullTourUpsell";
+import { NextListingUpsell } from "@/components/NextListingUpsell";
 
 type Status = "pending_payment" | "processing" | "completed" | "failed";
 
@@ -79,17 +80,18 @@ export default function OrderPage() {
   const justPaid = searchParams.get("success") === "1";
   const demo = searchParams.get("demo");
 
-  const [data, setData] = useState<StatusData | null>(null);
+  // Demo states come straight from the URL, so they are initial state rather
+  // than something an effect assigns after the first paint.
+  const [data, setData] = useState<StatusData | null>(
+    demo ? (DEMO_STATES[demo] ?? DEMO_STATES.processing) : null,
+  );
   const [error, setError] = useState("");
   // Seconds on the "creating your tour" screen — drives the live progress bar
   // and step, so the wait feels like something is happening (not a dead spinner).
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
-    if (demo) {
-      setData(DEMO_STATES[demo] ?? DEMO_STATES.processing);
-      return;
-    }
+    if (demo) return;
 
     let timer: NodeJS.Timeout;
 
@@ -176,10 +178,15 @@ export default function OrderPage() {
               This link has expired
             </h1>
             <p className="mx-auto mt-3 max-w-md text-tink-soft">
-              Video links are available for 7 days after delivery. If you still
-              need your tour, reply to your delivery email and we&apos;ll help
-              you out.
+              This page&apos;s links last 7 days. Your tour itself did not go
+              anywhere — open your library and it is still there.
             </p>
+            <a
+              href="/library"
+              className="mt-6 inline-flex h-12 items-center justify-center rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] px-7 text-[0.95rem] font-semibold tracking-tight text-white shadow-[0_14px_34px_-10px_rgba(15,125,107,0.65)]"
+            >
+              Open my library
+            </a>
             <p className="mt-6 text-[13px] text-tink-soft/80">
               Order #{orderId}
             </p>
@@ -260,12 +267,17 @@ export default function OrderPage() {
               )}
             </div>
 
-            {data.free && (
+            {data.free ? (
               <FullTourUpsell
                 orderId={orderId}
                 photoCount={data.photoCount}
                 previewCount={data.previewCount ?? 3}
               />
+            ) : (
+              // Paid and finished: the one moment they have seen the product
+              // work. Nothing to unlock, so the only honest next step is the
+              // next listing.
+              <NextListingUpsell />
             )}
 
             <p className="mt-6 text-center text-[13px] text-tink-soft">
@@ -273,6 +285,16 @@ export default function OrderPage() {
                 ? `Order #${orderId}`
                 : `We also sent these links to your email · Order #${orderId}`}
             </p>
+
+            {!data.free && (
+              <p className="mt-2 text-center text-[13px] text-tink-soft">
+                Every tour you make lives in{" "}
+                <a href="/library" className="text-accent underline">
+                  your library
+                </a>
+                , after these links expire.
+              </p>
+            )}
           </div>
         ) : data.status === "failed" ? (
           <div className="text-center">

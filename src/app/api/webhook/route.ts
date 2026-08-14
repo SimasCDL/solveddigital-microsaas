@@ -1,29 +1,13 @@
 import { after } from "next/server";
 import { NextRequest, NextResponse } from "next/server";
-import { getStripe, photosForAmount } from "@/lib/stripe";
+import { getStripe, photosForSession } from "@/lib/stripe";
 import { getOrder, updateOrder } from "@/lib/orders";
 import { fulfillOrder } from "@/lib/fulfill";
 import { sendTelegram } from "@/lib/telegram";
+import { sendUploadLinkEmail } from "@/lib/resend";
 import { stopSequence, sendRecovery } from "@/lib/sequence";
 import { sendMetaEventServerSide } from "@/lib/meta";
 import type Stripe from "stripe";
-
-// A pack's photo cap is fixed by the Stripe Price the customer paid for — NOT
-// the amount. Deriving it from the amount broke under promo codes: OFF20 on the
-// $160/40-photo pack pays $128, which the amount ladder misread as the 25-pack.
-// The Price a promo discounts is still the same Price, so this stays correct.
-// Keep in sync with the pack Payment Links.
-const PHOTOS_BY_PRICE: Record<string, number> = {
-  // Current prices.
-  price_1TyAcqI5ln1sJkOAvIqvpvp1: 40, // $112 pack
-  price_1TyAcpI5ln1sJkOAq05gmtCD: 25, // $84 pack
-  price_1TyAcoI5ln1sJkOAXNVR2BxX: 15, // $65 pack
-  // Retired prices — kept so an in-flight checkout opened before the price
-  // change still entitles the right pack instead of falling back to 15.
-  price_1TvdxxI5ln1sJkOAwnzfABr8: 40, // was $160
-  price_1TvdxbI5ln1sJkOAZt1Xttod: 25, // was $125
-  price_1TvdxBI5ln1sJkOA1GKh5Q4C: 15, // was $105
-};
 
 /** Telegram "cha-ching" on a sale: what + amount + today's running total. */
 async function notifyPurchase(
@@ -184,7 +168,8 @@ export async function POST(req: NextRequest) {
     sendMetaEventServerSide({
       eventName: "Purchase",
       orderId: session.id,
-      email: session.customer_details?.email ?? session.customer_email ?? undefined,
+      email:
+        session.customer_details?.email ?? session.customer_email ?? undefined,
       value: (session.amount_total ?? 0) / 100,
       currency: session.currency ?? "usd",
       eventSourceUrl: `${process.env.NEXT_PUBLIC_APP_URL || ""}/upload`,
@@ -208,6 +193,38 @@ export async function POST(req: NextRequest) {
         console.error("[webhook] stopSequence failed:", err),
       ),
     );
+  }
+
+  // Pay-first purchase: money has landed and there is no order yet, because the
+  // customer has not uploaded anything. Their ONLY route to the uploader is the
+  // session id on Stripe's success URL, so mail them a durable copy of it now.
+  //
+  // Without this, closing that tab is indistinguishable from being robbed: no
+  // order exists to chase, Stripe's receipt has no link of ours, and the
+  // "PAID BUT NOT FULFILLED" alarm below cannot fire because a Payment Link
+  // carries no client_reference_id. Nobody would ever know.
+  //
+  // Skipped when an order already exists — those customers uploaded first and
+  // are being told to upload something they already sent.
+  if (!order && buyerEmail) {
+    after(async () => {
+      try {
+        await sendUploadLinkEmail({
+          to: buyerEmail,
+          sessionId: session.id,
+          maxPhotos: await photosForSession(session),
+        });
+      } catch (err) {
+        // Loud: this failing means somebody paid and has no way back in.
+        console.error("[webhook] upload link email failed:", err);
+        await sendTelegram(
+          `🚨 *Upload link email FAILED* — customer has paid and cannot reach the uploader\n` +
+            `📧 ${buyerEmail}\n💳 session \`${session.id}\`\n` +
+            `🔗 ${process.env.NEXT_PUBLIC_APP_URL || ""}/upload?session_id=${session.id}\n` +
+            `⚠️ ${String(err).slice(0, 300)}`,
+        ).catch(() => {});
+      }
+    });
   }
 
   // Did this payment actually kick off fulfillment? A paid checkout that carries
@@ -242,21 +259,9 @@ export async function POST(req: NextRequest) {
       status: "processing",
       stripeSessionId: session.id,
     });
-    // Entitlement from the Price the customer bought (discount-proof). Fall back
-    // to the amount only if the line item can't be read for some reason.
-    let allowed = photosForAmount(session.amount_total);
-    try {
-      const items = await getStripe().checkout.sessions.listLineItems(
-        session.id,
-        { limit: 1 },
-      );
-      const priceId = items.data[0]?.price?.id;
-      if (priceId && PHOTOS_BY_PRICE[priceId]) {
-        allowed = PHOTOS_BY_PRICE[priceId];
-      }
-    } catch {
-      /* keep the amount-based fallback */
-    }
+    // Entitlement from the Price the customer bought (discount-proof), shared
+    // with /api/pack and /api/fulfill so the three can never disagree.
+    const allowed = await photosForSession(session);
     after(() => fulfillOrder(orderId, { limitPhotos: allowed }));
     fulfilled = true;
   }

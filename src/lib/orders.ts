@@ -162,8 +162,34 @@ export async function hasPaidOrderFor(email: string): Promise<boolean> {
   }
 }
 
+/**
+ * Every tour this address has, newest first.
+ *
+ * Backs the customer's library at /tours. Only reachable behind a magic link
+ * mailed to the address itself, because "list every order for an email" is
+ * exactly the query you must never expose to whoever can type an email.
+ *
+ * `pending_payment` rows are excluded: those are uploads that never completed
+ * checkout, and showing them as tours would promise a video that was never
+ * paid for and never generated.
+ */
+export async function listOrdersByEmail(email: string): Promise<Order[]> {
+  if (!supabaseConfigured()) return [];
+  try {
+    const res = await sbFetch(
+      `/orders?email=eq.${encodeURIComponent(email.trim().toLowerCase())}` +
+        `&status=neq.pending_payment&select=*&order=created_at.desc&limit=100`,
+    );
+    const rows: OrderRow[] = await res.json();
+    return rows.map(fromRow);
+  } catch (err) {
+    console.error("[orders] list by email failed:", err);
+    return [];
+  }
+}
+
 /** How many orders (any status except pending_payment) already used this Stripe
- *  session — enforces single-use (or 3-use for the multi-video pack) sessions. */
+ *  session — enforces single-use sessions. */
 export async function countOrdersBySession(sessionId: string): Promise<number> {
   if (supabaseConfigured()) {
     try {
