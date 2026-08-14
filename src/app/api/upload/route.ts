@@ -1,12 +1,10 @@
 import { after } from "next/server";
-import { fal } from "@fal-ai/client";
 import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuid } from "uuid";
 import { createOrder } from "@/lib/orders";
+import { uploadPhotos } from "@/lib/photos";
 import { sendTelegram } from "@/lib/telegram";
 import type { Order } from "@/lib/types";
-
-fal.config({ credentials: process.env.FAL_KEY! });
 
 const MAX_PHOTOS = 40; // the biggest pack
 const MAX_FILE_BYTES = 15 * 1024 * 1024; // 15 MB per photo
@@ -50,10 +48,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // uploaded in parallel
-    const photoUrls = await Promise.all(
-      valid.map((file) => fal.storage.upload(file)),
-    );
+    // Uploaded in parallel to our own Supabase bucket. This used to go to
+    // fal.storage, which meant a lapsed balance on a third-party account took
+    // the entire product offline at its first step.
+    const photoUrls = await uploadPhotos(valid);
 
     const orderId = uuid();
     const order: Order = {
