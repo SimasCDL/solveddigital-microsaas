@@ -131,6 +131,15 @@ export const trackStartTrialOnce = (orderId: string) =>
  */
 export const trackPurchaseOnce = (
   sessionId: string,
-  value: number,
-  currency: string,
-) => trackOnce("Purchase", sessionId, "video_tour_pack", { value, currency });
+  value?: number,
+  currency?: string,
+) =>
+  trackOnce(
+    "Purchase",
+    sessionId,
+    "video_tour_pack",
+    // Omitted for a zero-value sale (100%-off coupon), matching the server side.
+    // The conversion is still reported; only the revenue figure is withheld,
+    // because a literal 0 would be averaged into Meta's value optimisation.
+    value !== undefined && value > 0 && currency ? { value, currency } : undefined,
+  );

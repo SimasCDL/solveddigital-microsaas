@@ -2,6 +2,7 @@ import { getStripe } from "./stripe";
 import { funnelCounts, type FunnelStage } from "./quizEvents";
 import { sendsInWindow } from "./nurtureSends";
 import { convertedInWindow, leadCounts } from "./leads";
+import { healthSection } from "./health";
 
 /**
  * Daily report — pulls traffic/behavior from Microsoft Clarity and
@@ -246,7 +247,7 @@ function quizSection(stages: FunnelStage[]): string[] {
 }
 
 export async function buildReport(): Promise<string> {
-  const [day, week, sales7, devices, quiz, emailsSent, converted, leads] =
+  const [day, week, sales7, devices, quiz, emailsSent, converted, leads, health] =
     await Promise.all([
     fetchClarity(1).catch(() => null),
     fetchSales(24).catch(() => null),
@@ -256,6 +257,7 @@ export async function buildReport(): Promise<string> {
     sendsInWindow(24).catch(() => 0),
     convertedInWindow(24).catch(() => 0),
     leadCounts().catch(() => null),
+    healthSection().catch(() => [] as string[]),
   ]);
 
   const date = new Intl.DateTimeFormat("en-GB", {
@@ -267,6 +269,15 @@ export async function buildReport(): Promise<string> {
   const L: string[] = [];
   L.push(`🎯 *Tourly* · ${date} · last 24h`);
   L.push("");
+
+  // HEALTH goes first, above the numbers, and only appears when something is
+  // actually wrong. A locked provider or a stuck paid order makes every metric
+  // below it meaningless, so it must not sit at the bottom of the message where
+  // it competes with a conversion rate for attention.
+  if (health.length) {
+    L.push(...health);
+    L.push("");
+  }
 
   // FUNNEL
   const landing = day?.sessions ?? 0;

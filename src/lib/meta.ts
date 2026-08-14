@@ -53,7 +53,11 @@ export async function sendMetaEventServerSide(params: {
   // Meta records the conversion with no revenue and ROAS reads as zero. Sent
   // only when we actually know the amount — a Purchase with value 0 is worse
   // than one with no value at all, because Meta believes the zero.
-  if (params.value !== undefined && params.currency) {
+  // `> 0`, not `!== undefined`: a 100%-off coupon settles at amount_total 0, and
+  // a real paid session can report 0 too. Sending value 0 is worse than sending
+  // nothing, because Meta believes it and averages it into value optimisation.
+  // The conversion still counts; only the revenue figure is withheld.
+  if (params.value !== undefined && params.value > 0 && params.currency) {
     event.custom_data = {
       value: params.value,
       currency: params.currency.toUpperCase(),

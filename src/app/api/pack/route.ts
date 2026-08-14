@@ -18,10 +18,10 @@ export async function GET(req: NextRequest) {
 
   try {
     const session = await getStripe().checkout.sessions.retrieve(sessionId);
-    // 'paid' = normal purchase; 'no_payment_required' = 100%-off coupon. Both
-    // are accepted by /api/fulfill, so both must open the uploader here — a
-    // customer this gate turns away has already been charged (or comped) and
-    // has nowhere else to go.
+    // 'no_payment_required' is a 100%-off coupon — a real, entitled customer.
+    // /api/fulfill has always accepted both; this route only accepted 'paid',
+    // so a free-coupon buyer was shown the locked uploader and could not
+    // deliver their photos at all. Keep the two in agreement.
     if (
       session.payment_status !== "paid" &&
       session.payment_status !== "no_payment_required"

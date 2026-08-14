@@ -1,8 +1,8 @@
 import { after } from 'next/server';
 import { NextRequest, NextResponse } from 'next/server';
-import { fal } from '@fal-ai/client';
 import { v4 as uuid } from 'uuid';
 import { createOrder } from '@/lib/orders';
+import { uploadPhotos } from '@/lib/photos';
 import { fulfillOrder } from '@/lib/fulfill';
 import { sendTelegram } from '@/lib/telegram';
 import {
@@ -14,8 +14,6 @@ import {
   type Segment,
 } from '@/lib/freeTrial';
 import type { Order } from '@/lib/types';
-
-fal.config({ credentials: process.env.FAL_KEY! });
 
 // 300s is the ceiling on Vercel's Hobby plan — a higher value does not just get
 // clamped, it fails the deploy with "invalid maxDuration value". Raise this only
@@ -90,7 +88,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const photoUrls = await Promise.all(valid.map((file) => fal.storage.upload(file)));
+    // Our own Supabase bucket, not fal.storage — see src/lib/photos.ts.
+    const photoUrls = await uploadPhotos(valid);
 
     const now = new Date().toISOString();
     const order: Order = {
