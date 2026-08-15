@@ -11,7 +11,8 @@ import { IntroTestimonials } from "@/components/quiz/IntroTestimonials";
 import { BeforeAfterRail } from "@/components/sections/BeforeAfterRail";
 import { Testimonials } from "@/components/quiz/Testimonials";
 import { packCheckoutUrl, discountPct } from "@/lib/pricing";
-import { track } from "@/lib/track";
+import { track, sessionId } from "@/lib/track";
+import { trackCompleteRegistrationOnce } from "@/components/MetaPixel";
 import {
   visibleSteps,
   diagnose,
@@ -181,12 +182,20 @@ export function QuizFunnel({ initial }: { initial?: QuizInitialState } = {}) {
     if (!consent) return setError("Please accept so we can send your copy.");
     setError("");
     setPhase("analyzing");
+
+    // The one mid-funnel conversion Meta can attribute per ad. Purchases are
+    // too sparse to rank creative on, so this is what makes an angle test
+    // readable in days instead of weeks. Keyed on the visit id so the browser
+    // pixel and the server-side copy de-dupe into one conversion.
+    const sid = sessionId();
+    if (!isPreview) trackCompleteRegistrationOnce(sid);
+
     // Fire and forget — a failed lead ping must never block the result the
     // visitor just spent two minutes earning.
     fetch("/api/quiz-lead", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, answers }),
+      body: JSON.stringify({ email, answers, sessionId: sid }),
     }).catch(() => {});
     setTimeout(() => setPhase("result"), 2200);
   };

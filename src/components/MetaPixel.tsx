@@ -62,7 +62,7 @@ const inFlight = new Set<string>();
  * the order "sent" while the pixel was still loading and the event would be lost.
  */
 function trackOnce(
-  event: "Lead" | "StartTrial" | "Purchase",
+  event: "Lead" | "StartTrial" | "Purchase" | "CompleteRegistration",
   orderId: string,
   contentName: string,
   extra?: { value: number; currency: string },
@@ -118,6 +118,21 @@ export const trackLeadOnce = (orderId: string) =>
  *  signal the paid campaigns are optimizing against. */
 export const trackStartTrialOnce = (orderId: string) =>
   trackOnce("StartTrial", orderId, "free_video_tour");
+
+/**
+ * Someone finished the quiz and left an email.
+ *
+ * The only mid-funnel event Meta can see. Purchases are far too sparse to rank
+ * creative on — at ten dollars a day against a ninety dollar product an ad set
+ * produces roughly one sale a week, which is noise, not signal. Registrations
+ * run one to two orders of magnitude denser, so an angle can be judged in days.
+ *
+ * Deliberately NOT `Lead`: that name is already the paid-purchase signal the
+ * existing campaigns optimise against, and diluting it with quiz completions
+ * would wreck the one conversion event with real history.
+ */
+export const trackCompleteRegistrationOnce = (sessionId: string) =>
+  trackOnce("CompleteRegistration", sessionId, "quiz_diagnostic");
 
 /**
  * Money received — the event a Sales campaign optimises on.

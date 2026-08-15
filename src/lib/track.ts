@@ -32,7 +32,12 @@ export type QuizEvent =
   | "result_view"
   | "checkout_click";
 
-function sessionId(): string {
+/**
+ * Exported so the Meta `CompleteRegistration` event can use the same id as its
+ * dedupe key on both the browser and the server. Without a shared key the two
+ * report as separate conversions and every ad's registration count doubles.
+ */
+export function sessionId(): string {
   try {
     let id = sessionStorage.getItem(KEY);
     if (!id) {

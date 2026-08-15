@@ -22,7 +22,7 @@ const sha256 = (v: string) =>
  * Test Events while testing (remove it for production).
  */
 export async function sendMetaEventServerSide(params: {
-  eventName: 'Lead' | 'StartTrial' | 'Purchase';
+  eventName: 'Lead' | 'StartTrial' | 'Purchase' | 'CompleteRegistration';
   /** Dedupe key, matched against the browser pixel's eventID. Order id for
    *  Lead/StartTrial; the Stripe session id for Purchase, because a pay-first
    *  checkout has no order yet at the moment the money lands. */

@@ -7,6 +7,7 @@ import { packCheckoutUrl } from "@/lib/pricing";
 import { diagnose, costSentence, usd, type Answers } from "@/lib/quiz";
 import { countRecentByIpHash, upsertLead } from "@/lib/leads";
 import { startSequence } from "@/lib/sequence";
+import { sendMetaEventServerSide } from "@/lib/meta";
 
 /**
  * Quiz lead capture — mails the diagnostic, starts the nurture sequence and
@@ -68,9 +69,11 @@ function sweep(now: number) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, answers } = (await req.json()) as {
+    const { email, answers, sessionId } = (await req.json()) as {
       email?: string;
       answers?: Answers;
+      /** The visit id, shared with the browser pixel so Meta de-dupes. */
+      sessionId?: string;
     };
 
     if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
@@ -157,6 +160,24 @@ export async function POST(req: NextRequest) {
         ).catch(() => {});
       }
     });
+
+    // The server half of CompleteRegistration. The browser fires the same event
+    // with the same id, so Meta collapses them; this one is what survives an ad
+    // blocker or a tab closed during the analysing screen. Without it the
+    // registration counts an angle test is judged on are quietly undercounted,
+    // and unevenly — blocker usage is not spread evenly across audiences.
+    if (sessionId) {
+      after(() =>
+        sendMetaEventServerSide({
+          eventName: "CompleteRegistration",
+          orderId: sessionId,
+          email,
+          eventSourceUrl: `${appUrl}/tour`,
+        }).catch((err) =>
+          console.error("[quiz-lead] Meta CompleteRegistration failed:", err),
+        ),
+      );
+    }
 
     after(() =>
       sendTelegram(
