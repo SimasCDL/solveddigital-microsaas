@@ -189,7 +189,11 @@ function TourCard({ tour }: { tour: Tour }) {
 
         <div className="mt-3 flex flex-wrap gap-2">
           <a
-            href={`/order/${tour.id}`}
+            href={
+              tour.id.startsWith("demo")
+                ? "/order/demo?demo=completed"
+                : `/order/${tour.id}`
+            }
             className="inline-flex h-9 items-center rounded-full border border-line px-4 text-[13px] font-medium text-tink transition-colors hover:border-accent hover:text-accent"
           >
             Open
@@ -284,63 +288,178 @@ function Lock({ className = "" }: { className?: string }) {
 
 function LockedStyles({ thumbnail }: { thumbnail: string | null }) {
   return (
-    <section className="mt-12">
-      <div className="text-center">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-line/50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-tink-soft">
-          <Lock className="h-3 w-3" />
-          Not built yet
-        </span>
-        <h2 className="mt-3 font-display text-xl text-tink sm:text-2xl">
-          Styles
-        </h2>
-        <p className="mx-auto mt-1.5 max-w-md text-sm text-tink-soft">
-          One day you will be able to re-cut a tour you already have in a
-          different look, without re-uploading anything. We are showing you what
-          we are working towards, not something you can click.
-        </p>
-      </div>
-
-      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {STYLES.map((s) => (
-          <div
-            key={s.name}
-            className="group relative overflow-hidden rounded-2xl border border-line bg-paper"
-            aria-disabled="true"
-          >
-            <div className="relative aspect-video bg-line">
-              {thumbnail ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={thumbnail}
-                  alt=""
-                  className="h-full w-full object-cover"
-                  style={{ filter: s.css }}
-                />
-              ) : (
-                <div className="h-full w-full bg-gradient-to-br from-line to-cream" />
-              )}
-              <div className="absolute inset-0 bg-night/25" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-night/70 text-white">
-                  <Lock className="h-3.5 w-3.5" />
-                </span>
+    <section>
+      <div className="relative overflow-hidden rounded-3xl border border-line bg-paper">
+        {/* The tiles sit behind glass. Enough shows through to read as a real
+            feature waiting to be switched on; not enough to browse, because
+            there is nothing to browse yet. */}
+        <div
+          className="grid grid-cols-2 gap-3 p-5 sm:grid-cols-3"
+          aria-hidden="true"
+          style={{ filter: "blur(7px)", opacity: 0.55 }}
+        >
+          {STYLES.map((st) => (
+            <div key={st.name} className="overflow-hidden rounded-2xl bg-line">
+              <div className="relative aspect-video">
+                {thumbnail ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={thumbnail}
+                    alt=""
+                    className="h-full w-full object-cover"
+                    style={{ filter: st.css }}
+                  />
+                ) : (
+                  <div className="h-full w-full bg-gradient-to-br from-line to-cream" />
+                )}
+              </div>
+              <div className="px-3 py-2">
+                <div className="h-2 w-2/3 rounded bg-tink/15" />
               </div>
             </div>
-            <div className="p-3">
-              <p className="text-sm font-medium text-tink">{s.name}</p>
-              <p className="mt-0.5 text-[12px] leading-snug text-tink-soft">
-                {s.hint}
-              </p>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
+
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-cream/70 px-6 text-center backdrop-blur-[2px]">
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-night/85 text-white">
+            <Lock className="h-5 w-5" />
+          </span>
+          <h2 className="mt-4 font-display text-xl text-tink sm:text-2xl">
+            Styles
+          </h2>
+          <p className="mt-1.5 max-w-sm text-sm text-tink-soft">
+            Re-cut a tour you already have in a different look, without
+            re-uploading anything.
+          </p>
+          <span className="mt-4 rounded-full border border-line bg-paper px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-tink-soft">
+            Coming soon
+          </span>
+        </div>
       </div>
 
-      <p className="mt-4 text-center text-[13px] text-tink-soft">
-        Nothing to do here yet. When it exists it will appear on the tours you
-        already have, at no extra cost for the ones you have paid for.
+      {/* Says what it is without pretending it can be bought. Nothing here is a
+          paywall: there is no version of this a customer could pay to unlock
+          today, and implying otherwise would be selling something that does not
+          exist. */}
+      <p className="mt-3 text-center text-[13px] text-tink-soft">
+        Not available yet. When it lands it will work on the tours you already
+        have, at no extra cost for the ones you have paid for.
       </p>
     </section>
+  );
+}
+
+type Tab = "tours" | "new" | "styles";
+
+const TABS: Array<{ id: Tab; label: string; locked?: boolean }> = [
+  { id: "tours", label: "My tours" },
+  { id: "new", label: "New tour" },
+  { id: "styles", label: "Styles", locked: true },
+];
+
+function Nav({
+  tab,
+  setTab,
+  email,
+}: {
+  tab: Tab;
+  setTab: (t: Tab) => void;
+  email: string;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const item = (t: (typeof TABS)[number], onPick: () => void) => (
+    <button
+      key={t.id}
+      type="button"
+      onClick={onPick}
+      className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+        tab === t.id
+          ? "bg-paper text-tink shadow-sm"
+          : "text-tink-soft hover:text-tink"
+      }`}
+    >
+      {t.label}
+      {t.locked && <Lock className="h-3 w-3" />}
+    </button>
+  );
+
+  return (
+    <div className="mb-8">
+      <div className="flex items-center justify-between gap-3 rounded-full border border-line bg-cream px-2 py-2">
+        {/* Desktop: the tabs sit inline. */}
+        <div className="hidden items-center gap-1 sm:flex">
+          {TABS.map((t) => item(t, () => setTab(t.id)))}
+        </div>
+
+        {/* Mobile: one button, because three tabs and an email do not fit. */}
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          aria-label="Menu"
+          className="flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium text-tink sm:hidden"
+        >
+          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+            <path
+              d={open ? "M6 6l12 12M18 6L6 18" : "M4 7h16M4 12h16M4 17h16"}
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            />
+          </svg>
+          {TABS.find((t) => t.id === tab)?.label}
+        </button>
+
+        <span className="truncate px-3 text-[13px] text-tink-soft">{email}</span>
+      </div>
+
+      {open && (
+        <div className="mt-2 flex flex-col gap-1 rounded-2xl border border-line bg-cream p-2 sm:hidden">
+          {TABS.map((t) =>
+            item(t, () => {
+              setTab(t.id);
+              setOpen(false);
+            }),
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** One shell for the demo and the real thing, so they cannot drift apart. */
+function Portal({ email, tours }: { email: string; tours: Tour[] }) {
+  const [tab, setTab] = useState<Tab>("tours");
+  const thumb = tours.find((t) => t.thumbnail)?.thumbnail ?? null;
+
+  return (
+    <>
+      <Nav tab={tab} setTab={setTab} email={email} />
+
+      {tab === "tours" &&
+        (tours.length === 0 ? (
+          <p className="mt-8 text-center text-sm text-tink-soft">
+            Nothing here yet.
+          </p>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {tours.map((t) => (
+              <TourCard key={t.id} tour={t} />
+            ))}
+          </div>
+        ))}
+
+      {tab === "new" && (
+        <NextListingUpsell
+          email={email}
+          heading="Start a new tour"
+          sub="Pick the pack that fits your gallery. Send the photos, and the tour comes back to your inbox."
+        />
+      )}
+
+      {tab === "styles" && <LockedStyles thumbnail={thumb} />}
+    </>
   );
 }
 
@@ -386,21 +505,7 @@ function Library() {
 
   if (demo) {
     return (
-      <>
-        <div className="text-center">
-          <h1 className="font-display text-2xl leading-tight text-tink sm:text-3xl">
-            Your tours
-          </h1>
-          <p className="mt-1.5 text-sm text-tink-soft">agent@example.com</p>
-        </div>
-        <div className="mt-8 grid gap-4 sm:grid-cols-2">
-          {DEMO_TOURS.map((t) => (
-            <TourCard key={t.id} tour={t} />
-          ))}
-        </div>
-        <NextListingUpsell email="agent@example.com" />
-        <LockedStyles thumbnail={DEMO_TOURS[0].thumbnail} />
-      </>
+      <Portal email="agent@example.com" tours={DEMO_TOURS} />
     );
   }
 
@@ -428,29 +533,7 @@ function Library() {
   }
 
   return (
-    <>
-      <div className="text-center">
-        <h1 className="font-display text-2xl leading-tight text-tink sm:text-3xl">
-          Your tours
-        </h1>
-        <p className="mt-1.5 text-sm text-tink-soft">{data.email}</p>
-      </div>
-
-      {data.tours.length === 0 ? (
-        <p className="mt-8 text-center text-sm text-tink-soft">
-          Nothing here yet.
-        </p>
-      ) : (
-        <div className="mt-8 grid gap-4 sm:grid-cols-2">
-          {data.tours.map((t) => (
-            <TourCard key={t.id} tour={t} />
-          ))}
-        </div>
-      )}
-
-      <NextListingUpsell email={data.email} />
-      <LockedStyles thumbnail={data.tours.find((t) => t.thumbnail)?.thumbnail ?? null} />
-    </>
+    <Portal email={data.email} tours={data.tours} />
   );
 }
 
