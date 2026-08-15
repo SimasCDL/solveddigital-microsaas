@@ -325,7 +325,7 @@ function LockedStyles({ thumbnail }: { thumbnail: string | null }) {
             <Lock className="h-5 w-5" />
           </span>
           <h2 className="mt-4 font-display text-xl text-tink sm:text-2xl">
-            Styles
+            Effects &amp; Styles
           </h2>
           <p className="mt-1.5 max-w-sm text-sm text-tink-soft">
             Re-cut a tour you already have in a different look, without
@@ -354,26 +354,27 @@ type Tab = "tours" | "new" | "styles";
 const TABS: Array<{ id: Tab; label: string; locked?: boolean }> = [
   { id: "tours", label: "My tours" },
   { id: "new", label: "New tour" },
-  { id: "styles", label: "Styles", locked: true },
+  { id: "styles", label: "Effects & Styles", locked: true },
 ];
 
-function Nav({
+function Header({
   tab,
   setTab,
   email,
 }: {
-  tab: Tab;
-  setTab: (t: Tab) => void;
-  email: string;
+  tab?: Tab;
+  setTab?: (t: Tab) => void;
+  email?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const hasNav = !!(tab && setTab);
 
   const item = (t: (typeof TABS)[number], onPick: () => void) => (
     <button
       key={t.id}
       type="button"
       onClick={onPick}
-      className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+      className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
         tab === t.id
           ? "bg-paper text-tink shadow-sm"
           : "text-tink-soft hover:text-tink"
@@ -385,46 +386,66 @@ function Nav({
   );
 
   return (
-    <div className="mb-8">
-      <div className="flex items-center justify-between gap-3 rounded-full border border-line bg-cream px-2 py-2">
-        {/* Desktop: the tabs sit inline. */}
-        <div className="hidden items-center gap-1 sm:flex">
-          {TABS.map((t) => item(t, () => setTab(t.id)))}
-        </div>
+    <header className="sticky top-3 z-50 sm:top-4">
+      <div className="flex h-14 items-center gap-2 rounded-full border border-line bg-cream/85 px-3 shadow-lg shadow-black/5 backdrop-blur-md sm:px-5">
+        {/* Mobile: the hamburger replaces the wordmark, because the tab you are
+            on matters more here than the brand you already recognise. */}
+        {hasNav && (
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            aria-expanded={open}
+            aria-label="Menu"
+            className="flex shrink-0 items-center gap-2 rounded-full px-2 py-1.5 text-sm font-medium text-tink sm:hidden"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              className="h-5 w-5"
+              aria-hidden="true"
+            >
+              <path
+                d={open ? "M6 6l12 12M18 6L6 18" : "M4 7h16M4 12h16M4 17h16"}
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              />
+            </svg>
+            {TABS.find((t) => t.id === tab)?.label}
+          </button>
+        )}
 
-        {/* Mobile: one button, because three tabs and an email do not fit. */}
-        <button
-          type="button"
-          onClick={() => setOpen((o) => !o)}
-          aria-expanded={open}
-          aria-label="Menu"
-          className="flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium text-tink sm:hidden"
+        <Link
+          href="/"
+          className={`font-display text-xl tracking-tight text-tink ${
+            hasNav ? "hidden sm:block" : ""
+          }`}
         >
-          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-            <path
-              d={open ? "M6 6l12 12M18 6L6 18" : "M4 7h16M4 12h16M4 17h16"}
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-            />
-          </svg>
-          {TABS.find((t) => t.id === tab)?.label}
-        </button>
+          Tourly
+        </Link>
 
-        <span className="truncate px-3 text-[13px] text-tink-soft">{email}</span>
+        {hasNav && (
+          <div className="hidden items-center gap-1 sm:flex">
+            {TABS.map((t) => item(t, () => setTab!(t.id)))}
+          </div>
+        )}
+
+        <span className="ml-auto truncate pl-2 text-[13px] text-tink-soft">
+          {email ?? "Your library"}
+        </span>
       </div>
 
-      {open && (
-        <div className="mt-2 flex flex-col gap-1 rounded-2xl border border-line bg-cream p-2 sm:hidden">
+      {hasNav && open && (
+        <div className="mt-2 flex flex-col gap-1 rounded-2xl border border-line bg-cream/95 p-2 shadow-lg shadow-black/5 backdrop-blur-md sm:hidden">
           {TABS.map((t) =>
             item(t, () => {
-              setTab(t.id);
+              setTab!(t.id);
               setOpen(false);
             }),
           )}
         </div>
       )}
-    </div>
+    </header>
   );
 }
 
@@ -435,7 +456,8 @@ function Portal({ email, tours }: { email: string; tours: Tour[] }) {
 
   return (
     <>
-      <Nav tab={tab} setTab={setTab} email={email} />
+      <Header tab={tab} setTab={setTab} email={email} />
+      <div className="pt-8" />
 
       {tab === "tours" &&
         (tours.length === 0 ? (
@@ -509,15 +531,30 @@ function Library() {
     );
   }
 
-  if (!token) return <RequestLink />;
+  if (!token)
+    return (
+      <>
+        <Header />
+        <div className="pt-16">
+          <RequestLink />
+        </div>
+      </>
+    );
 
   if (state === "loading") {
-    return <p className="text-center text-sm text-tink-soft">Loading…</p>;
+    return (
+      <>
+        <Header />
+        <p className="pt-16 text-center text-sm text-tink-soft">Loading…</p>
+      </>
+    );
   }
 
   if (state === "expired" || !data) {
     return (
-      <div className="mx-auto max-w-md text-center">
+      <>
+      <Header />
+      <div className="mx-auto max-w-md pt-16 text-center">
         <h1 className="font-display text-2xl leading-tight text-tink sm:text-3xl">
           That link has expired
         </h1>
@@ -529,6 +566,7 @@ function Library() {
           <RequestLink />
         </div>
       </div>
+      </>
     );
   }
 
@@ -540,26 +578,10 @@ function Library() {
 export default function ToursPage() {
   return (
     <div className="tourly min-h-screen bg-cream text-tink">
-      <header className="px-4 pt-3 sm:px-6 sm:pt-4">
-        <div className="mx-auto w-full max-w-4xl">
-          <div className="flex h-14 items-center justify-between rounded-full border border-line bg-cream/85 px-6 shadow-lg shadow-black/5 backdrop-blur-md">
-            <Link
-              href="/"
-              className="font-display text-xl tracking-tight text-tink"
-            >
-              Tourly
-            </Link>
-            <span className="hidden text-sm text-tink-soft sm:block">
-              Your library
-            </span>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6">
+      <main className="mx-auto w-full max-w-4xl px-4 pb-14 pt-3 sm:px-6 sm:pt-4">
         <Suspense
           fallback={
-            <p className="text-center text-sm text-tink-soft">Loading…</p>
+            <p className="pt-16 text-center text-sm text-tink-soft">Loading…</p>
           }
         >
           <Library />
