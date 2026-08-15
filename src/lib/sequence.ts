@@ -15,9 +15,11 @@ import { cancelScheduledEmails, sendNurtureEmail } from "./resend";
 import {
   updateLead,
   getLeadByEmail,
+  enrolCustomer,
   type Lead,
   type LeadStatus,
 } from "./leads";
+import { diagnose, type Answers } from "./quiz";
 import { createLeadPromoCode } from "./stripe";
 import { recordSend } from "./nurtureSends";
 
@@ -81,7 +83,9 @@ function contextFor(lead: Lead, step: number): LeadContext {
     email: lead.email,
     answers: lead.answers,
     unsubToken: lead.unsubToken,
-    promo: promoStepsFor(lead.source).includes(step) ? resolvePromo(lead) : null,
+    promo: promoStepsFor(lead.source).includes(step)
+      ? resolvePromo(lead)
+      : null,
   });
 }
 
@@ -129,7 +133,9 @@ export async function startSequence(lead: Lead): Promise<void> {
       email: lead.email,
       step: 1,
       source: lead.source,
-      sentAt: dueAtForSource(lead.createdAt, 1, lead.source) ?? new Date().toISOString(),
+      sentAt:
+        dueAtForSource(lead.createdAt, 1, lead.source) ??
+        new Date().toISOString(),
     });
     await updateLead(lead.id, {
       step: 1,
@@ -141,6 +147,49 @@ export async function startSequence(lead: Lead): Promise<void> {
       step: 0,
       nextAt: dueAtForSource(lead.createdAt, 1, lead.source),
     });
+  }
+}
+
+/**
+ * Enrol a delivered customer on the post-purchase sequence.
+ *
+ * Called once a paid tour has actually been delivered, not when the money
+ * landed. The difference matters: somebody who paid and never uploaded has no
+ * tour to be taught how to use, and telling them where to post the vertical cut
+ * would read as a company that has not noticed they got nothing.
+ *
+ * Nothing is scheduled at Resend here. The first step is eight days out, well
+ * inside what an hourly cron handles, and cron-side sending is what lets an
+ * unsubscribe between now and then actually stop it.
+ */
+export async function startCustomerSequence(params: {
+  email: string;
+  /** Photos in the delivered order — picks the pack the copy quotes. */
+  photoCount: number;
+}): Promise<void> {
+  // A band, not a count: `diagnose` reads `answers.photos`, and this is the
+  // only field that changes which pack the emails talk about. Used only when
+  // we have no real answers for them, which is any customer who bought without
+  // running the quiz first.
+  const band =
+    params.photoCount <= 15 ? "p10" : params.photoCount <= 25 ? "p20" : "p35";
+  const answers: Answers = { who: "agent", photos: band };
+  const d = diagnose(answers);
+
+  const now = new Date().toISOString();
+  const lead = await enrolCustomer({
+    email: params.email,
+    answers,
+    archetype: d.archetype,
+    score: d.score,
+    packId: d.pack.id,
+    nextAt: dueAtForSource(now, 1, "customer"),
+  });
+
+  if (!lead) {
+    // Unsubscribed, or the write failed. Both are non-events for the caller:
+    // the customer has their video, which is the thing they paid for.
+    console.log(`[sequence] customer not enrolled for ${params.email}`);
   }
 }
 

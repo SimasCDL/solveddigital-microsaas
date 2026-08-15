@@ -1,11 +1,21 @@
-import { getOrder, updateOrder } from '@/lib/orders';
-import { generateVideo, generateReelSegment, chunkPhotos, makeRunBudget } from '@/lib/fal';
-import { sortPhotoUrls } from '@/lib/sort';
-import { stitchClips, makeVerticalVariants, addMusicTrack } from '@/lib/stitch';
-import { saveVideo } from '@/lib/videos';
-import { sendDeliveryEmail, sendFailureEmail, sendAdminAlert } from '@/lib/resend';
-import { sendMetaEventServerSide } from '@/lib/meta';
-import { sendTelegram, generationReadyMessage } from '@/lib/telegram';
+import { getOrder, updateOrder } from "@/lib/orders";
+import {
+  generateVideo,
+  generateReelSegment,
+  chunkPhotos,
+  makeRunBudget,
+} from "@/lib/fal";
+import { sortPhotoUrls } from "@/lib/sort";
+import { stitchClips, makeVerticalVariants, addMusicTrack } from "@/lib/stitch";
+import { saveVideo } from "@/lib/videos";
+import {
+  sendDeliveryEmail,
+  sendFailureEmail,
+  sendAdminAlert,
+} from "@/lib/resend";
+import { sendMetaEventServerSide } from "@/lib/meta";
+import { sendTelegram, generationReadyMessage } from "@/lib/telegram";
+import { startCustomerSequence } from "@/lib/sequence";
 
 // The one fulfillment pipeline: sort → generate → stitch → persist → email.
 // Called from the Stripe webhook (paid orders) and /api/fulfill (free mode).
@@ -18,19 +28,20 @@ export async function fulfillOrder(
   orderId: string,
   opts: { limitPhotos?: number } = {},
 ): Promise<void> {
+  const startedAt = Date.now();
   const order = await getOrder(orderId);
   if (!order) throw new Error(`Order ${orderId} not found`);
 
   // Free trials carry a `free:<segment>` marker instead of a Stripe session id.
-  const isFree = (order.stripeSessionId ?? '').startsWith('free:');
+  const isFree = (order.stripeSessionId ?? "").startsWith("free:");
 
   // Report the conversion to Meta server-side, independent of the customer's
   // browser; de-dupes with the browser pixel via event_id=orderId. A free trial
   // must report StartTrial — sending Lead here would dilute the purchase signal
   // the paid campaigns optimize on, which is the whole reason they're separate.
-  const appBase = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const appBase = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   await sendMetaEventServerSide({
-    eventName: isFree ? 'StartTrial' : 'Lead',
+    eventName: isFree ? "StartTrial" : "Lead",
     orderId,
     email: order.email,
     eventSourceUrl: `${appBase}/order/${orderId}`,
@@ -46,31 +57,42 @@ export async function fulfillOrder(
       : allSorted;
     console.log(
       `[fulfill] ${orderId}: stored=${order.photoUrls.length} ` +
-        `limit=${opts.limitPhotos ?? 'none'} using=${sortedUrls.length}`,
+        `limit=${opts.limitPhotos ?? "none"} using=${sortedUrls.length}`,
     );
 
     // same pipeline as the test page: Seedance reel segments when enabled,
     // per-photo clips otherwise
     let clips: string[];
-    if (process.env.VIDEO_PROVIDER === 'seedance' && process.env.REPLICATE_API_TOKEN) {
+    if (
+      process.env.VIDEO_PROVIDER === "seedance" &&
+      process.env.REPLICATE_API_TOKEN
+    ) {
       const chunks = chunkPhotos(sortedUrls, 5);
       const runBudget = makeRunBudget(chunks.length);
-      const settled = await Promise.allSettled(chunks.map(chunk => generateReelSegment(chunk, undefined, runBudget)));
+      const settled = await Promise.allSettled(
+        chunks.map((chunk) => generateReelSegment(chunk, undefined, runBudget)),
+      );
       clips = settled
-        .filter((s): s is PromiseFulfilledResult<string> => s.status === 'fulfilled')
-        .map(s => s.value);
+        .filter(
+          (s): s is PromiseFulfilledResult<string> => s.status === "fulfilled",
+        )
+        .map((s) => s.value);
     } else {
       const runBudget = makeRunBudget(sortedUrls.length);
-      const settled = await Promise.allSettled(sortedUrls.map(url => generateVideo(url, undefined, runBudget)));
+      const settled = await Promise.allSettled(
+        sortedUrls.map((url) => generateVideo(url, undefined, runBudget)),
+      );
       clips = settled
-        .filter((s): s is PromiseFulfilledResult<string> => s.status === 'fulfilled')
-        .map(s => s.value);
+        .filter(
+          (s): s is PromiseFulfilledResult<string> => s.status === "fulfilled",
+        )
+        .map((s) => s.value);
     }
 
-    if (!clips.length) throw new Error('All clips failed to generate');
+    if (!clips.length) throw new Error("All clips failed to generate");
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const absolute = (u: string) => (u.startsWith('/') ? `${appUrl}${u}` : u);
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const absolute = (u: string) => (u.startsWith("/") ? `${appUrl}${u}` : u);
 
     // One 16:9 master generation → three delivered formats (no re-generation).
     const master = await stitchClips(clips);
@@ -94,7 +116,7 @@ export async function fulfillOrder(
     // The order stores permanent (private) URLs for support; the customer's
     // email gets signed links that expire after 7 days.
     const allUrls = [wideUrl, blurredUrl, cropUrl];
-    await updateOrder(orderId, { status: 'completed', videoUrls: allUrls });
+    await updateOrder(orderId, { status: "completed", videoUrls: allUrls });
 
     // Ping the channel with a link, so a finished tour can be eyeballed without
     // digging through Supabase for the order id.
@@ -105,8 +127,23 @@ export async function fulfillOrder(
         photoCount: order.photoUrls.length,
         free: isFree,
         appUrl,
+        durationSec: (Date.now() - startedAt) / 1000,
       }),
     ).catch(() => {});
+
+    // A delivered paid tour is the entry condition for the post-purchase
+    // sequence. Deliberately not fired for free previews: those people have not
+    // bought, and the copy assumes throughout that they have.
+    if (!isFree) {
+      await startCustomerSequence({
+        email: order.email,
+        photoCount: order.photoUrls.length,
+      }).catch((err) =>
+        // Never fatal. The customer has the thing they paid for; a missed
+        // follow-up sequence is ours to lose, not theirs.
+        console.error("[fulfill] customer sequence enrolment failed:", err),
+      );
+    }
 
     // The video exists and the order page can serve it — a delivery-email
     // failure must NOT mark the order failed. Alert the admin instead.
@@ -117,34 +154,42 @@ export async function fulfillOrder(
         preview: isFree,
       });
     } catch (emailErr) {
-      console.error('[fulfill] delivery email failed (video is fine):', emailErr);
+      console.error(
+        "[fulfill] delivery email failed (video is fine):",
+        emailErr,
+      );
       await sendAdminAlert(
         `Delivery email FAILED for order ${orderId}`,
         `The video generated fine but the email to ${order.email} failed.\n` +
-        `Send them their order page manually.\n\nError: ${String(emailErr)}`
+          `Send them their order page manually.\n\nError: ${String(emailErr)}`,
       ).catch(() => {});
     }
   } catch (err) {
-    console.error('Video generation failed:', err);
-    await updateOrder(orderId, { status: 'failed', errorMessage: String(err) });
+    console.error("Video generation failed:", err);
+    await updateOrder(orderId, { status: "failed", errorMessage: String(err) });
 
     // Telegram first and always: sendAdminAlert depends on ADMIN_ALERT_EMAIL
     // being set and silently drops the alert if it isn't, which would leave a
     // failed order — and a real prospect's email — completely unnoticed.
     await sendTelegram(
-      `⚠️ *Order FAILED* · ${isFree ? 'free trial' : 'paid'}\n` +
-      `📧 ${order.email}\n📸 ${order.photoUrls.length} photos\n🆔 \`${orderId}\`\n\n` +
-      `${String(err).slice(0, 300)}`
+      `⚠️ *Order FAILED* · ${isFree ? "free trial" : "paid"}\n` +
+        `📧 ${order.email}\n📸 ${order.photoUrls.length} photos\n` +
+        // How long it ran before dying separates "the provider refused us
+        // instantly" from "it ground for 40 minutes and then broke", which are
+        // different problems with different fixes.
+        `⏱ died after ${Math.round((Date.now() - startedAt) / 1000)}s\n` +
+        `🆔 \`${orderId}\`\n\n` +
+        `${String(err).slice(0, 300)}`,
     ).catch(() => {});
 
-    await sendFailureEmail({ to: order.email, orderId }).catch(e =>
-      console.error('[fulfill] failure email also failed:', e)
+    await sendFailureEmail({ to: order.email, orderId }).catch((e) =>
+      console.error("[fulfill] failure email also failed:", e),
     );
     await sendAdminAlert(
       `Order ${orderId} FAILED`,
       `Customer: ${order.email}\nProperty: ${order.propertyAddress}\nPhotos: ${order.photoUrls.length}\n\n` +
-      `Error: ${String(err)}\n\n` +
-      `Retry it with:\ncurl -X POST <app-url>/api/admin/retry -H "x-admin-key: <ADMIN_KEY>" -H "Content-Type: application/json" -d "{\\"orderId\\":\\"${orderId}\\"}"`
+        `Error: ${String(err)}\n\n` +
+        `Retry it with:\ncurl -X POST <app-url>/api/admin/retry -H "x-admin-key: <ADMIN_KEY>" -H "Content-Type: application/json" -d "{\\"orderId\\":\\"${orderId}\\"}"`,
     ).catch(() => {});
   }
 }

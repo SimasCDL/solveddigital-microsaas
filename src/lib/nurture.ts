@@ -1,6 +1,8 @@
 import type { Block } from "./emailBlocks";
 import { diagnose, painLabel, usd, type Answers, type Diagnosis } from "./quiz";
 import { packCheckoutUrl } from "./pricing";
+// The only place external figures may come from, each carrying its own source.
+import { SELLERS_EXPECT, AGENT_ADOPTION } from "./proof";
 
 /**
  * The post-diagnostic email sequence.
@@ -885,18 +887,417 @@ export const WINBACK: NurtureEmail[] = [
 /** Which step of which sequence carries the discount. */
 export const WINBACK_PROMO_STEPS = [3];
 
-export type LeadSource = "quiz" | "winback";
+/* ══════════════════════════ CUSTOMER ══════════════════════════════════════ */
+
+/**
+ * The post-delivery sequence: they bought, and they have watched their tour.
+ *
+ * A different job from every other sequence here. The quiz sequence argues that
+ * the product is worth buying; this one is written for somebody who already
+ * knows, so arguing the case again would insult them. What they do not know is
+ * how to get more out of the thing they own, and that is the only reason to
+ * appear in their inbox eight times.
+ *
+ * Two rules it holds itself to:
+ *
+ * - **Six of the eight ask for nothing.** A customer who bought once is the
+ *   cheapest sale available and the easiest to lose. Every email that only
+ *   pitches spends that relationship down; every email that teaches something
+ *   they can use tonight tops it back up. The ask lands at the end, once.
+ * - **No discount, ever.** They paid full price and liked it. Discounting the
+ *   second one teaches them the first one was overpriced.
+ *
+ * The external figures in step 3 come from `proof.ts` with their attribution
+ * intact, because that is the only place in this repo allowed to state one.
+ */
+export const CUSTOMER_DUE_MINUTES: Record<number, number> = {
+  1: 3 * DAY, // the long one: where to put it, what to write, why it works
+  2: 8 * DAY, // Ray's story, and the discount turns on
+  3: 13 * DAY,
+  4: 18 * DAY,
+  5: 23 * DAY, // what it does not do — no discount on this one
+  6: 28 * DAY, // the direct ask
+  7: 33 * DAY, // last call, and the last step carrying the code
+};
+
+export const CUSTOMER_LAST_STEP = 7;
+
+/**
+ * Steps carrying the discount, enforced rather than described.
+ *
+ * Step 5 is left out deliberately: it is the email about what the product
+ * cannot do, and a price under that would turn candour into a technique. After
+ * step 7 the code is dropped from the checkout link as well as the copy, which
+ * is what makes "the code goes with it" true of the software.
+ */
+export const CUSTOMER_PROMO_STEPS = [2, 3, 4, 6, 7];
+
+const CUSTOMER_REASON =
+  "You are getting this because you made a tour with Tourly.";
+
+export const CUSTOMER: NurtureEmail[] = [
+  /* 1 ------------------------------- day 3: everything worth knowing, at once */
+  // Deliberately long. This is the one email in the sequence a customer opens
+  // while the tour is still new to them, which is the only moment they will
+  // read three things in a row about how to use it. Splitting it across three
+  // sends spread the same material over two weeks and lost most of it to the
+  // second and third open rate.
+  {
+    step: 1,
+    subject: () => "what to actually do with the tour you just made",
+    preheader: () =>
+      "Where to put it, what to write under it, and why it works at all.",
+    blocks: (c) => [
+      {
+        t: "p",
+        text: "Your tour is done, so this is the useful part. Three things, and then I will leave you alone for a while.",
+      },
+      { t: "hr" },
+      { t: "h", text: "1. Where it actually earns its money" },
+      {
+        t: "p",
+        text: "Most agents put one on the portal listing and stop there. That is the single place it does the least work, because everyone looking at it had already decided to click.",
+      },
+      {
+        t: "ul",
+        items: [
+          "The vertical cut, posted natively to Reels and TikTok. Native means uploaded to the platform, not a link to somewhere else. A link gets shown to a fraction of the people an upload does.",
+          "Sent straight to your seller, on its own, the day it lands. This is the one that gets forwarded, and the people it gets forwarded to are the ones quietly thinking about selling.",
+          "The portal and the MLS. Worth doing, lowest return of the three, because it only reaches people already on the listing.",
+        ],
+      },
+      {
+        t: "p",
+        text: "If you only do one this week, do the second. It costs you a message, and it is the only one of the three that reaches somebody who was not already looking at property.",
+      },
+      { t: "hr" },
+      { t: "h", text: "2. The line that goes under it" },
+      {
+        t: "p",
+        text: "A good tour with a portal caption still gets scrolled past. A portal caption describes the property: three bedrooms, renovated kitchen, close to schools. Nobody stops for that, because it is what every other post says.",
+      },
+      {
+        t: "p",
+        text: "Write the first line about the thing the video shows instead.",
+      },
+      {
+        t: "ul",
+        items: [
+          '"The kitchen is the reason this one will go fast." Then let the tour prove it.',
+          '"Wait for the back garden." People stay to find out whether you were right.',
+          '"This is what 1.2 acres actually looks like." Scale is the thing photos are worst at and video is best at.',
+        ],
+      },
+      {
+        t: "p",
+        text: "Same pattern every time: name the one thing worth watching for, let the video pay it off, and put the bedroom count underneath where it belongs.",
+      },
+      { t: "hr" },
+      { t: "h", text: "3. Why any of this works" },
+      {
+        t: "p",
+        text: "Two figures, both from the industry rather than from us.",
+      },
+      {
+        t: "figures",
+        rows: [
+          [SELLERS_EXPECT.stat, SELLERS_EXPECT.claim],
+          [AGENT_ADOPTION.stat, AGENT_ADOPTION.claim],
+        ],
+      },
+      {
+        t: "note",
+        text: `${SELLERS_EXPECT.source} · ${SELLERS_EXPECT.context}. Adoption figure: ${AGENT_ADOPTION.source}.`,
+      },
+      {
+        t: "p",
+        text: "Nearly three in four sellers say video makes them more likely to hire you, and roughly one agent in ten actually turns up with it. That gap is the whole opportunity, and it is not permanent. It closes as more people do what you have just done.",
+      },
+      {
+        t: "p",
+        text: "Which is the argument for using it on every listing rather than only the expensive ones. The advantage was never the video. It is being the only person at the table who has one.",
+      },
+      { t: "note", text: `Your tours live at ${c.appUrl}/library.` },
+    ],
+    reason: CUSTOMER_REASON,
+  },
+
+  /* 2 ----------------------------------- day 10: Ray, and the code turns on */
+  // The quote is Ray Whitfield's, transcribed from the video on the offer
+  // screen rather than composed here. Swap it for another customer's whenever
+  // one lands harder, but swap it for something a named person actually said.
+  // A quote that merely sounds like what customers say is the one thing this
+  // email cannot survive being caught doing.
+  {
+    step: 2,
+    subject: () => "six weeks on the market, then two",
+    preheader: (c) =>
+      c.promo
+        ? `One agent's version of it, and ${c.promo.pct}% off your next one.`
+        : "One agent's version of the same problem.",
+    blocks: (c) => [
+      {
+        t: "p",
+        text: "Not a case study, just something a customer sent that stuck with me.",
+      },
+      {
+        t: "quote",
+        text: "It sat on Zillow six weeks with barely any showings and everyone kept telling me the market was slow. Turns out the listings that sell all have video tours. Ran my photos through this, looked like we'd hired a film crew. Sold two weeks later.",
+        by: "Ray Whitfield",
+      },
+      {
+        t: "p",
+        text: 'The part worth borrowing is not the ending. It is that he stopped accepting "the market is slow" as the explanation. That sentence is true often enough to hide a listing that is simply not being marketed, and it is the most expensive thing a seller can believe about their own property.',
+      },
+      {
+        t: "p",
+        text: "If you have one sitting longer than it should, it is worth asking which of the two it is before you have the price conversation.",
+      },
+      ...(c.promo
+        ? ([
+            { t: "hr" },
+            {
+              t: "p",
+              text: `And since you have already made one: ${c.promo.code} takes ${c.promo.pct}% off your next tour. It is prefilled in the link below, so there is nothing to type.`,
+            },
+            {
+              t: "figures",
+              rows: [
+                [
+                  priceAfter(c.d, c.promo.pct),
+                  `your ${packPhrase(c.d)}, normally ${c.d.pack.priceLabel}`,
+                ],
+              ],
+            },
+            {
+              t: "cta",
+              label: `Do the one that is sitting`,
+              href: c.checkoutUrl,
+            },
+          ] as Block[])
+        : ([
+            {
+              t: "cta",
+              label: "Do the one that is sitting",
+              href: c.checkoutUrl,
+            },
+          ] as Block[])),
+    ],
+    reason: CUSTOMER_REASON,
+  },
+
+  /* 3 ------------------------------------------- day 18: the back catalogue */
+  {
+    step: 3,
+    subject: () => "the listings you already have",
+    preheader: () => "Everyone does this for the new one. That is the mistake.",
+    blocks: (c) => [
+      {
+        t: "p",
+        text: "Something I notice: almost everyone runs their newest listing through first, which makes sense, and then waits for the next new one. The back catalogue is where this actually pays.",
+      },
+      {
+        t: "p",
+        text: "A fresh listing gets attention anyway. It is new, the portal pushes it, and the seller is watching. A listing that has been up seven weeks gets none of that, and it is the one where a seller has started wondering whether they picked the right agent.",
+      },
+      { t: "h", text: "What that looks like in practice" },
+      {
+        t: "ul",
+        items: [
+          "Pick the listing that has been up longest and still has decent photos.",
+          "Send the tour to that seller with nothing else attached. You are not asking for anything, you are showing you are still working.",
+          "Repost it as if it were new. The feed has no memory, and the people who missed it the first time are not the ones who saw it.",
+        ],
+      },
+      {
+        t: "p",
+        text: "It is the cheapest thing you can do for a relationship that is quietly going cold.",
+      },
+      ...(c.promo
+        ? ([
+            {
+              t: "p",
+              text: `${c.promo.code} is still on your next one, ${c.promo.pct}% off.`,
+            },
+          ] as Block[])
+        : []),
+      { t: "cta", label: "Do that one", href: c.checkoutUrl },
+    ],
+    reason: CUSTOMER_REASON,
+  },
+
+  /* 4 ------------------------------------ day 26: before you have the listing */
+  {
+    step: 4,
+    subject: () => "using it before you have the listing",
+    preheader: () => "The pitch is where it is worth the most.",
+    blocks: (c) => [
+      {
+        t: "p",
+        text: "So far this has been about listings you already have. The higher-value use is the conversation before you have one.",
+      },
+      {
+        t: "p",
+        text: "At a listing appointment you are one of two or three people saying similar things about price and process. Almost none of them will show a video tour of another property they marketed, because almost none of them have one.",
+      },
+      { t: "h", text: "The whole move" },
+      {
+        t: "ul",
+        items: [
+          "Open your phone. Play fifteen seconds of a tour you made for another listing.",
+          "Say one sentence: every listing I take gets one of these.",
+          "Stop talking.",
+        ],
+      },
+      {
+        t: "p",
+        text: "It works because it is a demonstration rather than a claim, and because your competition cannot match it without changing how they operate. A promise about marketing is what every agent in that kitchen is making. Yours is the only one with the evidence already on the screen.",
+      },
+      {
+        t: "p",
+        text: "Which is also the argument for having one ready before the appointment rather than after.",
+      },
+      ...(c.promo
+        ? ([
+            {
+              t: "cta",
+              label: `Have one ready · ${c.promo.pct}% off`,
+              href: c.checkoutUrl,
+            },
+          ] as Block[])
+        : ([
+            { t: "cta", label: "Have one ready", href: c.checkoutUrl },
+          ] as Block[])),
+    ],
+    reason: CUSTOMER_REASON,
+  },
+
+  /* 5 ------------------------------------------------ day 34: the honest one */
+  // No discount on this step, on purpose. It is the email that says what the
+  // product cannot do, and a price tag underneath would turn the honesty into
+  // a technique.
+  {
+    step: 5,
+    subject: () => "what it does not do",
+    preheader: () => "Worth being straight about, since you have used it now.",
+    blocks: () => [
+      {
+        t: "p",
+        text: "You have made one, so you already know what this is good at. Here is the other half, because knowing where it stops is what stops you using it on the wrong listing and deciding it does not work.",
+      },
+      { t: "h", text: "It will not" },
+      {
+        t: "ul",
+        items: [
+          "Fix bad photos. It builds from what you send. Dark, crooked or badly ordered photos come out as a dark, crooked tour, and the best thing you can do for the output is send a properly shot gallery.",
+          "Sell an overpriced house. Marketing changes how many people see a listing. It does not change what they think it is worth once they do.",
+          "Replace a videographer on the property that deserves one. On a genuinely high-end listing a real crew still wins, and the fee makes sense there.",
+        ],
+      },
+      {
+        t: "p",
+        text: "What it does is cover the properties where none of that was ever going to happen, which for most agents is nearly all of them. That is a smaller claim than the category usually makes, and it is the one I would rather you hold us to.",
+      },
+    ],
+    reason: CUSTOMER_REASON,
+  },
+
+  /* 6 ----------------------------------------------- day 42: the direct ask */
+  {
+    step: 6,
+    subject: (c) => `your next listing, ${c.d.pack.priceLabel}`,
+    preheader: () => "Same as last time. Send the photos, get the tour.",
+    blocks: (c) => [
+      {
+        t: "p",
+        text: "Enough teaching. This one is a straight ask.",
+      },
+      {
+        t: "p",
+        text: `You have a tour that worked. The next gallery that lands on your desk can have one by the end of the day: send the photos, and it comes back to this inbox in about fifteen minutes.`,
+      },
+      c.promo
+        ? {
+            t: "figures",
+            rows: [
+              [
+                priceAfter(c.d, c.promo.pct),
+                `your ${packPhrase(c.d)} with ${c.promo.code}, normally ${c.d.pack.priceLabel}`,
+              ],
+            ],
+          }
+        : {
+            t: "figures",
+            rows: [[c.d.pack.priceLabel, `your ${packPhrase(c.d)}`]],
+          },
+      { t: "cta", label: "Start the next one", href: c.checkoutUrl },
+      { t: "note", text: guarantee(c) },
+    ],
+    reason: CUSTOMER_REASON,
+  },
+
+  /* 7 ------------------------------------------------- day 50: the last call */
+  // The last step carrying the code. `CUSTOMER_PROMO_STEPS` ends here, so the
+  // discount is genuinely dropped from the checkout link afterwards and the
+  // sentence below is a statement about the software, not a sales line.
+  {
+    step: 7,
+    subject: (c) =>
+      c.promo
+        ? "last one from me, and the code goes with it"
+        : "last one from me",
+    preheader: () => "Then I stop.",
+    blocks: (c) => [
+      {
+        t: "p",
+        text: "This is the last of these. You bought once, you got what you paid for, and there is a limit to how many times I should turn up in your inbox about it.",
+      },
+      ...(c.promo
+        ? ([
+            {
+              t: "p",
+              text: `${c.promo.code} comes off after this email. Not a countdown and not a trick: it simply stops being attached to the links I send you, so this is the last one that carries it.`,
+            },
+            {
+              t: "figures",
+              rows: [
+                [
+                  priceAfter(c.d, c.promo.pct),
+                  `your ${packPhrase(c.d)} today, ${c.d.pack.priceLabel} after this`,
+                ],
+              ],
+            },
+          ] as Block[])
+        : []),
+      { t: "cta", label: "Use it on your next listing", href: c.checkoutUrl },
+      {
+        t: "p",
+        text: `Either way, everything you have made stays at ${c.appUrl}/library, and it stays there whether or not you ever buy another one. Pull an old tour down for a pitch any time.`,
+      },
+      { t: "note", text: guarantee(c) },
+    ],
+    reason: CUSTOMER_REASON,
+  },
+];
+
+export type LeadSource = "quiz" | "winback" | "customer";
 
 export function sequenceFor(source: LeadSource): NurtureEmail[] {
-  return source === "winback" ? WINBACK : SEQUENCE;
+  if (source === "winback") return WINBACK;
+  if (source === "customer") return CUSTOMER;
+  return SEQUENCE;
 }
 
 export function lastStepFor(source: LeadSource): number {
-  return source === "winback" ? WINBACK_LAST_STEP : LAST_STEP;
+  if (source === "winback") return WINBACK_LAST_STEP;
+  if (source === "customer") return CUSTOMER_LAST_STEP;
+  return LAST_STEP;
 }
 
 export function promoStepsFor(source: LeadSource): number[] {
-  return source === "winback" ? WINBACK_PROMO_STEPS : PROMO_STEPS;
+  if (source === "winback") return WINBACK_PROMO_STEPS;
+  if (source === "customer") return CUSTOMER_PROMO_STEPS;
+  return PROMO_STEPS;
 }
 
 export function dueAtForSource(
@@ -904,7 +1305,12 @@ export function dueAtForSource(
   step: number,
   source: LeadSource,
 ): string | null {
-  const table = source === "winback" ? WINBACK_DUE_MINUTES : STEP_DUE_MINUTES;
+  const table =
+    source === "winback"
+      ? WINBACK_DUE_MINUTES
+      : source === "customer"
+        ? CUSTOMER_DUE_MINUTES
+        : STEP_DUE_MINUTES;
   const mins = table[step];
   if (mins === undefined) return null;
   return new Date(new Date(createdAt).getTime() + mins * 60_000).toISOString();

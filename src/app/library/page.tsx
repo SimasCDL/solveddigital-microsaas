@@ -50,6 +50,30 @@ const fmtDate = (iso: string) =>
     year: "numeric",
   });
 
+/** Mock data for /library?demo=1. Never reachable with a real token. */
+const DEMO_TOURS: Tour[] = [
+  {
+    id: "demo-1",
+    status: "completed",
+    createdAt: new Date(Date.now() - 6 * 86400000).toISOString(),
+    propertyAddress: "128 Maple Ave, Austin, TX",
+    photoCount: 32,
+    thumbnail: "/transform/pool.jpg",
+    free: false,
+    videoUrls: ["/demo/sample.mp4", "/demo/sample.mp4", "/demo/sample.mp4"],
+  },
+  {
+    id: "demo-2",
+    status: "processing",
+    createdAt: new Date().toISOString(),
+    propertyAddress: "9 Birchwood Close",
+    photoCount: 24,
+    thumbnail: "/transform/furniture.jpg",
+    free: false,
+    videoUrls: [],
+  },
+];
+
 function RequestLink() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
@@ -192,36 +216,130 @@ function TourCard({ tour }: { tour: Tour }) {
   );
 }
 
-/** Signposted, not sold. Nothing here can be bought yet, so nothing claims it can. */
-function ComingSoon() {
+/**
+ * Styles, shown locked.
+ *
+ * None of this is built yet, and the panel says so in plain words rather than
+ * implying a plan the customer might be waiting on. What it does do is make the
+ * library read as a place their tours live and keep gaining things, instead of
+ * a receipt page — which is the difference between a one-time funnel and
+ * something worth coming back to.
+ *
+ * The tiles are their OWN photo under different CSS treatments, not stock
+ * mockups. Cheaper, more convincing, and it cannot misrepresent output we have
+ * never produced, because it is visibly a colour treatment of a still they
+ * uploaded rather than a frame of a video we are claiming to have made.
+ */
+const STYLES: Array<{ name: string; hint: string; css: string }> = [
+  {
+    name: "Cinematic",
+    hint: "Slow push-ins, deeper contrast",
+    css: "contrast(1.25) saturate(1.1) brightness(0.92)",
+  },
+  {
+    name: "Bright & airy",
+    hint: "The look most listing photos aim for",
+    css: "brightness(1.12) saturate(0.95) contrast(0.95)",
+  },
+  {
+    name: "Golden hour",
+    hint: "Warm, late-afternoon grade",
+    css: "sepia(0.35) saturate(1.35) brightness(1.05)",
+  },
+  {
+    name: "Fast cut",
+    hint: "Shorter holds, built for Reels",
+    css: "contrast(1.15) saturate(1.25)",
+  },
+  {
+    name: "Twilight",
+    hint: "Cool dusk grade for exteriors",
+    css: "hue-rotate(-12deg) brightness(0.85) saturate(1.2)",
+  },
+  {
+    name: "Editorial",
+    hint: "Black and white, for the hero shot",
+    css: "grayscale(1) contrast(1.2)",
+  },
+];
+
+function Lock({ className = "" }: { className?: string }) {
   return (
-    <section className="mt-10 rounded-2xl border border-dashed border-line bg-cream p-5">
-      <div className="flex items-start gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-line/60 text-tink-soft">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            className="h-4 w-4"
-            aria-hidden="true"
-          >
-            <path
-              d="M7 11V8a5 5 0 0 1 10 0v3M5 11h14v9H5z"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </div>
-        <div>
-          <p className="font-display text-base text-tink">Styles and effects</p>
-          <p className="mt-0.5 max-w-lg text-[13px] text-tink-soft">
-            Re-cut the same listing in a different look, pace or soundtrack,
-            without re-uploading anything. We are building it. Nothing to do
-            yet, it will show up here for tours you already have.
-          </p>
-        </div>
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M7 11V8a5 5 0 0 1 10 0v3M5 11h14v9H5z"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function LockedStyles({ thumbnail }: { thumbnail: string | null }) {
+  return (
+    <section className="mt-12">
+      <div className="text-center">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-line/50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-tink-soft">
+          <Lock className="h-3 w-3" />
+          Not built yet
+        </span>
+        <h2 className="mt-3 font-display text-xl text-tink sm:text-2xl">
+          Styles
+        </h2>
+        <p className="mx-auto mt-1.5 max-w-md text-sm text-tink-soft">
+          One day you will be able to re-cut a tour you already have in a
+          different look, without re-uploading anything. We are showing you what
+          we are working towards, not something you can click.
+        </p>
       </div>
+
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {STYLES.map((s) => (
+          <div
+            key={s.name}
+            className="group relative overflow-hidden rounded-2xl border border-line bg-paper"
+            aria-disabled="true"
+          >
+            <div className="relative aspect-video bg-line">
+              {thumbnail ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={thumbnail}
+                  alt=""
+                  className="h-full w-full object-cover"
+                  style={{ filter: s.css }}
+                />
+              ) : (
+                <div className="h-full w-full bg-gradient-to-br from-line to-cream" />
+              )}
+              <div className="absolute inset-0 bg-night/25" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-night/70 text-white">
+                  <Lock className="h-3.5 w-3.5" />
+                </span>
+              </div>
+            </div>
+            <div className="p-3">
+              <p className="text-sm font-medium text-tink">{s.name}</p>
+              <p className="mt-0.5 text-[12px] leading-snug text-tink-soft">
+                {s.hint}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <p className="mt-4 text-center text-[13px] text-tink-soft">
+        Nothing to do here yet. When it exists it will appear on the tours you
+        already have, at no extra cost for the ones you have paid for.
+      </p>
     </section>
   );
 }
@@ -229,6 +347,9 @@ function ComingSoon() {
 function Library() {
   const params = useSearchParams();
   const token = params.get("t");
+  // Design preview: /library?demo=1 renders the signed-in state with mock data,
+  // no token and no backend. Mirrors the same affordance on the order page.
+  const demo = params.get("demo") === "1";
 
   const [data, setData] = useState<{ email: string; tours: Tour[] } | null>(
     null,
@@ -262,6 +383,26 @@ function Library() {
     const timer = setInterval(load, 15000);
     return () => clearInterval(timer);
   }, [data, load]);
+
+  if (demo) {
+    return (
+      <>
+        <div className="text-center">
+          <h1 className="font-display text-2xl leading-tight text-tink sm:text-3xl">
+            Your tours
+          </h1>
+          <p className="mt-1.5 text-sm text-tink-soft">agent@example.com</p>
+        </div>
+        <div className="mt-8 grid gap-4 sm:grid-cols-2">
+          {DEMO_TOURS.map((t) => (
+            <TourCard key={t.id} tour={t} />
+          ))}
+        </div>
+        <NextListingUpsell email="agent@example.com" />
+        <LockedStyles thumbnail={DEMO_TOURS[0].thumbnail} />
+      </>
+    );
+  }
 
   if (!token) return <RequestLink />;
 
@@ -308,7 +449,7 @@ function Library() {
       )}
 
       <NextListingUpsell email={data.email} />
-      <ComingSoon />
+      <LockedStyles thumbnail={data.tours.find((t) => t.thumbnail)?.thumbnail ?? null} />
     </>
   );
 }
