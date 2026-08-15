@@ -1,12 +1,1 @@
-{
-  "crons": [
-    {
-      "path": "/api/daily-report",
-      "schedule": "0 7 * * *"
-    },
-    {
-      "path": "/api/nurture",
-      "schedule": "0 14 * * *"
-    }
-  ]
-}
+{}
