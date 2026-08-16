@@ -18,6 +18,15 @@ export interface Pack {
   name: string;
   /** Numeric price in USD. */
   price: number;
+  /**
+   * The charged price, currency included.
+   *
+   * "USD" is load-bearing, not decoration. Ads run in the US, Canada and
+   * Australia, and Stripe's Adaptive Pricing (always on for Payment Links)
+   * shows a Canadian CA$155 at checkout for what this page called "$112". A
+   * bare dollar sign reads as the local dollar everywhere it is not the local
+   * dollar, and the surprise lands at the exact moment they were about to pay.
+   */
   priceLabel: string;
   /** Original ("was") price the discount is measured against. */
   was: number;
@@ -40,7 +49,7 @@ export const PACKS: Pack[] = [
     photos: 15,
     name: "Up to 15 photos",
     price: 65,
-    priceLabel: "$65",
+    priceLabel: "$65 USD",
     was: 105,
     wasLabel: "$105",
     blurbShort: "Quick single listing",
@@ -57,7 +66,7 @@ export const PACKS: Pack[] = [
     photos: 25,
     name: "Up to 25 photos",
     price: 84,
-    priceLabel: "$84",
+    priceLabel: "$84 USD",
     was: 125,
     wasLabel: "$125",
     blurbShort: "Most listings fit here",
@@ -76,7 +85,7 @@ export const PACKS: Pack[] = [
     photos: 40,
     name: "Up to 40 photos",
     price: 112,
-    priceLabel: "$112",
+    priceLabel: "$112 USD",
     was: 160,
     wasLabel: "$160",
     blurbShort: "Big homes & full galleries",

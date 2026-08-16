@@ -195,8 +195,13 @@ function readableDate(iso: string): string {
   });
 }
 
+// Carries the currency for the same reason `priceLabel` does. This is the
+// number the customer is actually charged, so if either figure has to name its
+// currency it is this one — a discounted price without it is the worst case:
+// the amount they will pay, in an ambiguous dollar, next to a full price that
+// says USD.
 const priceAfter = (d: Diagnosis, pct: number) =>
-  usd(d.pack.price - (d.pack.price * pct) / 100);
+  `${usd(d.pack.price - (d.pack.price * pct) / 100)} USD`;
 
 /**
  * The guarantee, pointed at /help rather than at a reply.
@@ -1065,7 +1070,7 @@ export const CUSTOMER: NurtureEmail[] = [
               rows: [
                 [
                   priceAfter(c.d, c.promo.pct),
-                  `your ${packPhrase(c.d)}, normally ${c.d.pack.priceLabel}`,
+                  `your ${packPhrase(c.d)}, normally ${usd(c.d.pack.price)}`,
                 ],
               ],
             },
@@ -1222,7 +1227,7 @@ export const CUSTOMER: NurtureEmail[] = [
             rows: [
               [
                 priceAfter(c.d, c.promo.pct),
-                `your ${packPhrase(c.d)} with ${c.promo.code}, normally ${c.d.pack.priceLabel}`,
+                `your ${packPhrase(c.d)} with ${c.promo.code}, normally ${usd(c.d.pack.price)}`,
               ],
             ],
           }
@@ -1263,7 +1268,7 @@ export const CUSTOMER: NurtureEmail[] = [
               rows: [
                 [
                   priceAfter(c.d, c.promo.pct),
-                  `your ${packPhrase(c.d)} today, ${c.d.pack.priceLabel} after this`,
+                  `your ${packPhrase(c.d)} today, ${usd(c.d.pack.price)} after this`,
                 ],
               ],
             },
