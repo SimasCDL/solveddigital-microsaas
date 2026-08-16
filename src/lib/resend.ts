@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { createTourToken } from "./tourAccess";
 
 // Lazy singleton — constructing Resend at module load throws "Missing API key"
 // during Vercel's build (env vars aren't present then). Build it on first send.
@@ -32,6 +33,14 @@ export async function sendDeliveryEmail(params: {
   preview?: boolean;
 }): Promise<void> {
   const orderUrl = `${appUrl()}/order/${params.orderId}`;
+  // A signed link straight into their library, so the moment they have a tour
+  // they also have the place all their tours live — no address to type, no
+  // second email to request. This is the email they were always going to open;
+  // making it the door into the portal is the cheapest retention there is.
+  const token = params.preview ? null : createTourToken(params.to);
+  const libraryUrl = token
+    ? `${appUrl()}/library?t=${encodeURIComponent(token)}`
+    : `${appUrl()}/library`;
 
   const resend = getResend();
   if (!resend) {
@@ -71,8 +80,9 @@ export async function sendDeliveryEmail(params: {
       <p style="color:#6f6a60;font-size:12px;margin:28px 0 0;border-top:1px solid #e7e1d6;padding-top:16px;">
         Order #${params.orderId} &middot; This page's links last 7 days. After that
         your tour is still in
-        <a href="${appUrl()}/library" style="color:#0f7d6b;">your library</a>,
-        along with everything else you have made.
+        <a href="${libraryUrl}" style="color:#0f7d6b;">your library</a>,
+        along with everything else you have made. That link is yours &mdash; no
+        password, nothing to type.
       </p>
     `),
   });

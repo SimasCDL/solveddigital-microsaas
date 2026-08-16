@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStripe, photosForSession } from "@/lib/stripe";
-import { listStuckOrders, countOrdersBySession } from "@/lib/orders";
+import {
+  listStuckOrders,
+  countOrdersBySession,
+  updateOrder,
+} from "@/lib/orders";
 import { sendUploadReminderEmail } from "@/lib/resend";
 import { hasSent, recordSend } from "@/lib/nurtureSends";
 import { sendTelegram } from "@/lib/telegram";
@@ -28,9 +32,15 @@ export const maxDuration = 300;
  * an alert and at most two emails per customer, ever.
  */
 
-/** A generation that has run this long is not running any more. Real ones
- *  finish in 4-13 minutes; this leaves room for a bad one before crying wolf. */
-const STUCK_AFTER_MIN = 45;
+/**
+ * A generation that has run this long is not running any more.
+ *
+ * Measured runs land at 4-13 minutes, but a 40-photo order on a single vCPU has
+ * never been timed and the ffmpeg half grows with the finished video's length.
+ * 90 minutes is well past any honest run and still catches a dead job the same
+ * working day.
+ */
+const STUCK_AFTER_MIN = 90;
 
 /** How far back to look for paid sessions. Beyond this, chasing is archaeology. */
 const LOOKBACK_DAYS = 14;
@@ -63,10 +73,26 @@ export async function GET(req: NextRequest) {
       );
       out.stuck.push(`${o.id} (${mins}m)`);
       if (dry) continue;
-      // Short on purpose. This fires at most a handful of times ever, and a
-      // long message is one people stop reading.
+
+      // Resolve it, do not just report it. Marking the order `failed` is what
+      // makes this alert fire once instead of every hour forever: the row stops
+      // matching the query that found it. The first version only alerted, and
+      // it re-announced the same month-old order on every run until somebody
+      // noticed the channel had turned into a metronome.
+      //
+      // It is also the honest state. The job is dead, and until this runs the
+      // order page shows a customer a progress bar that will never finish.
+      // `failed` is what the page needs to offer them a way out.
+      await updateOrder(o.id, {
+        status: "failed",
+        errorMessage: `No progress for ${mins} minutes — marked failed by the sweep. The process was most likely restarted mid-generation.`,
+      }).catch((err) => console.error("[sweep] could not mark failed:", err));
+
+      // Deliberately no customer email here. A retry often fixes this in a few
+      // minutes, and "your video failed" followed by "your video is ready" is
+      // worse than a short silence. A human decides, with the command to hand.
       await sendTelegram(
-        `🕒 *Order stuck* ${mins}m\n📧 ${o.email}\n🆔 \`${o.id}\`\n` +
+        `🕒 *Order stuck* ${mins}m · marked failed\n📧 ${o.email}\n🆔 \`${o.id}\`\n` +
           `Retry: POST /api/admin/retry`,
       ).catch(() => {});
     }
