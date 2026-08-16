@@ -59,7 +59,12 @@ export async function GET(req: NextRequest) {
         // Backstop for a webhook that never landed, or a customer who paid with
         // a different address than the one Stripe reported. An order row is the
         // other independent record that they bought.
-        if (await hasPaidOrderFor(lead.email)) {
+        //
+        // Never applied to the `customer` sequence, whose entry condition IS
+        // having bought. Without this exemption that sequence would be stopped
+        // by its own qualifying event on the first cron run after enrolment,
+        // and the failure would look exactly like it working.
+        if (lead.source !== "customer" && (await hasPaidOrderFor(lead.email))) {
           await stopSequence(lead.email, "purchased");
           skipped++;
           continue;

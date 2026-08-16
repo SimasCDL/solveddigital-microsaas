@@ -69,7 +69,125 @@ export async function sendDeliveryEmail(params: {
       : `Your video tour is ready`,
     html: shell(`${body}
       <p style="color:#6f6a60;font-size:12px;margin:28px 0 0;border-top:1px solid #e7e1d6;padding-top:16px;">
-        Order #${params.orderId} &middot; Your videos stay available on this page for 7 days.
+        Order #${params.orderId} &middot; This page's links last 7 days. After that
+        your tour is still in
+        <a href="${appUrl()}/library" style="color:#0f7d6b;">your library</a>,
+        along with everything else you have made.
+      </p>
+    `),
+  });
+}
+
+/**
+ * The link into the customer's own tour library.
+ *
+ * Sent only when the address actually has tours, and only ever to the address
+ * itself — the token in this link is the whole authentication story, so mailing
+ * it anywhere else would hand over somebody's listings.
+ */
+export async function sendTourLibraryLinkEmail(params: {
+  to: string;
+  token: string;
+  /** Finished tours, so the copy can be specific rather than say "your tours". */
+  tourCount: number;
+}): Promise<void> {
+  const resend = getResend();
+  if (!resend) {
+    console.error("[resend] RESEND_API_KEY not set — skipping library link");
+    return;
+  }
+
+  const url = `${appUrl()}/library?t=${encodeURIComponent(params.token)}`;
+  const n = params.tourCount;
+  const countLine =
+    n === 0
+      ? "Your tours are here."
+      : n === 1
+        ? "You have 1 tour saved."
+        : `You have ${n} tours saved.`;
+
+  await resend.emails.send({
+    from: process.env.FROM_EMAIL!,
+    to: params.to,
+    subject: "Your Tourly library",
+    html: shell(`
+      <h1 style="color:#15130f;font-size:26px;font-weight:600;letter-spacing:-0.022em;margin:0 0 28px;">${countLine}</h1>
+      <p style="color:#15130f;font-size:15px;margin:0 0 28px;">
+        Everything you have made with Tourly lives on one page: watch it, download
+        it again, or start the next listing. No password, this link is the key.
+      </p>
+      <p style="margin:0 0 28px;">
+        <a href="${url}" style="display:inline-block;background:#0f7d6b;color:#ffffff;font-weight:600;font-size:15px;padding:15px 32px;border-radius:999px;text-decoration:none;">Open my library &rarr;</a>
+      </p>
+      <p style="color:#6f6a60;font-size:13px;margin:0;">
+        The link works for 30 days and only from this email address. If you did
+        not ask for it, nothing has happened to your account and you can ignore
+        this.
+      </p>
+    `),
+  });
+}
+
+/**
+ * The receipt that is also the way back in.
+ *
+ * In the pay-first funnel the customer pays on a Stripe Payment Link and only
+ * then reaches the uploader, via the session id on the success URL. That URL is
+ * the ONLY route to it. Close the tab, lose the tab, tap a notification
+ * mid-redirect, and they have paid us and have nowhere to go: Stripe's own
+ * receipt carries no link of ours, and their order does not exist yet, so
+ * nothing else in the system knows to chase them.
+ *
+ * So this is not a nicety. It is the durable copy of the one link that turns
+ * their money into a product, and it must go out the moment the payment lands.
+ *
+ * Never "reply to this email" — nothing reads that inbox. /help reaches a phone.
+ */
+export async function sendUploadLinkEmail(params: {
+  to: string;
+  /** The paid Checkout Session — its id is what unlocks the uploader. */
+  sessionId: string;
+  /** Photos this pack covers, so the copy states the real cap. */
+  maxPhotos: number;
+}): Promise<void> {
+  const resend = getResend();
+  if (!resend) {
+    console.error("[resend] RESEND_API_KEY not set — skipping upload link");
+    return;
+  }
+
+  const uploadUrl = `${appUrl()}/upload?session_id=${encodeURIComponent(params.sessionId)}`;
+  const helpUrl = `${appUrl()}/help`;
+
+  await resend.emails.send({
+    from: process.env.FROM_EMAIL!,
+    to: params.to,
+    subject: "You're in. Send your listing photos",
+    html: shell(`
+      <h1 style="color:#15130f;font-size:26px;font-weight:600;letter-spacing:-0.022em;margin:0 0 28px;">You're in. Now send your photos.</h1>
+      <p style="color:#15130f;font-size:15px;margin:0 0 28px;">
+        Your pack is paid for and waiting. Send up to ${params.maxPhotos} listing
+        photos and your tour comes back to this inbox, usually in about 15
+        minutes. No editing, nothing to install.
+      </p>
+      <p style="margin:0 0 28px;">
+        <a href="${uploadUrl}" style="display:inline-block;background:#0f7d6b;color:#ffffff;font-weight:600;font-size:15px;padding:15px 32px;border-radius:999px;text-decoration:none;">Upload my photos &rarr;</a>
+      </p>
+      <p style="color:#15130f;font-size:15px;margin:0 0 28px;">
+        Keep this email. That button is how you get back to your upload page if
+        you close the tab, and it works whenever you are ready. Your photos do
+        not have to be sent today.
+      </p>
+      <p style="color:#6f6a60;font-size:13px;margin:0;">
+        You get three files: widescreen for Zillow and the MLS, plus two vertical
+        cuts for Reels and TikTok. Something wrong? Tell us at
+        <a href="${helpUrl}" style="color:#0f7d6b;">${helpUrl.replace(/^https?:\/\//, "")}</a>
+        and a human picks it up.
+      </p>
+      <p style="color:#6f6a60;font-size:12px;margin:28px 0 0;border-top:1px solid #e7e1d6;padding-top:16px;">
+        30 days to change your mind. If the tour is not something you would put
+        your name on, ask at ${helpUrl.replace(/^https?:\/\//, "")} and we refund
+        you, and you keep the files either way.
       </p>
     `),
   });

@@ -17,7 +17,7 @@ export function priceForPhotoCount(n: number): number {
 }
 
 // Max photos a paid Stripe amount (in cents) entitles a customer to.
-// FALLBACK ONLY: the webhook entitles by Stripe Price id (PHOTOS_BY_PRICE) and
+// FALLBACK ONLY: entitlement runs off the Stripe Price id (PHOTOS_BY_PRICE) and
 // only lands here if that lookup fails, because an amount can't survive a promo
 // code — $112 minus 20% reads as the $84 pack. Thresholds sit below each price
 // to tolerate rounding, not discounts.
@@ -26,6 +26,49 @@ export function photosForAmount(amountTotal: number | null): number {
   if (cents >= 11000) return 40; // $112 pack
   if (cents >= 7500) return 25; // $84 pack
   return 15; // $65 pack (floor)
+}
+
+// A pack's photo cap is fixed by the Stripe Price the customer paid for — NOT
+// the amount. Deriving it from the amount breaks under promo codes: 15% off the
+// $112/40-photo pack pays $95.20, which the amount ladder misreads as the
+// 25-pack. The Price a promo discounts is still the same Price, so this stays
+// correct. Keep in sync with the pack Payment Links.
+export const PHOTOS_BY_PRICE: Record<string, number> = {
+  // Current prices.
+  price_1TyAcqI5ln1sJkOAvIqvpvp1: 40, // $112 pack
+  price_1TyAcpI5ln1sJkOAq05gmtCD: 25, // $84 pack
+  price_1TyAcoI5ln1sJkOAXNVR2BxX: 15, // $65 pack
+  // Retired prices — kept so an in-flight checkout opened before the price
+  // change still entitles the right pack instead of falling back to 15.
+  price_1TvdxxI5ln1sJkOAwnzfABr8: 40, // was $160
+  price_1TvdxbI5ln1sJkOAZt1Xttod: 25, // was $125
+  price_1TvdxBI5ln1sJkOA1GKh5Q4C: 15, // was $105
+};
+
+/**
+ * How many photos this checkout session entitles the customer to.
+ *
+ * The ONE place entitlement is decided, so the uploader's cap (/api/pack), the
+ * fulfillment gate (/api/fulfill) and the webhook can never disagree — they did
+ * once, and the disagreement only showed up for discounted customers, who were
+ * told to "buy a larger pack" after already paying for it.
+ *
+ * Price id first, amount only if the line item can't be read.
+ */
+export async function photosForSession(
+  session: Stripe.Checkout.Session,
+): Promise<number> {
+  try {
+    const items = await getStripe().checkout.sessions.listLineItems(
+      session.id,
+      { limit: 1 },
+    );
+    const priceId = items.data[0]?.price?.id;
+    if (priceId && PHOTOS_BY_PRICE[priceId]) return PHOTOS_BY_PRICE[priceId];
+  } catch (err) {
+    console.error("[stripe] line item lookup failed, using amount:", err);
+  }
+  return photosForAmount(session.amount_total);
 }
 
 /**

@@ -64,6 +64,11 @@ export default function UploadPage() {
       .then((d) => {
         if (d?.maxPhotos) setMaxPhotos(d.maxPhotos);
         if (SKIP_CHECKOUT) setAccess(d?.paid ? "ok" : "denied");
+        // Prefill with the address Stripe already collected. Retyping it is
+        // pure friction, and a typo here sends the finished tour to an inbox
+        // the customer does not own while leaving them on the "you have not
+        // bought yet" nurture sequence, since nothing matches their purchase.
+        if (typeof d?.email === "string" && d.email) setEmail(d.email);
         // Report the sale the moment the customer lands back from Stripe. Only
         // on a server-verified paid session, so a hand-typed ?session_id cannot
         // manufacture a conversion. The webhook sends the same event with the

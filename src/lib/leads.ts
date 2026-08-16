@@ -186,6 +186,88 @@ export async function upsertLead(params: {
   return { lead: fromRow(rows[0]), isNew: !existing };
 }
 
+/**
+ * Put a paying customer onto the post-delivery sequence.
+ *
+ * Separate from `upsertLead` because it has to do the one thing that function
+ * exists to refuse: write over a row whose status is `purchased`. That guard is
+ * right for the quiz sequence, which would otherwise mail a customer "you have
+ * not bought yet". It is exactly wrong here, where having bought is the entry
+ * condition.
+ *
+ * The unsubscribe guard is NOT relaxed. An unsubscribe is permanent and applies
+ * to every sequence we run, including this one — somebody who opted out and
+ * then bought has told us both things, and only one of them is about email.
+ *
+ * Returns null when nothing was enrolled, which the caller treats as normal.
+ */
+export async function enrolCustomer(params: {
+  email: string;
+  /** Their quiz answers if we have them; the emails quote their own figures. */
+  answers: Answers;
+  archetype: string;
+  score: number;
+  packId: string;
+  /** When step 1 is due, from `dueAtForSource(..., 'customer')`. */
+  nextAt: string | null;
+}): Promise<Lead | null> {
+  if (!supabaseConfigured()) return null;
+  const email = normalizeEmail(params.email);
+
+  try {
+    const existing = await getLeadByEmail(email);
+    if (existing?.status === "unsubscribed") return null;
+
+    // Already running this sequence — a second order must not restart it from
+    // the top, or a customer who buys three times in a month gets three
+    // overlapping copies of the same seven emails.
+    if (existing?.source === "customer" && existing.status === "active") {
+      return existing;
+    }
+
+    const now = new Date().toISOString();
+    const row: Partial<LeadRow> = {
+      id: existing?.id ?? randomUUID(),
+      email,
+      // Prefer answers they actually gave over anything synthesised from an
+      // order, so the copy keeps quoting their own numbers.
+      answers: Object.keys(existing?.answers ?? {}).length
+        ? existing!.answers
+        : params.answers,
+      archetype: existing?.archetype || params.archetype,
+      score: existing?.score || params.score,
+      pack_id: params.packId,
+      source: "customer",
+      step: 0,
+      next_at: params.nextAt,
+      scheduled_ids: [],
+      status: "active",
+      unsub_token: existing?.unsubToken ?? randomUUID(),
+      promo_code: null,
+      promo_pct: null,
+      promo_expires_at: null,
+      // Keep the purchase on the record. Clearing it would let the quiz
+      // sequence treat them as a fresh lead if they ever ran the quiz again.
+      purchased_at: existing?.purchasedAt ?? now,
+      unsubscribed_at: null,
+      recovery_sent_at: existing?.recoverySentAt ?? null,
+      created_at: existing?.createdAt ?? now,
+      updated_at: now,
+    };
+
+    const res = await sbFetch("/quiz_leads?on_conflict=email", {
+      method: "POST",
+      headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+      body: JSON.stringify(row),
+    });
+    const rows: LeadRow[] = await res.json();
+    return rows.length ? fromRow(rows[0]) : null;
+  } catch (err) {
+    console.error("[leads] customer enrolment failed:", err);
+    return null;
+  }
+}
+
 export async function updateLead(
   id: string,
   updates: Partial<{

@@ -11,8 +11,10 @@ import { useVideoAutoplay } from "@/components/site/useVideoAutoplay";
  * photo, one text-only, one video. Three identical cards read as a template;
  * varied ones read as real reviews that happened to arrive differently.
  *
- * The two written quotes are example copy for the concept build — swap them for
- * real customer ones before this takes live traffic. The video is genuine.
+ * All three are real customers. An earlier version of this file carried a note
+ * calling the two written quotes placeholder copy; that note was stale and has
+ * been removed. Keep it that way: nothing on this screen may be written by us
+ * and attributed to a customer, however representative it feels.
  */
 
 interface Card {
