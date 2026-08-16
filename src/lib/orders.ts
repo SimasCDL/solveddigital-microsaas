@@ -188,6 +188,38 @@ export async function listOrdersByEmail(email: string): Promise<Order[]> {
   }
 }
 
+/**
+ * Orders that have been generating for implausibly long.
+ *
+ * On Vercel a stalled fulfilment eventually hit the function timeout and threw,
+ * which at least marked the order `failed` and mailed the customer. On a VPS
+ * there is no timeout, so the same stall is silent: a `systemctl restart` mid
+ * generation kills the job without an exception, and the row sits in
+ * `processing` forever while the customer watches a progress bar.
+ *
+ * There is one in this table that has been processing since 19 July. Nobody
+ * found out from the software.
+ */
+export async function listStuckOrders(
+  olderThanMinutes: number,
+): Promise<Order[]> {
+  if (!supabaseConfigured()) return [];
+  try {
+    const cutoff = new Date(
+      Date.now() - olderThanMinutes * 60_000,
+    ).toISOString();
+    const res = await sbFetch(
+      `/orders?status=eq.processing&updated_at=lt.${encodeURIComponent(cutoff)}` +
+        `&select=*&order=updated_at.asc&limit=50`,
+    );
+    const rows: OrderRow[] = await res.json();
+    return rows.map(fromRow);
+  } catch (err) {
+    console.error("[orders] stuck lookup failed:", err);
+    return [];
+  }
+}
+
 /** How many orders (any status except pending_payment) already used this Stripe
  *  session — enforces single-use sessions. */
 export async function countOrdersBySession(sessionId: string): Promise<number> {

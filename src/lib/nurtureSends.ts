@@ -37,6 +37,36 @@ export async function recordSend(p: {
   }
 }
 
+/**
+ * Has this exact email already gone to this address?
+ *
+ * The idempotency key for anything driven by a sweep rather than by a lead's
+ * own `step` counter. A cron that re-reads Stripe every hour would otherwise
+ * re-send the same reminder every hour, and the one thing worse than never
+ * chasing a stranded customer is chasing them twenty-four times a day.
+ *
+ * Fails CLOSED: on error it reports "already sent", because a missed reminder
+ * costs one email and a duplicate storm costs the sender reputation that every
+ * other email in this system depends on.
+ */
+export async function hasSent(
+  email: string,
+  step: number,
+  source: string,
+): Promise<boolean> {
+  if (!supabaseConfigured()) return true;
+  try {
+    const res = await sbFetch(
+      `/nurture_sends?email=eq.${encodeURIComponent(email.trim().toLowerCase())}` +
+        `&step=eq.${step}&source=eq.${encodeURIComponent(source)}&select=id&limit=1`,
+    );
+    return ((await res.json()) as unknown[]).length > 0;
+  } catch (err) {
+    console.error("[nurture] hasSent check failed, assuming sent:", err);
+    return true;
+  }
+}
+
 /** How many nurture emails landed in the window. */
 export async function sendsInWindow(hours: number): Promise<number> {
   if (!supabaseConfigured()) return 0;

@@ -79,6 +79,79 @@ export async function sendDeliveryEmail(params: {
 }
 
 /**
+ * The reminder for somebody who paid and never sent their photos.
+ *
+ * Two of these, ever. Deliberately not the post-purchase sequence: every email
+ * in that one is written for a person holding a finished tour, and telling
+ * someone where to post a vertical cut they have never seen would read as a
+ * company that had not noticed they got nothing.
+ *
+ * It also concedes nothing and hurries nobody. An unredeemed pack costs us no
+ * generation, so there is no revenue to rescue here — only a customer who paid
+ * and has not been served, which is a reason to be available rather than a
+ * reason to push. Nothing here claims an expiry, because nothing expires.
+ */
+export async function sendUploadReminderEmail(params: {
+  to: string;
+  sessionId: string;
+  maxPhotos: number;
+  /** 1 = the nudge a day later, 2 = the last one. */
+  attempt: 1 | 2;
+}): Promise<void> {
+  const resend = getResend();
+  if (!resend) {
+    console.error("[resend] RESEND_API_KEY not set — skipping reminder");
+    return;
+  }
+
+  const uploadUrl = `${appUrl()}/upload?session_id=${encodeURIComponent(params.sessionId)}`;
+  const helpUrl = `${appUrl()}/help`;
+  const helpShort = helpUrl.replace(/^https?:\/\//, "");
+
+  const body =
+    params.attempt === 1
+      ? `
+      <h1 style="color:#15130f;font-size:26px;font-weight:600;letter-spacing:-0.022em;margin:0 0 28px;">Your photos have not arrived yet</h1>
+      <p style="color:#15130f;font-size:15px;margin:0 0 28px;">
+        You bought a pack yesterday and it is still sitting here waiting for a
+        gallery. Nothing is wrong and nothing has been used up &mdash; send up to
+        ${params.maxPhotos} photos whenever the listing is ready and your tour
+        comes back to this inbox in about fifteen minutes.
+      </p>`
+      : `
+      <h1 style="color:#15130f;font-size:26px;font-weight:600;letter-spacing:-0.022em;margin:0 0 28px;">Still here whenever you are</h1>
+      <p style="color:#15130f;font-size:15px;margin:0 0 28px;">
+        Last one about this. Your pack is paid for and it does not expire, so
+        there is no rush from our side &mdash; the link below works next week or
+        next month just as well as today.
+      </p>
+      <p style="color:#15130f;font-size:15px;margin:0 0 28px;">
+        If something went wrong when you tried to upload, that is worth telling
+        us about rather than writing off. It takes one message and we will sort
+        it out.
+      </p>`;
+
+  await resend.emails.send({
+    from: process.env.FROM_EMAIL!,
+    to: params.to,
+    subject:
+      params.attempt === 1
+        ? "your pack is waiting for photos"
+        : "still here whenever you are",
+    html: shell(`${body}
+      <p style="margin:0 0 28px;">
+        <a href="${uploadUrl}" style="display:inline-block;background:#0f7d6b;color:#ffffff;font-weight:600;font-size:15px;padding:15px 32px;border-radius:999px;text-decoration:none;">Send my photos &rarr;</a>
+      </p>
+      <p style="color:#6f6a60;font-size:13px;margin:0;">
+        Stuck, or changed your mind? Tell us at
+        <a href="${helpUrl}" style="color:#0f7d6b;">${helpShort}</a>
+        and a human picks it up. 30 days to change your mind, refund included.
+      </p>
+    `),
+  });
+}
+
+/**
  * The link into the customer's own tour library.
  *
  * Sent only when the address actually has tours, and only ever to the address
