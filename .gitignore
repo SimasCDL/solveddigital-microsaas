@@ -36,6 +36,10 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
+# The real prod/local credentials on this machine are named with an underscore,
+# not a dot, so `.env*` above never matched them and `git add -A` would have
+# committed the Stripe, Supabase service-role and Resend keys verbatim.
+_env*
 
 # vercel
 .vercel
