@@ -22,43 +22,32 @@ export interface Probe {
 }
 
 /**
- * fal.ai — used by /api/upload for EVERY photo, so a locked account means
- * nobody can submit anything, paid or not.
+ * fal.ai is deliberately NOT probed.
  *
- * Probes the upload-initiate endpoint because that is the exact call the upload
- * route makes. It reserves an upload URL and costs nothing; no bytes are sent.
+ * It was, back when /api/upload put every photo in fal.storage and a lapsed
+ * balance took the product offline at its first step. Neither is true now:
+ * uploads go to our own Supabase bucket, and generation runs on Replicate
+ * under `VIDEO_PROVIDER=seedance`. The account can sit at zero indefinitely
+ * without a customer noticing.
+ *
+ * So the probe did the one thing a health check must never do — print a red
+ * BALANCE EXHAUSTED banner above the numbers, every morning, for a service no
+ * request touches. An alarm that is always on and never actionable is worse
+ * than no alarm, because it teaches you to skip the section where the real one
+ * will appear. If a fal code path ever goes back in the customer's way, probe
+ * it again then.
  */
-async function probeFal(): Promise<Probe> {
-  const key = process.env.FAL_KEY;
-  if (!key) return { name: "fal.ai", state: "down", detail: "FAL_KEY not set" };
-  try {
-    const res = await fetch("https://rest.alpha.fal.ai/storage/upload/initiate", {
-      method: "POST",
-      headers: { Authorization: `Key ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ content_type: "image/png", file_name: "healthcheck.png" }),
-    });
-    if (res.ok) return { name: "fal.ai", state: "ok" };
-    const body = await res.text().catch(() => "");
-    // The message that matters: "User is locked. Reason: Exhausted balance."
-    const balance = /exhausted balance|user is locked/i.test(body);
-    return {
-      name: "fal.ai",
-      state: "down",
-      detail: balance
-        ? "BALANCE EXHAUSTED — top up at fal.ai/dashboard/billing"
-        : `${res.status} ${body.slice(0, 120)}`,
-    };
-  } catch (err) {
-    return { name: "fal.ai", state: "unknown", detail: String(err).slice(0, 120) };
-  }
-}
 
 /** Replicate — generates every clip. A dead token means no tours, only after
  *  the customer has already uploaded and paid. */
 async function probeReplicate(): Promise<Probe> {
   const token = process.env.REPLICATE_API_TOKEN;
   if (!token) {
-    return { name: "Replicate", state: "down", detail: "REPLICATE_API_TOKEN not set" };
+    return {
+      name: "Replicate",
+      state: "down",
+      detail: "REPLICATE_API_TOKEN not set",
+    };
   }
   try {
     const res = await fetch("https://api.replicate.com/v1/account", {
@@ -71,12 +60,16 @@ async function probeReplicate(): Promise<Probe> {
       detail: `${res.status} ${(await res.text().catch(() => "")).slice(0, 120)}`,
     };
   } catch (err) {
-    return { name: "Replicate", state: "unknown", detail: String(err).slice(0, 120) };
+    return {
+      name: "Replicate",
+      state: "unknown",
+      detail: String(err).slice(0, 120),
+    };
   }
 }
 
 export async function probeProviders(): Promise<Probe[]> {
-  return Promise.all([probeFal(), probeReplicate()]);
+  return Promise.all([probeReplicate()]);
 }
 
 export interface StuckOrder {
@@ -113,7 +106,9 @@ export async function stuckOrders(minMinutes = 20): Promise<StuckOrder[]> {
   return rows.map((r) => ({
     id: r.id,
     email: r.email,
-    minutes: Math.round((Date.now() - new Date(r.updated_at).getTime()) / 60_000),
+    minutes: Math.round(
+      (Date.now() - new Date(r.updated_at).getTime()) / 60_000,
+    ),
     // A `free:` marker is a preview, not a purchase — worth separating, because
     // a stuck PAID order is somebody owed either a video or their money back.
     paid: !!r.stripe_session_id && !r.stripe_session_id.startsWith("free:"),
@@ -133,7 +128,9 @@ export async function healthSection(): Promise<string[]> {
 
   const L: string[] = ["🚨 *HEALTH*"];
   for (const p of bad) {
-    L.push(`${p.state === "down" ? "❌" : "❓"} ${p.name} — ${p.detail ?? p.state}`);
+    L.push(
+      `${p.state === "down" ? "❌" : "❓"} ${p.name} — ${p.detail ?? p.state}`,
+    );
   }
   if (stuck.length) {
     const paid = stuck.filter((s) => s.paid).length;
@@ -142,7 +139,9 @@ export async function healthSection(): Promise<string[]> {
         (paid ? ` · *${paid} PAID*` : ""),
     );
     for (const s of stuck.slice(0, 5)) {
-      L.push(`   ${s.paid ? "💳" : "🆓"} ${s.email} · ${s.minutes}m · \`${s.id}\``);
+      L.push(
+        `   ${s.paid ? "💳" : "🆓"} ${s.email} · ${s.minutes}m · \`${s.id}\``,
+      );
     }
   }
   return L;

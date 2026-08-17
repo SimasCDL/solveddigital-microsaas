@@ -13,7 +13,10 @@ export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
   const auth = req.headers.get("authorization");
   const key = req.nextUrl.searchParams.get("key");
-  if (secret && auth !== `Bearer ${secret}` && key !== secret) {
+  // Fail-closed, matching /api/nurture and every admin route: an unset
+  // CRON_SECRET must 401, not open the endpoint to anyone who guesses the
+  // path. This one sends to the Telegram channel, so open means spammable.
+  if (!secret || (auth !== `Bearer ${secret}` && key !== secret)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

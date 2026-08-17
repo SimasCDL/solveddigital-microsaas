@@ -47,9 +47,21 @@ interface ClarityRow {
   information?: Record<string, unknown>[];
 }
 
-async function fetchClarity(days: number): Promise<ClaritySnapshot | null> {
+/**
+ * Clarity either answered or it did not, and the report must be able to tell
+ * the difference.
+ *
+ * Returning `null` for both an unset token and a rejected request is what let
+ * a silently broken instrument print "Landing 0" next to a day with real
+ * traffic in it. A zero that came from a failed probe is not a measurement,
+ * and every line built on it is a fabrication.
+ */
+type ClarityResult =
+  { ok: true; snap: ClaritySnapshot } | { ok: false; reason: string };
+
+async function fetchClarity(days: number): Promise<ClarityResult> {
   const token = process.env.CLARITY_API_TOKEN;
-  if (!token) return null;
+  if (!token) return { ok: false, reason: "CLARITY_API_TOKEN not set" };
   const res = await fetch(
     `${CLARITY_URL}?numOfDays=${days}&dimension1=Referrer`,
     {
@@ -57,7 +69,16 @@ async function fetchClarity(days: number): Promise<ClaritySnapshot | null> {
       cache: "no-store",
     },
   );
-  if (!res.ok) throw new Error(`Clarity ${res.status}`);
+  if (!res.ok) {
+    // 401 is a token that belongs to no project (or a different one from the
+    // tag on the page); 429 is the 10-requests-per-day export cap. Both look
+    // identical to "nobody visited" unless the status is carried through.
+    const body = (await res.text().catch(() => "")).slice(0, 100);
+    return {
+      ok: false,
+      reason: `Clarity API ${res.status}${body ? ` — ${body}` : ""}`,
+    };
+  }
   const data = (await res.json()) as ClarityRow[];
 
   const traffic = metric(data, "Traffic");
@@ -90,20 +111,23 @@ async function fetchClarity(days: number): Promise<ClaritySnapshot | null> {
     .slice(0, 3);
 
   return {
-    sessions,
-    bots,
-    botPct: sessions ? (bots / sessions) * 100 : 0,
-    humans: sessions - bots,
-    activeSec: sessions ? activeTime / sessions : activeTime,
-    totalSec: sessions ? totalTime / sessions : totalTime,
-    scrollPct: num(metric(data, "ScrollDepth").averageScrollDepth),
-    deadClickPct: num(
-      metric(data, "DeadClickCount").sessionsWithMetricPercentage,
-    ),
-    jsErrorPct: num(
-      metric(data, "ScriptErrorCount").sessionsWithMetricPercentage,
-    ),
-    topSources,
+    ok: true,
+    snap: {
+      sessions,
+      bots,
+      botPct: sessions ? (bots / sessions) * 100 : 0,
+      humans: sessions - bots,
+      activeSec: sessions ? activeTime / sessions : activeTime,
+      totalSec: sessions ? totalTime / sessions : totalTime,
+      scrollPct: num(metric(data, "ScrollDepth").averageScrollDepth),
+      deadClickPct: num(
+        metric(data, "DeadClickCount").sessionsWithMetricPercentage,
+      ),
+      jsErrorPct: num(
+        metric(data, "ScriptErrorCount").sessionsWithMetricPercentage,
+      ),
+      topSources,
+    },
   };
 }
 
@@ -202,10 +226,15 @@ function quizSection(stages: FunnelStage[]): string[] {
   // The three rates that mean different things and have different fixes:
   // whether the ad matched the page, whether the gate is worth the address,
   // and whether the offer lands.
-  const landed = at("intro");
+  //
+  // These keys are the event names `funnelCounts` emits, and nothing else will
+  // do: a lookup that misses returns 0, so a wrong key prints a confident
+  // "0%" rather than failing, and the report goes on lying every morning until
+  // somebody checks it against the raw events.
+  const landed = at("quiz_start");
   const started = stages.find((s) => s.step.startsWith("step_"))?.sessions ?? 0;
   L.push(
-    `▶️ Start ${pct(started, landed)}% · ✉️ Gate ${pct(at("submit"), at("email"))}% · 🛒 Buy ${pct(at("checkout"), at("result"))}%`,
+    `▶️ Start ${pct(started, landed)}% · ✉️ Gate ${pct(at("lead"), at("gate_view"))}% · 🛒 Buy ${pct(at("checkout_click"), at("result_view"))}%`,
   );
 
   /**
@@ -218,7 +247,9 @@ function quizSection(stages: FunnelStage[]): string[] {
    * that is where a number worth acting on shows up.
    */
   const body = (s: FunnelStage) =>
-    s.step === "intro" || s.step.startsWith("step_") || s.step === "email";
+    s.step === "quiz_start" ||
+    s.step.startsWith("step_") ||
+    s.step === "gate_view";
   let worst: { from: FunnelStage; to: FunnelStage } | null = null;
   for (let i = 1; i < stages.length; i++) {
     if (!body(stages[i]) || !body(stages[i - 1])) continue;
@@ -235,8 +266,8 @@ function quizSection(stages: FunnelStage[]): string[] {
   } else {
     // Nothing anomalous inside the quiz means the constraint has moved to a
     // gate, and the report should say which one rather than go quiet.
-    const gate = pct(at("submit"), at("email"));
-    const buy = pct(at("checkout"), at("result"));
+    const gate = pct(at("lead"), at("gate_view"));
+    const buy = pct(at("checkout_click"), at("result_view"));
     L.push(
       buy < gate
         ? "👉 Quiz body is clean. The offer is the constraint, not the questions."
@@ -247,9 +278,21 @@ function quizSection(stages: FunnelStage[]): string[] {
 }
 
 export async function buildReport(): Promise<string> {
-  const [day, week, sales7, devices, quiz, emailsSent, converted, leads, health] =
-    await Promise.all([
-    fetchClarity(1).catch(() => null),
+  const [
+    clarity,
+    sales24,
+    sales7,
+    devices,
+    quiz,
+    emailsSent,
+    converted,
+    leads,
+    health,
+  ] = await Promise.all([
+    fetchClarity(1).catch((err): ClarityResult => ({
+      ok: false,
+      reason: String(err).slice(0, 100),
+    })),
     fetchSales(24).catch(() => null),
     fetchSales(24 * 7).catch(() => null),
     fetchDevices(1).catch(() => null),
@@ -280,14 +323,27 @@ export async function buildReport(): Promise<string> {
   }
 
   // FUNNEL
-  const landing = day?.sessions ?? 0;
-  const checkouts = week?.checkouts ?? 0;
-  const buys = week?.purchases ?? 0;
-  const rev = week ? money(week.revenue, week.currency) : "—";
+  //
+  // Clarity is the sitewide session count, but it is a third-party tag on a
+  // third-party API and it is the one input here that can vanish without
+  // anything else changing. When it does, the number that replaces it is our
+  // own — the quiz landings we count ourselves — and it is labelled, because a
+  // quiz-only figure printed as if it were sitewide traffic is the same lie in
+  // the other direction.
+  const day = clarity.ok ? clarity.snap : null;
+  const quizLanded = quiz.find((s) => s.step === "quiz_start")?.sessions ?? 0;
+  const landing = day ? day.sessions : quizLanded;
+  const landingNote = day ? "" : " (quiz)";
+  const checkouts = sales24?.checkouts ?? 0;
+  const buys = sales24?.purchases ?? 0;
+  const rev = sales24 ? money(sales24.revenue, sales24.currency) : "—";
   const coPct = landing ? Math.round((checkouts / landing) * 100) : 0;
   L.push("*FUNNEL*");
   L.push(
-    `👁 Landing ${landing}  →  🛒 Checkout ${checkouts} (${coPct}%)  →  💳 Buys ${buys} · ${rev}`,
+    `👁 Landing ${landing || "n/a"}${landingNote}  →  🛒 Checkout ${checkouts}` +
+      // A rate with no denominator is not 0%, it is unknown, and printing it as
+      // 0% is what made a day with 35 landings and 2 checkouts read as dead.
+      `${landing ? ` (${coPct}%)` : ""}  →  💳 Buys ${buys} · ${rev}`,
   );
   L.push("");
 
@@ -305,7 +361,8 @@ export async function buildReport(): Promise<string> {
       `📧 Sent ${emailsSent} · 💰 Converted ${converted}` +
         (leads ? ` · 👥 ${leads.active} on sequence` : ""),
     );
-    if (leads?.unsubscribed) L.push(`🚪 Unsubscribed total ${leads.unsubscribed}`);
+    if (leads?.unsubscribed)
+      L.push(`🚪 Unsubscribed total ${leads.unsubscribed}`);
     L.push("");
   }
 
@@ -330,8 +387,16 @@ export async function buildReport(): Promise<string> {
     L.push(
       `⚠️ dead-clicks ${day.deadClickPct.toFixed(1)}% · JS-errors ${day.jsErrorPct.toFixed(1)}%`,
     );
-  } else {
+  } else if (clarity.ok) {
     L.push("— no sessions in the last 24h");
+  } else {
+    // The instrument is broken, not the traffic. Said plainly, because the
+    // previous wording claimed a measurement nobody took, and it read as the
+    // most alarming line in the report on a day the funnel was working.
+    L.push(`❓ Clarity not reporting — ${clarity.reason}`);
+    if (quizLanded) {
+      L.push(`   (our own counters saw ${quizLanded} quiz landings)`);
+    }
   }
   L.push("");
 
@@ -361,7 +426,9 @@ export async function buildReport(): Promise<string> {
     tips.push(
       `💡 Most traffic: ${day.topSources[0].name} (${day.topSources[0].count})`,
     );
-  if (day && day.sessions === 0)
+  // Both instruments have to agree. Clarity reading zero on a day our own
+  // counters logged landings means Clarity is wrong, not that nobody came.
+  if (day && day.sessions === 0 && !quizLanded)
     tips.push("💡 No traffic yet — waiting on ads");
   if (tips.length) {
     L.push(...tips.slice(0, 3));

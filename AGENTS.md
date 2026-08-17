@@ -90,6 +90,25 @@ as a `quiz_<step>` tag. The counters give the numbers; the tags make the replays
 filterable. Clarity's API does not expose custom events, so the numbers cannot
 come from there.
 
+⚠️ The report looks stages up **by the event names `funnelCounts` emits**
+(`quiz_start`, `step_N`, `gate_view`, `lead`, `result_view`, `checkout_click`).
+A key that misses returns 0, so a wrong one prints a confident `0%` instead of
+failing — which is exactly how `Start 0% · Gate 0% · Buy 0%` shipped and went
+unnoticed for weeks against real traffic. Change a key in one file, change it
+in both.
+
+Clarity is the only report input that can vanish on its own, so its absence is
+now **stated, never rendered as a zero**. `fetchClarity` returns
+`{ok:false, reason}` rather than `null`; with it down the FUNNEL line falls
+back to our own quiz landings and labels them `(quiz)`, and BEHAVIOR prints the
+reason. `GET /api/debug?clarity=1` (admin key) asks the export API directly —
+a 401 means the token cannot read the project the page tag writes to, which is
+indistinguishable from no traffic without the status code.
+
+fal.ai is **not health-probed**: uploads go to Supabase and generation runs on
+Replicate under `VIDEO_PROVIDER=seedance`, so a zero balance harms nobody and
+the daily red banner only trained everyone to skip the HEALTH section.
+
 The daily report's QUIZ FUNNEL section names the **worst drop inside the quiz
 body only** (intro → questions → gate). Result → checkout is excluded on
 purpose: it is the biggest drop in any priced funnel, so surfacing it daily is
