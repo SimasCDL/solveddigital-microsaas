@@ -481,10 +481,14 @@ export function painEcho(a: Answers): string {
  * obviously true to the reader. Pulled from ALL_STEPS so it cannot drift from
  * the wording on the screen they tapped it on.
  */
-export function painLabel(a: Answers): string {
-  const q = ALL_STEPS.find((s) => s.id === "pain");
+export function choiceLabel(a: Answers, stepId: string): string {
+  const q = ALL_STEPS.find((s) => s.id === stepId);
   if (!q || q.kind !== "question") return "";
-  return resolve(q.choices, a).find((c) => c.id === a.pain)?.label ?? "";
+  return resolve(q.choices, a).find((c) => c.id === a[stepId])?.label ?? "";
+}
+
+export function painLabel(a: Answers): string {
+  return choiceLabel(a, "pain");
 }
 
 const GOAL_PHRASE: Record<string, string> = {

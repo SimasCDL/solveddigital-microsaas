@@ -89,7 +89,7 @@ export function FullTourUpsell({
                 <span className="block text-base font-bold text-tink">
                   {p.priceLabel}
                 </span>
-                <span className="block text-xs text-tink-soft line-through">
+                <span className="block text-xs font-medium text-tink-soft line-through decoration-tink-soft/40 decoration-[1px]">
                   {p.wasLabel}
                 </span>
               </span>

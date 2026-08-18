@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Shield, Arrow, Bolt } from "@/components/site/icons";
+import { Shield, Arrow, Bolt, Check } from "@/components/site/icons";
 import { Stars } from "@/components/site/Stars";
 import { PaymentLogos } from "@/components/site/PaymentLogos";
 import { ReviewAvatars } from "@/components/site/ReviewsRow";
@@ -16,6 +16,7 @@ import { trackCompleteRegistrationOnce } from "@/components/MetaPixel";
 import {
   visibleSteps,
   diagnose,
+  choiceLabel,
   resolve,
   usd,
   VIDEOGRAPHER_TYPICAL,
@@ -197,13 +198,26 @@ export function QuizFunnel({ initial }: { initial?: QuizInitialState } = {}) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, answers, sessionId: sid }),
     }).catch(() => {});
-    setTimeout(() => setPhase("result"), 2200);
+    // The analysing screen owns the hand-off. Its length is the length of the
+    // read-out, and a duplicate timer here would race it to the result.
   };
 
   if (phase === "intro")
     return <Intro onStart={() => setPhase("steps")} ref={topRef} />;
 
-  if (phase === "analyzing") return <Analyzing ref={topRef} />;
+  if (phase === "analyzing")
+    return (
+      <Analyzing
+        answers={answers}
+        // /questions mounts this phase as its own frame. Letting it advance
+        // would leave the screen labelled "analysing" showing the result four
+        // seconds after anyone scrolled to it.
+        onDone={() => {
+          if (!isPreview) setPhase("result");
+        }}
+        ref={topRef}
+      />
+    );
 
   if (phase === "result")
     return <Result answers={answers} email={email} ref={topRef} />;
@@ -534,12 +548,166 @@ function Intro({
   );
 }
 
-function Analyzing({ ref }: { ref?: React.Ref<HTMLDivElement> }) {
+/** Per-line dwell, and the beat held after the last one lands. */
+const LINE_MS = 850;
+const HOLD_MS = 550;
+
+/**
+ * What the analysing screen reads out, built from what they actually tapped.
+ *
+ * Every line is a real input to `diagnose()` and every value is the visitor's
+ * own answer, resolved from ALL_STEPS via `choiceLabel` so a quote here cannot
+ * drift from the wording on the screen they tapped it on. Nothing is invented
+ * and nothing claims a computation that does not happen — there is no
+ * "scanning 4,000 listings in your area", because we do not, and an agent can
+ * tell.
+ *
+ * No price and no market figure. Both belong to the result screen: the entire
+ * positioning of this funnel rests on the number arriving after the diagnosis
+ * rather than alongside it.
+ *
+ * A missing answer drops its line rather than rendering an empty one — the
+ * homeowner branch skips the volume question, and a blank row on the one screen
+ * that is supposed to prove we read them is worse than a shorter list.
+ */
+function analysisLines(a: Answers): { task: string; found: string }[] {
+  const { single, perYear } = diagnose(a);
+  return [
+    { task: "Reading your answers", found: choiceLabel(a, "who") },
+    {
+      task: "Checking how your listings go out today",
+      found: choiceLabel(a, "today"),
+    },
+    {
+      task: "Weighing what you said is going wrong",
+      found: choiceLabel(a, "pain"),
+    },
+    {
+      task: "Sizing the plan to your volume",
+      found: single ? "One property" : `${perYear} listings a year`,
+    },
+  ].filter((l) => l.found);
+}
+
+/**
+ * The pause between handing over an address and getting the result.
+ *
+ * It was a bare spinner over "Scoring your answers…" for 2.2 seconds, which is
+ * the shape of a page waiting on a server rather than a person being read. The
+ * result that follows is built entirely from their answers and nothing before
+ * it said so, so the personalisation arrived unannounced and read as a
+ * template. This screen shows the reading happening, in their own words.
+ *
+ * The delay is a pacing device, not a progress bar over real work: `diagnose()`
+ * is instant. That is why every line names something we genuinely use rather
+ * than a fake workload — the time is spent showing them what we already know,
+ * which is the one version of this pattern that is not a lie.
+ */
+function Analyzing({
+  answers,
+  onDone,
+  ref,
+}: {
+  answers: Answers;
+  onDone: () => void;
+  ref?: React.Ref<HTMLDivElement>;
+}) {
+  const lines = useMemo(() => analysisLines(answers), [answers]);
+  const [done, setDone] = useState(0);
+
+  // Held in a ref because the parent passes an inline arrow. As a dependency it
+  // would be a new identity on every tick, and the effect would clear and
+  // restart its own timers forever without ever reaching the result.
+  const doneRef = useRef(onDone);
+  useEffect(() => {
+    doneRef.current = onDone;
+  });
+
+  useEffect(() => {
+    const reduced =
+      typeof window !== "undefined" &&
+      !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+    // Someone who asked the OS for less motion is not asking to be held on a
+    // screen watching rows tick over, so their dwell collapses to zero. Still
+    // driven by the same timers rather than a straight setState, which keeps
+    // the whole sequence on one code path.
+    const step = reduced ? 0 : LINE_MS;
+    const hold = reduced ? 400 : HOLD_MS;
+
+    const timers = lines.map((_, i) =>
+      setTimeout(() => setDone(i + 1), (i + 1) * step),
+    );
+    timers.push(
+      setTimeout(() => doneRef.current(), lines.length * step + hold),
+    );
+    return () => timers.forEach(clearTimeout);
+  }, [lines]);
+
+  const pct = Math.round((done / Math.max(1, lines.length)) * 100);
+  const finished = done >= lines.length;
+
   return (
     <Shell ref={ref}>
-      <div className="flex flex-col items-center py-24">
-        <div className="h-12 w-12 animate-spin rounded-full border-[3px] border-line border-t-accent" />
-        <p className="mt-6 text-[15px] text-ink-soft">Scoring your answers…</p>
+      <div className="py-14">
+        <p className="text-center text-[12.5px] font-bold uppercase tracking-[0.08em] text-accent">
+          Building your plan
+        </p>
+        <h2 className="mt-2 text-center font-display text-[25px] font-bold leading-[1.15] text-ink">
+          {finished ? "Your plan is ready." : "Reading what you told us…"}
+        </h2>
+
+        <div className="mt-6 h-1.5 w-full overflow-hidden rounded-full bg-line">
+          <div
+            className="h-full rounded-full bg-accent transition-[width] duration-700 ease-out"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+
+        <ul className="mt-7 space-y-4">
+          {lines.map((l, i) => {
+            const complete = i < done;
+            const active = i === done;
+            return (
+              <li
+                key={l.task}
+                className={`flex items-start gap-3 transition-opacity duration-500 ${
+                  complete || active ? "opacity-100" : "opacity-40"
+                }`}
+              >
+                <span
+                  className={`mt-[3px] flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border-2 transition-colors duration-300 ${
+                    complete
+                      ? "border-accent bg-accent text-white"
+                      : "border-line"
+                  }`}
+                >
+                  {complete ? (
+                    <Check className="h-[12px] w-[12px]" />
+                  ) : active ? (
+                    <span className="h-[7px] w-[7px] animate-pulse rounded-full bg-accent" />
+                  ) : null}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[14px] leading-[1.35] text-ink-soft">
+                    {l.task}
+                  </span>
+                  {/* Reserves its own height from the start, so a line landing
+                      never nudges the rows below it. */}
+                  <span
+                    className={`block text-[15.5px] font-bold leading-[1.4] text-ink transition-all duration-500 ${
+                      complete
+                        ? "translate-y-0 opacity-100"
+                        : "-translate-y-1 opacity-0"
+                    }`}
+                  >
+                    {l.found}
+                  </span>
+                </span>
+              </li>
+            );
+          })}
+        </ul>
       </div>
     </Shell>
   );
@@ -580,6 +748,70 @@ function TierLadder({ d }: { d: Diagnosis }) {
           here pushes the offer further down the page. */}
     </div>
   );
+}
+
+/**
+ * The discount arriving, instead of having already arrived.
+ *
+ * A price that is simply printed next to a struck-through one asks the reader
+ * to take the saving on faith, and a struck number is the single most-faked
+ * element in online retail. Counting down from the "was" to the charged price
+ * shows the reduction happening to *their* recommended pack, which is the one
+ * version of this they can watch rather than believe.
+ *
+ * What it must not do is claim the drop is momentary. The launch price is not
+ * going anywhere — the countdown above already refuses to lie about that when
+ * it hits zero — so this animates the discount, never a deadline.
+ */
+function useCountDown(
+  from: number,
+  to: number,
+): { value: number | null; settled: boolean } {
+  /**
+   * `null` means "not animating — show the price we actually charge", and it is
+   * deliberately the initial state.
+   *
+   * The server render, the first paint, a visitor whose JS never arrives and
+   * anyone who has asked for reduced motion all land here, so all of them see
+   * the real price. Starting this at `from` instead would server-render "$160
+   * USD" beside a button reading "Lock in $112 USD" — the animation would have
+   * been quoting a higher price than we charge to every visitor whose
+   * JavaScript was slow, which is the one failure this must not have.
+   */
+  const [value, setValue] = useState<number | null>(null);
+
+  useEffect(() => {
+    const reduced =
+      typeof window !== "undefined" &&
+      !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    // Nothing to do: the settled price is already the one on screen.
+    if (reduced) return;
+
+    const DELAY = 420; // a beat to land before the number starts moving
+    const DURATION = 900;
+    let raf = 0;
+    const start = performance.now();
+
+    const tick = (now: number) => {
+      const elapsed = now - start - DELAY;
+      if (elapsed < 0) {
+        setValue(from); // hold the old price while the beat runs
+        raf = requestAnimationFrame(tick);
+        return;
+      }
+      const p = Math.min(1, elapsed / DURATION);
+      const eased = 1 - Math.pow(1 - p, 3);
+      // Back to null at the end, so the settled figure is `priceLabel` itself
+      // rather than a reconstruction that could drift from it.
+      setValue(p < 1 ? Math.round(from + (to - from) * eased) : null);
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [from, to]);
+
+  return { value, settled: value === null };
 }
 
 function Result({
@@ -741,6 +973,8 @@ function Offer({
   label: string;
   expired: boolean;
 }) {
+  const { value: shownPrice, settled } = useCountDown(d.pack.was, d.pack.price);
+
   return (
     <>
       {/* The whole card is ringed in red while the hold is live, so the urgency
@@ -796,14 +1030,32 @@ function Offer({
 
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-end gap-x-2.5 gap-y-1">
-              <span className="font-display text-[40px] font-bold leading-none text-ink sm:text-[46px]">
-                {d.pack.priceLabel}
+              {/* `tabular-nums` so the digits don't jitter the layout while the
+                  number is counting. The settled state prints `priceLabel`
+                  verbatim rather than a reconstruction, because that string is
+                  the one place the currency is spelled out and Stripe's
+                  Adaptive Pricing makes a bare "$" a real problem. */}
+              <span className="font-display text-[40px] font-bold leading-none text-ink tabular-nums sm:text-[46px]">
+                {settled ? d.pack.priceLabel : `$${shownPrice} USD`}
               </span>
-              <span className="pb-1 text-[18px] text-ink-soft line-through">
+              {/* The old price was struck at full weight in the same colour as
+                  the digits, which buried the number the discount is measured
+                  against — a saving you cannot read is not a saving. Thin rule,
+                  lighter than the text, and the figure itself carries more
+                  weight than it did so it survives being crossed out. */}
+              <span
+                className={`pb-1 text-[19px] font-semibold text-ink-soft line-through decoration-ink-soft/40 decoration-[1.5px] transition-opacity duration-500 ${
+                  settled ? "opacity-100" : "opacity-0"
+                }`}
+              >
                 {d.pack.wasLabel}
               </span>
             </div>
-            <span className="mt-2 inline-block rounded-full bg-[#fdeceb] px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.04em] text-[#b42318]">
+            <span
+              className={`mt-2 inline-block rounded-full bg-[#fdeceb] px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.04em] text-[#b42318] transition-all duration-300 ${
+                settled ? "scale-100 opacity-100" : "scale-90 opacity-0"
+              }`}
+            >
               Save {discountPct(d.pack)}%
             </span>
             {/* The pack size is gone. "Up to 40 photos" reads as a limit being
