@@ -2,7 +2,6 @@ import { getStripe } from "./stripe";
 import { funnelCounts, type FunnelStage } from "./quizEvents";
 import { sendsInWindow } from "./nurtureSends";
 import { convertedInWindow, leadCounts } from "./leads";
-import { healthSection } from "./health";
 
 /**
  * Daily report — pulls traffic/behavior from Microsoft Clarity and
@@ -202,11 +201,11 @@ async function fetchDevices(
 }
 
 /**
- * The quiz funnel as two lines and one instruction.
+ * The quiz funnel as two lines: three rates, then the single worst drop.
  *
- * The point is to name the leak, not to print the funnel. A wall of per-step
- * percentages is the thing nobody reads twice, so this shows the shape, then
- * the single worst drop, and nothing else.
+ * The point is to name the leak, not to print the funnel. Nothing here lists
+ * the stages, because a reader who has to find the leak themselves in a row of
+ * counts will not, and the section then costs attention without spending it.
  */
 function quizSection(stages: FunnelStage[]): string[] {
   if (stages.length < 2) return [];
@@ -215,13 +214,12 @@ function quizSection(stages: FunnelStage[]): string[] {
     stages.find((s) => s.step === step)?.sessions ?? 0;
   const pct = (a: number, b: number) => (b ? Math.round((a / b) * 100) : 0);
 
+  // No stage-by-stage list. Thirteen labels and thirteen numbers on one wrapped
+  // line is the part nobody reads twice, and it pushed the two lines that do
+  // say something under a wall of figures. The rates and the worst drop are the
+  // whole point of the section; the raw counts live in `quiz_events` for
+  // anyone who wants to interrogate them.
   const L: string[] = ["*QUIZ FUNNEL* (24h)"];
-  L.push(
-    stages
-      .map((s) => `${s.label} ${s.sessions}`)
-      .join(" → ")
-      .slice(0, 320),
-  );
 
   // The three rates that mean different things and have different fixes:
   // whether the ad matched the page, whether the gate is worth the address,
@@ -278,17 +276,8 @@ function quizSection(stages: FunnelStage[]): string[] {
 }
 
 export async function buildReport(): Promise<string> {
-  const [
-    clarity,
-    sales24,
-    sales7,
-    devices,
-    quiz,
-    emailsSent,
-    converted,
-    leads,
-    health,
-  ] = await Promise.all([
+  const [clarity, sales24, sales7, devices, quiz, emailsSent, converted, leads] =
+    await Promise.all([
     fetchClarity(1).catch((err): ClarityResult => ({
       ok: false,
       reason: String(err).slice(0, 100),
@@ -300,7 +289,6 @@ export async function buildReport(): Promise<string> {
     sendsInWindow(24).catch(() => 0),
     convertedInWindow(24).catch(() => 0),
     leadCounts().catch(() => null),
-    healthSection().catch(() => [] as string[]),
   ]);
 
   const date = new Intl.DateTimeFormat("en-GB", {
@@ -310,17 +298,14 @@ export async function buildReport(): Promise<string> {
   }).format(new Date());
 
   const L: string[] = [];
-  L.push(`🎯 *Tourly* · ${date} · last 24h`);
+  // The 7-day total rides on the header rather than sitting in its own block
+  // near the bottom. It is the one number that answers "are we selling", and it
+  // was the last thing in the message, below three sections about traffic.
+  const week7 = sales7
+    ? ` · 🗓 *7-DAY*: ${sales7.purchases} buys · ${money(sales7.revenue, sales7.currency)}`
+    : "";
+  L.push(`🎯 *Tourly* · ${date} · last 24h${week7}`);
   L.push("");
-
-  // HEALTH goes first, above the numbers, and only appears when something is
-  // actually wrong. A locked provider or a stuck paid order makes every metric
-  // below it meaningless, so it must not sit at the bottom of the message where
-  // it competes with a conversion rate for attention.
-  if (health.length) {
-    L.push(...health);
-    L.push("");
-  }
 
   // FUNNEL
   //
@@ -399,14 +384,6 @@ export async function buildReport(): Promise<string> {
     }
   }
   L.push("");
-
-  // 7-DAY
-  if (sales7) {
-    L.push(
-      `🗓 *7-DAY*: ${sales7.purchases} buys · ${money(sales7.revenue, sales7.currency)}`,
-    );
-    L.push("");
-  }
 
   // INSIGHTS
   const tips: string[] = [];
