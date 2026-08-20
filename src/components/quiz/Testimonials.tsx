@@ -225,86 +225,114 @@ function VideoTestimonial() {
 }
 
 /**
- * The two written cards swipe sideways instead of stacking.
+ * The two written cards drift left on their own, forever and slowly.
  *
  * Each card is a quote plus a 4:5 photo, so three of them stacked ran about
  * three phone screens of testimonial between the offer and everything below it.
- * The video keeps its full-width slot because it is the strongest proof here;
- * the other two cost a swipe instead of a scroll.
+ * The video keeps its full-width slot as the strongest proof; the other two
+ * became a rail.
  *
- * Cards sit at 86% width so the next one is always visibly cut off at the edge.
- * That peek is the only thing telling a reader there is more, and without it a
- * carousel reads as a single card.
+ * Two problems solved at once, which is why this is rAF over `scrollLeft`
+ * rather than a CSS marquee:
  *
- * It nudges itself once, the first time it comes into view, and only once.
- * A static row of cards does not read as swipeable on a phone no matter how it
- * is cut, and a single movement answers that where an arrow or a dot row would
- * just be more furniture. It is deliberately not a loop: something that keeps
- * moving on its own steals attention from the section being read, and it takes
- * the card out from under a thumb that was already reaching for it.
+ *   - **Seamless loop with only two cards.** The set is rendered twice and the
+ *     scroll position wraps by exactly half the content width. Because the
+ *     second copy is identical to the first, the wrap lands on a pixel that
+ *     already looks the same and there is nothing to see.
+ *   - **It stays swipeable.** A `translateX` marquee would take the rail out of
+ *     the scroll container, so a reader who wants to look properly could not
+ *     grab it. Driving the real scroll position keeps native dragging, and
+ *     touching it pauses the drift instead of fighting it.
  *
- * `lg:contents` dissolves the wrapper on desktop, handing the cards straight
- * back to the grid as the columns they used to be.
+ * Snap is deliberately off: mandatory snap points pull against a continuous
+ * scroll every frame and the result stutters.
+ *
+ * `lg:contents` dissolves the wrapper on desktop, handing the cards back to the
+ * grid as the columns they used to be - and the duplicate set is `lg:hidden`,
+ * or the three-column grid would get four items.
  */
 function WrittenCards() {
   const rail = useRef<HTMLDivElement>(null);
-  const nudged = useRef(false);
 
   useEffect(() => {
     const el = rail.current;
     if (!el) return;
-    // Desktop renders this as grid columns, and horizontal scroll there is a
-    // no-op that would just look like a twitch.
+    // Desktop renders these as grid columns; there is nothing to scroll.
     if (window.matchMedia("(min-width: 1024px)").matches) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (!e.isIntersecting || nudged.current) continue;
-          nudged.current = true;
-          // Far enough to expose the second card, then back, so the row ends
-          // where it started and nobody loses their place.
-          const to = Math.min(el.scrollWidth - el.clientWidth, el.clientWidth * 0.55);
-          window.setTimeout(() => {
-            el.scrollTo({ left: to, behavior: "smooth" });
-            window.setTimeout(
-              () => el.scrollTo({ left: 0, behavior: "smooth" }),
-              1100,
-            );
-          }, 450);
-        }
-      },
-      { threshold: 0.45 },
-    );
-    io.observe(el);
-    return () => io.disconnect();
+    /** Pixels per second. Slow enough to read a quote while it moves. */
+    const SPEED = 16;
+    let raf = 0;
+    let last = performance.now();
+    let paused = false;
+
+    const tick = (now: number) => {
+      const dt = (now - last) / 1000;
+      last = now;
+      if (!paused) {
+        const half = el.scrollWidth / 2;
+        let next = el.scrollLeft + SPEED * dt;
+        if (half > 0 && next >= half) next -= half;
+        el.scrollLeft = next;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+
+    const pause = () => {
+      paused = true;
+    };
+    const resume = () => {
+      last = performance.now();
+      paused = false;
+    };
+
+    el.addEventListener("pointerdown", pause);
+    el.addEventListener("pointerenter", pause);
+    el.addEventListener("pointerleave", resume);
+    window.addEventListener("pointerup", resume);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      el.removeEventListener("pointerdown", pause);
+      el.removeEventListener("pointerenter", pause);
+      el.removeEventListener("pointerleave", resume);
+      window.removeEventListener("pointerup", resume);
+    };
   }, []);
 
   return (
     <div
       ref={rail}
-      className="-mx-5 mt-3.5 flex snap-x snap-mandatory gap-3.5 overflow-x-auto px-5 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] sm:-mx-8 sm:px-8 lg:contents [&::-webkit-scrollbar]:hidden"
+      className="-mx-5 mt-3.5 flex gap-3.5 overflow-x-auto px-5 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] sm:-mx-8 sm:px-8 lg:contents [&::-webkit-scrollbar]:hidden"
     >
-      {CARDS.map((c) => (
-        <div
-          key={c.name}
-          className="w-[86%] shrink-0 snap-start sm:w-[70%] lg:w-auto"
-        >
-          <Shell>
-            <Head name={c.name} avatar={c.avatar} />
-            <Quote>{c.quote}</Quote>
-            <div className="mt-auto overflow-hidden rounded-[14px] bg-line/40 pt-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={c.photo}
-                alt=""
-                className="aspect-[4/5] w-full object-cover"
-              />
-            </div>
-          </Shell>
-        </div>
-      ))}
+      {/* Rendered twice: the second set is what the wrap lands on. Hidden from
+          desktop and from screen readers, which must not hear two Erins. */}
+      {[0, 1].map((copy) =>
+        CARDS.map((c) => (
+          <div
+            key={`${c.name}-${copy}`}
+            aria-hidden={copy === 1 || undefined}
+            className={`w-[86%] shrink-0 sm:w-[70%] lg:w-auto ${
+              copy === 1 ? "lg:hidden" : ""
+            }`}
+          >
+            <Shell>
+              <Head name={c.name} avatar={c.avatar} />
+              <Quote>{c.quote}</Quote>
+              <div className="mt-auto overflow-hidden rounded-[14px] bg-line/40 pt-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={c.photo}
+                  alt=""
+                  className="aspect-[4/5] w-full object-cover"
+                />
+              </div>
+            </Shell>
+          </div>
+        )),
+      )}
     </div>
   );
 }
