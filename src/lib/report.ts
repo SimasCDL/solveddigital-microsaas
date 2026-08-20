@@ -230,6 +230,62 @@ async function fetchDevices(
 }
 
 /**
+ * Dead clicks per page.
+ *
+ * The aggregate ("18.2% of sessions") says something is unclickable and not
+ * where, which is the half that cannot be acted on. Broken out by page it is a
+ * work item: a page with few sessions and many dead clicks is broken, and that
+ * is invisible in a percentage averaged over the whole site.
+ *
+ * The URL dimension shatters on query strings — every ad click carries its own
+ * `fbclid` and utm set, so the same page comes back as dozens of one-session
+ * rows. Grouping by path is what makes the numbers add up, and ids inside the
+ * path (order pages) collapse to `*` for the same reason.
+ */
+async function fetchDeadClicks(
+  days: number,
+): Promise<{ path: string; clicks: number; sessions: number }[]> {
+  const token = process.env.CLARITY_API_TOKEN;
+  if (!token) return [];
+  try {
+    const res = await fetch(`${CLARITY_URL}?numOfDays=${days}&dimension1=URL`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    const data = (await res.json()) as ClarityRow[];
+    const rows =
+      data.find((m) => m.metricName === "DeadClickCount")?.information ?? [];
+
+    const agg = new Map<string, { clicks: number; sessions: number }>();
+    for (const r of rows) {
+      const url = typeof r.Url === "string" ? r.Url : "";
+      if (!url) continue;
+      const path =
+        url
+          .replace(/^https?:\/\/[^/]+/, "")
+          .replace(/\?.*$/, "")
+          // /order/<uuid> and friends are one page, not forty.
+          .replace(/\/[0-9a-f]{8}-[0-9a-f-]{20,}/gi, "/*")
+          .replace(/\/\d{4,}/g, "/*") || "/";
+      const clicks = num(r.subTotal);
+      if (clicks <= 0) continue;
+      const cur = agg.get(path) ?? { clicks: 0, sessions: 0 };
+      cur.clicks += clicks;
+      cur.sessions += num(r.sessionsCount);
+      agg.set(path, cur);
+    }
+
+    return [...agg]
+      .map(([path, v]) => ({ path, ...v }))
+      .sort((a, b) => b.clicks - a.clicks)
+      .slice(0, 3);
+  } catch {
+    return [];
+  }
+}
+
+/**
  * The quiz funnel as two lines: three rates, then the single worst drop.
  *
  * The point is to name the leak, not to print the funnel. Nothing here lists
@@ -305,8 +361,17 @@ function quizSection(stages: FunnelStage[]): string[] {
 }
 
 export async function buildReport(): Promise<string> {
-  const [clarity, sales24, sales7, devices, quiz, emailsSent, converted, leads] =
-    await Promise.all([
+  const [
+    clarity,
+    sales24,
+    sales7,
+    devices,
+    deadClicks,
+    quiz,
+    emailsSent,
+    converted,
+    leads,
+  ] = await Promise.all([
     fetchClarity(1).catch((err): ClarityResult => ({
       ok: false,
       reason: String(err).slice(0, 100),
@@ -314,6 +379,7 @@ export async function buildReport(): Promise<string> {
     fetchSales(24).catch(() => null),
     fetchSales(24 * 7).catch(() => null),
     fetchDevices(1).catch(() => null),
+    fetchDeadClicks(3).catch(() => []),
     funnelCounts(24).catch(() => [] as FunnelStage[]),
     sendsInWindow(24).catch(() => 0),
     convertedInWindow(24).catch(() => 0),
@@ -401,6 +467,17 @@ export async function buildReport(): Promise<string> {
     L.push(
       `⚠️ dead-clicks ${day.deadClickPct.toFixed(1)}% · JS-errors ${day.jsErrorPct.toFixed(1)}%`,
     );
+    // Only worth the line when it is actually happening. Under 5% of sessions
+    // this is background noise on any site and naming a page would invent a
+    // job out of it.
+    if (day.deadClickPct >= 5 && deadClicks.length) {
+      L.push(
+        "👆 " +
+          deadClicks
+            .map((d) => `${d.path} ${d.clicks} in ${d.sessions} sess`)
+            .join(" · "),
+      );
+    }
   } else if (clarity.ok) {
     L.push("— no sessions in the last 24h");
   } else {
