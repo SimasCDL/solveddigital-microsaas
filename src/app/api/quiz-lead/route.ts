@@ -5,7 +5,7 @@ import { clientIp, hashIp } from "@/lib/freeTrial";
 import { sendQuizDiagnosticEmail } from "@/lib/resend";
 import { packCheckoutUrl } from "@/lib/pricing";
 import { diagnose, costSentence, usd, type Answers } from "@/lib/quiz";
-import { countRecentByIpHash, upsertLead } from "@/lib/leads";
+import { countRecentByIpHash, getLeadByEmail, upsertLead } from "@/lib/leads";
 import { startSequence } from "@/lib/sequence";
 import { sendMetaEventServerSide } from "@/lib/meta";
 
@@ -36,6 +36,13 @@ import { sendMetaEventServerSide } from "@/lib/meta";
  */
 
 const HOUR = 60 * 60 * 1000;
+
+/** 1st, 2nd, 3rd, 4th… including the 11th/12th/13th exceptions. */
+function ordinal(n: number): string {
+  const rem100 = n % 100;
+  if (rem100 >= 11 && rem100 <= 13) return `${n}th`;
+  return `${n}${["th", "st", "nd", "rd"][n % 10] ?? "th"}`;
+}
 
 /** hits keyed by ip hash / email, each a list of timestamps. */
 const hits = new Map<string, number[]>();
@@ -179,16 +186,35 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    after(() =>
-      sendTelegram(
-        `🧭 *Quiz lead* · ${d.archetype} (${d.score}/100)\n` +
+    after(async () => {
+      /**
+       * How many times this address has been through the quiz.
+       *
+       * Read here rather than taken from `upsertLead`, because that function
+       * deliberately refuses to write for someone who unsubscribed or already
+       * bought — and a customer retaking the quiz is exactly the case worth
+       * seeing in the channel. Read separately, the count is right either way.
+       *
+       * Read, not written: the increment belongs to `upsertLead`, and the two
+       * run in parallel. Worst case a Supabase blip shows the wrong ordinal on
+       * an alert, which is cheaper than the alert not arriving at all.
+       */
+      const prior = await getLeadByEmail(addr).catch(() => null);
+      const visit = (prior?.submissions ?? 0) + 1;
+
+      await sendTelegram(
+        `🧭 *Quiz lead* · ${d.archetype} (${d.score}/100)` +
+          // Only when it is a repeat. Printing "1st time" on every lead is a
+          // line of noise on the alert that matters most.
+          (visit > 1 ? ` · 🔁 *${ordinal(visit)} time*` : "") +
+          "\n" +
           `📧 ${email}\n` +
           `👤 ${a.who ?? "—"} · 📈 ${d.single ? "single property" : `${d.perYear} listings/yr`} · 🎥 today: ${a.today ?? "—"}\n` +
           `😖 pain: ${a.pain ?? "—"}\n` +
           `💡 ${d.pack.name} (${d.pack.priceLabel}) · market rate ${usd(d.costLow)}–${usd(d.costHigh)}` +
           (appUrl ? `\n🔗 ${appUrl}/f/quiz` : ""),
-      ).catch(() => {}),
-    );
+      ).catch(() => {});
+    });
 
     return NextResponse.json({ ok: true });
   } catch (err) {

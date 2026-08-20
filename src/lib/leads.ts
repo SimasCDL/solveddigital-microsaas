@@ -47,6 +47,8 @@ export interface Lead {
   unsubscribedAt: string | null;
   /** Set once, so a second expired Stripe session cannot re-send it. */
   recoverySentAt: string | null;
+  /** How many times this address has completed the quiz. 1 on first capture. */
+  submissions: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -71,6 +73,7 @@ interface LeadRow {
   purchased_at: string | null;
   unsubscribed_at: string | null;
   recovery_sent_at: string | null;
+  submissions: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -94,6 +97,9 @@ const fromRow = (r: LeadRow): Lead => ({
   purchasedAt: r.purchased_at,
   unsubscribedAt: r.unsubscribed_at,
   recoverySentAt: r.recovery_sent_at,
+  // Rows written before the column existed read as a single visit, which is
+  // what they were as far as anything can now tell.
+  submissions: r.submissions ?? 1,
   createdAt: r.created_at,
   updatedAt: r.updated_at,
 });
@@ -173,17 +179,51 @@ export async function upsertLead(params: {
     purchased_at: null,
     unsubscribed_at: null,
     recovery_sent_at: null,
-    created_at: now,
+    submissions: (existing?.submissions ?? 0) + 1,
+    // First seen, not last seen. This was `now`, so every retake rewrote the
+    // capture date and the row claimed to be a brand-new lead — which is the
+    // exact fact the submission counter exists to preserve.
+    created_at: existing?.createdAt ?? now,
     updated_at: now,
   };
 
-  const res = await sbFetch("/quiz_leads?on_conflict=email", {
-    method: "POST",
-    headers: { Prefer: "resolution=merge-duplicates,return=representation" },
-    body: JSON.stringify(row),
-  });
-  const rows: LeadRow[] = await res.json();
+  const rows = await postLead(row);
   return { lead: fromRow(rows[0]), isNew: !existing };
+}
+
+/**
+ * Write the row, and survive a database that has not been migrated yet.
+ *
+ * `submissions` is a column the code writes before anyone has necessarily run
+ * `supabase/quiz_leads.sql`. PostgREST answers an unknown column with 42703 and
+ * the whole upsert fails — which does not mean "no counter", it means the lead
+ * is never persisted, no nurture sequence starts, and the only trace is a
+ * Telegram alert. That is too much to lose over a column that exists to make an
+ * alert nicer, so the write retries without it.
+ *
+ * Deploy order stops mattering as a result. Run the SQL and the counter starts
+ * working on its own; the warning below is the reminder.
+ */
+async function postLead(row: Partial<LeadRow>): Promise<LeadRow[]> {
+  const send = (body: Partial<LeadRow>) =>
+    sbFetch("/quiz_leads?on_conflict=email", {
+      method: "POST",
+      headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+      body: JSON.stringify(body),
+    });
+
+  try {
+    return await (await send(row)).json();
+  } catch (err) {
+    if (!/42703|submissions/.test(String(err))) throw err;
+    console.warn(
+      "[leads] no `submissions` column — run supabase/quiz_leads.sql. " +
+        "Saving the lead without the retake counter.",
+    );
+    const { submissions: _omit, ...rest } = row;
+    void _omit;
+    return await (await send(rest)).json();
+  }
 }
 
 /**

@@ -74,7 +74,15 @@ create table if not exists quiz_leads (
   -- abandoned-checkout recovery email.
   recovery_sent_at timestamptz,
 
-  emailed boolean not null default false
+  emailed boolean not null default false,
+
+  -- How many times this address has completed the quiz. The upsert targets
+  -- on_conflict=email, so a retake overwrites the row and every trace that they
+  -- had been here before is gone. This is the counter that survives it, and it
+  -- is what lets the Telegram alert say "3rd time" — somebody filling the quiz
+  -- a third time is a different, warmer lead than a first-timer, and the alert
+  -- was showing them identically.
+  submissions integer not null default 1
 );
 
 -- Bring an existing table (created from the earlier version of this file) up to
@@ -92,7 +100,8 @@ alter table quiz_leads
   add column if not exists promo_expires_at timestamptz,
   add column if not exists purchased_at     timestamptz,
   add column if not exists unsubscribed_at  timestamptz,
-  add column if not exists recovery_sent_at timestamptz;
+  add column if not exists recovery_sent_at timestamptz,
+  add column if not exists submissions      integer not null default 1;
 
 -- The upsert target. Added separately so it also applies to a table created
 -- before `email` was unique. Will error if duplicate emails already exist —
