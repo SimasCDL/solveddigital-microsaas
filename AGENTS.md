@@ -105,15 +105,36 @@ reason. `GET /api/debug?clarity=1` (admin key) asks the export API directly —
 a 401 means the token cannot read the project the page tag writes to, which is
 indistinguishable from no traffic without the status code.
 
-fal.ai is **not health-probed**: uploads go to Supabase and generation runs on
-Replicate under `VIDEO_PROVIDER=seedance`, so a zero balance harms nobody and
-the daily red banner only trained everyone to skip the HEALTH section.
+**There is no HEALTH section and no `lib/health.ts`.** Both are deleted, not
+disabled. The fal.ai probe outlived its subject (uploads went to Supabase,
+generation to Replicate under `VIDEO_PROVIDER=seedance`) and spent weeks firing
+a red BALANCE EXHAUSTED banner above the numbers for a service no request
+touches. What was left probed Replicate and was empty on every normal day. If
+something silently breaking needs an alarm again, write the probe for the thing
+that is actually in the customer's path.
 
-The daily report's QUIZ FUNNEL section names the **worst drop inside the quiz
-body only** (intro → questions → gate). Result → checkout is excluded on
-purpose: it is the biggest drop in any priced funnel, so surfacing it daily is
-arithmetic rather than a finding and it buries the drop that actually moved.
-Gate and buy rates are reported separately as their own numbers.
+Three Clarity shapes that cost us wrong numbers, all live at once until 20 Aug:
+
+- **Engagement time is in MINUTES.** Divided by session count and passed to
+  `fmtSec` it printed `Active 2s` for a funnel people spend 1m 36s in.
+- **Direct traffic is `{name: null, sessionsCount: "11"}`.** Any "first string
+  value on the row" fallback picks up the *count* and names the top traffic
+  source `11`.
+- **One source arrives under several hosts** (`facebook.com`, `l.facebook.com`,
+  `m.facebook.com`). Unmerged, the real biggest source reads as a third of
+  itself. Our own host is filtered too: Clarity logs the return from Stripe as
+  a referral from `/upload`, which both outranks real sources and prints a live
+  `cs_live_…` id into Telegram.
+
+The QUIZ FUNNEL section is **three rates and one worst-drop line, with no
+stage-by-stage list**. Thirteen labels and thirteen counts wrapped across a
+phone is the part nobody reads twice. The worst drop covers the quiz body only
+(intro → questions → gate); result → checkout is excluded because it is the
+biggest drop in any priced funnel, so naming it daily is arithmetic rather than
+a finding. Gate and buy are reported separately as their own rates.
+
+7-DAY rides on the header line, not its own block at the bottom: it is the one
+number that answers "are we selling".
 
 ## Old leads / winback
 
