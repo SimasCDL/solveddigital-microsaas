@@ -83,29 +83,58 @@ async function fetchClarity(days: number): Promise<ClarityResult> {
   const traffic = metric(data, "Traffic");
   const sessions = num(traffic.totalSessionCount);
   const bots = num(traffic.totalBotSessionCount);
+  // Clarity reports engagement in MINUTES, summed across every session in the
+  // window. Divided by sessions and handed straight to `fmtSec` it printed
+  // "Active 2s" for a funnel people genuinely spend a minute and a half in —
+  // a number wrong by 60x, and wrong in the direction that would have had
+  // somebody rewriting a page that was working.
   const eng = metric(data, "EngagementTime");
-  const totalTime = num(eng.totalTime);
-  const activeTime = num(eng.activeTime);
+  const totalTime = num(eng.totalTime) * 60;
+  const activeTime = num(eng.activeTime) * 60;
 
   // Referrer breakdown → top 3 by session count.
+  //
+  // Clarity hands back `{name: null, sessionsCount: "11"}` for direct traffic.
+  // The old fallback took "the first string value on the row", which on that
+  // row is the session count itself — so the report's top traffic source was
+  // literally named "11", and the INSIGHTS line read "Most traffic: 11 (11)".
+  // A null name is direct traffic and nothing else.
   const refRows =
     data.find((m) => m.metricName === "ReferrerUrl")?.information ?? [];
-  const topSources = refRows
-    .map((r) => {
-      const name =
-        (r.referrerUrl as string) ||
-        (r.name as string) ||
-        (Object.values(r).find((v) => typeof v === "string") as string) ||
-        "direct";
-      const count = num(r.totalSessionCount ?? r.sessionsCount ?? r.subTotal);
-      return {
-        name: String(name)
-          .replace(/^https?:\/\/(www\.)?/, "")
-          .replace(/\/.*/, ""),
-        count,
-      };
-    })
-    .filter((s) => s.count > 0)
+
+  // Our own host is not a source. Clarity counts the return from Stripe as a
+  // referral from /upload, which both outranks real sources and prints a live
+  // checkout session id into a Telegram message.
+  const ownHost = (process.env.NEXT_PUBLIC_APP_URL ?? "")
+    .replace(/^https?:\/\/(www\.)?/, "")
+    .replace(/\/.*/, "")
+    .toLowerCase();
+
+  const byHost = new Map<string, number>();
+  for (const r of refRows) {
+    const raw = typeof r.name === "string" ? r.name : "";
+    const count = num(r.totalSessionCount ?? r.sessionsCount ?? r.subTotal);
+    if (count <= 0) continue;
+
+    const host = raw
+      .replace(/^https?:\/\//, "")
+      .replace(/\/.*/, "")
+      // `facebook.com`, `l.facebook.com` and `m.facebook.com` are one source
+      // split three ways, which is how the real biggest source ended up ranked
+      // below a row that did not exist.
+      .replace(/^(www|l|lm|m)\./, "")
+      .toLowerCase();
+
+    if (!host) {
+      byHost.set("direct", (byHost.get("direct") ?? 0) + count);
+      continue;
+    }
+    if (host === ownHost || host === "buy.stripe.com") continue;
+    byHost.set(host, (byHost.get(host) ?? 0) + count);
+  }
+
+  const topSources = [...byHost]
+    .map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 3);
 
