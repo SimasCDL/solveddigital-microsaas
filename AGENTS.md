@@ -216,6 +216,34 @@ teaches every future lead to wait for one.
   concessions across the sequence is what trains people to wait for the next
   one.
 
+## Deploying (renoa.ai runs on a Hostinger VPS, not Vercel)
+
+`git push` is not a deploy. DNS moved to the VPS and the Vercel crons were
+dropped in `949e842`; both jobs now run from `/etc/cron.d` against
+`127.0.0.1:3000`. Nothing reaches production until someone runs:
+
+```
+cd <repo on the VPS>
+git pull
+npm run build
+systemctl restart tourly
+```
+
+The three that have each cost a deploy:
+
+- **It is systemd, not pm2.** `systemctl restart tourly`.
+- **The env file is `.env.production`, not `.env`.** Check before appending:
+  `CLARITY_API_TOKEN` is already in it, and a second copy is a silent
+  duplicate-key bug.
+- **Never `npm ci --omit=dev`.** Next needs the dev dependencies at build
+  time, and the build fails.
+
+**Clarity's export API allows 10 requests per project per day.** The daily
+report spends 3 of them per run (insights, devices, dead-clicks-by-URL). Two
+manual `?dry=1` pulls plus a cron run is most of the budget, and going over
+returns 429 for the rest of the day — which the report now reports honestly
+rather than as zero traffic, but the numbers are still gone until midnight.
+
 ### Required prod config (must be set in Vercel — not in the repo)
 
 - `ADMIN_KEY` — without it, every admin route 401s and the `/generate` panel
