@@ -33,7 +33,7 @@ export default async function CheckoutPage({
             Secure checkout
           </p>
           <p className="font-display mt-3 text-5xl text-ink">
-            {price ? `$${price}` : "—"}
+            {price ? `$${price}` : "-"}
           </p>
           <p className="mt-2 text-ink-soft">{packLabel}</p>
 

@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
       if (order.photoUrls.length > allowed) {
         return NextResponse.json(
           {
-            error: `Your pack covers up to ${allowed} photos, but you added ${order.photoUrls.length}. Please remove ${order.photoUrls.length - allowed} and try again — or buy a larger pack.`,
+            error: `Your pack covers up to ${allowed} photos, but you added ${order.photoUrls.length}. Please remove ${order.photoUrls.length - allowed} and try again - or buy a larger pack.`,
           },
           { status: 402 },
         );

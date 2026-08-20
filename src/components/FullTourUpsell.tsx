@@ -46,8 +46,8 @@ export function FullTourUpsell({
         </h2>
         <p className="mx-auto mt-2.5 max-w-md text-[15px] text-tink-soft">
           {photoCount > shown
-            ? `We'll rebuild it using all ${covered} of your photos — widescreen for the MLS plus both vertical cuts, with licensed music. Yours to download.`
-            : `Add your full gallery and get the complete tour — widescreen for the MLS plus both vertical cuts, with licensed music. Yours to download.`}
+            ? `We'll rebuild it using all ${covered} of your photos - widescreen for the MLS plus both vertical cuts, with licensed music. Yours to download.`
+            : `Add your full gallery and get the complete tour - widescreen for the MLS plus both vertical cuts, with licensed music. Yours to download.`}
         </p>
       </div>
 
@@ -104,7 +104,7 @@ export function FullTourUpsell({
         href={packCheckoutUrl(selected, orderId)}
         className="mt-4 flex h-14 items-center justify-center gap-2.5 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-base font-bold text-white shadow-[0_16px_34px_-12px_rgba(15,125,107,0.6)] ring-1 ring-white/10 transition-all hover:brightness-[1.06] active:scale-[0.99]"
       >
-        Get my full tour — {selected.priceLabel}
+        Get my full tour - {selected.priceLabel}
         <span aria-hidden="true">→</span>
       </a>
 

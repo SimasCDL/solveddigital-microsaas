@@ -39,14 +39,14 @@ export async function consumeClipBudget(): Promise<void> {
       // a parsed file with an older date is a legitimate new day → counter resets
     } catch (err) {
       // fail CLOSED: a corrupt counter must never silently reset the budget
-      console.error('[budget] usage.json is unreadable — refusing to generate:', err);
-      throw new Error('Generation budget file is corrupt — fix or delete .orders/usage.json to continue.');
+      console.error('[budget] usage.json is unreadable - refusing to generate:', err);
+      throw new Error('Generation budget file is corrupt - fix or delete .orders/usage.json to continue.');
     }
   }
 
   if (data.clips >= limit) {
     throw new Error(
-      `Daily generation limit reached (${limit} clips). This is a cost-protection stop — ` +
+      `Daily generation limit reached (${limit} clips). This is a cost-protection stop - ` +
       `raise DAILY_CLIP_LIMIT in .env.local if this is intentional.`
     );
   }

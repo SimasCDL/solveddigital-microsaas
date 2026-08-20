@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { HelpForm } from "@/components/HelpForm";
 
 export const metadata: Metadata = {
-  title: "Get help — Tourly",
+  title: "Get help - Tourly",
   description:
     "Refunds, re-cuts and questions about your tour. Send a message and we will get back to you.",
   robots: { index: false, follow: true },

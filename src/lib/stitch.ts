@@ -98,7 +98,7 @@ export async function addMusicTrack(video: Buffer): Promise<Buffer> {
   const track = musicTrackPath();
   const { existsSync } = await import('fs');
   if (!existsSync(track)) {
-    console.warn(`[stitch] music requested but no track at ${track} — delivering without music`);
+    console.warn(`[stitch] music requested but no track at ${track} - delivering without music`);
     return video;
   }
 

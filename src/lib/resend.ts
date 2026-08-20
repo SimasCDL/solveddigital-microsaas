@@ -44,7 +44,7 @@ export async function sendDeliveryEmail(params: {
 
   const resend = getResend();
   if (!resend) {
-    console.error("[resend] RESEND_API_KEY not set — skipping email");
+    console.error("[resend] RESEND_API_KEY not set - skipping email");
     return;
   }
 
@@ -110,7 +110,7 @@ export async function sendUploadReminderEmail(params: {
 }): Promise<void> {
   const resend = getResend();
   if (!resend) {
-    console.error("[resend] RESEND_API_KEY not set — skipping reminder");
+    console.error("[resend] RESEND_API_KEY not set - skipping reminder");
     return;
   }
 
@@ -176,7 +176,7 @@ export async function sendTourLibraryLinkEmail(params: {
 }): Promise<void> {
   const resend = getResend();
   if (!resend) {
-    console.error("[resend] RESEND_API_KEY not set — skipping library link");
+    console.error("[resend] RESEND_API_KEY not set - skipping library link");
     return;
   }
 
@@ -235,7 +235,7 @@ export async function sendUploadLinkEmail(params: {
 }): Promise<void> {
   const resend = getResend();
   if (!resend) {
-    console.error("[resend] RESEND_API_KEY not set — skipping upload link");
+    console.error("[resend] RESEND_API_KEY not set - skipping upload link");
     return;
   }
 
@@ -298,7 +298,7 @@ export async function sendQuizDiagnosticEmail(params: {
 }): Promise<void> {
   const resend = getResend();
   if (!resend) {
-    console.error("[resend] RESEND_API_KEY not set — skipping email");
+    console.error("[resend] RESEND_API_KEY not set - skipping email");
     return;
   }
 
@@ -315,7 +315,7 @@ export async function sendQuizDiagnosticEmail(params: {
   await resend.emails.send({
     from: process.env.FROM_EMAIL!,
     to: params.to,
-    subject: `Your listing diagnostic — ${params.archetype}`,
+    subject: `Your listing diagnostic - ${params.archetype}`,
     html: shell(`
       <p style="color:#6f6a60;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;margin:0 0 8px;">Your listing marketing</p>
       <h1 style="color:#15130f;font-size:26px;font-weight:600;letter-spacing:-0.022em;margin:0 0 6px;">${esc(params.archetype)}</h1>
@@ -376,7 +376,7 @@ export async function sendNurtureEmail(params: {
 }): Promise<string | null> {
   const resend = getResend();
   if (!resend) {
-    console.error("[resend] RESEND_API_KEY not set — skipping email");
+    console.error("[resend] RESEND_API_KEY not set - skipping email");
     return null;
   }
 
@@ -435,13 +435,13 @@ export async function sendAdminAlert(
   const to = process.env.ADMIN_ALERT_EMAIL;
   if (!to) {
     console.error(
-      `[alert] ADMIN_ALERT_EMAIL not set — dropping alert: ${subject}\n${body}`,
+      `[alert] ADMIN_ALERT_EMAIL not set - dropping alert: ${subject}\n${body}`,
     );
     return;
   }
   const resend = getResend();
   if (!resend) {
-    console.error("[resend] RESEND_API_KEY not set — skipping email");
+    console.error("[resend] RESEND_API_KEY not set - skipping email");
     return;
   }
   await resend.emails.send({
@@ -460,7 +460,7 @@ export async function sendFailureEmail(params: {
 }): Promise<void> {
   const resend = getResend();
   if (!resend) {
-    console.error("[resend] RESEND_API_KEY not set — skipping email");
+    console.error("[resend] RESEND_API_KEY not set - skipping email");
     return;
   }
   await resend.emails.send({

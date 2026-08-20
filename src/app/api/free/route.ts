@@ -28,7 +28,7 @@ const SEGMENTS: Segment[] = ['agent', 'homeowner'];
 
 const DENIAL_MESSAGE: Record<string, string> = {
   email_used:
-    'This email has already used its free tour. Grab a pack to make more — they start at $105.',
+    'This email has already used its free tour. Grab a pack to make more - they start at $105.',
   ip_limit:
     'That’s a few free tours from this connection already. Grab a pack to keep going.',
   daily_cap:
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
     try {
       await recordFreeTrial({ email, segment: segment as Segment, orderId, ipHash });
     } catch (err) {
-      console.error('[free] could not record trial — refusing to generate:', err);
+      console.error('[free] could not record trial - refusing to generate:', err);
       return NextResponse.json(
         { error: DENIAL_MESSAGE.unavailable, reason: 'unavailable' },
         { status: 429 },

@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
   const tg = new URL(req.url).searchParams.get("telegram");
   if (tg === "1") {
     telegramTest = await sendTelegram(
-      "🔔 *Test alert* — alerting works.\n\nThis is a manual check from the admin diagnostic, not a real order.",
+      "🔔 *Test alert* - alerting works.\n\nThis is a manual check from the admin diagnostic, not a real order.",
     );
   } else if (tg) {
     const order = await getOrder(tg);

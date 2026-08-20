@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { sbFetch, supabaseConfigured } from "@/lib/supabase";
 import { getLeadByEmail, normalizeEmail, upsertLead } from "@/lib/leads";
 import { startSequence } from "@/lib/sequence";
+import { isInternalEmail } from "@/lib/internal";
 import { diagnose } from "@/lib/quiz";
 
 export const dynamic = "force-dynamic";
@@ -24,23 +25,6 @@ export const maxDuration = 300;
  *   POST /api/backfill-leads   { "emails": ["a@b.com"], "confirm": true }
  */
 
-/**
- * The team's own addresses, from their Telegram history. These dominate the
- * historical data because every funnel was tested through the real endpoint,
- * and mailing yourselves a winback is at best noise and at worst a deliverability
- * signal you do not want.
- */
-const EXCLUDE = new Set(
-  [
-    "mr.redwolf01@gmail.com",
-    "a@gmail.com",
-    "jona.jonas@gmail.com",
-    "ignataras.skucas@gmail.com",
-    "razmarinas1@gmail.com",
-    "nojus.siugzdinis@gmail.com",
-    "simonasberesnevicius@gmail.com",
-  ].map(normalizeEmail),
-);
 
 /** Obvious non-humans that testing tends to leave behind. */
 function looksLikeJunk(email: string): boolean {
@@ -109,7 +93,7 @@ export async function POST(req: NextRequest) {
     for (const email of candidates) {
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
         skipped[email] = "invalid";
-      } else if (EXCLUDE.has(email)) {
+      } else if (isInternalEmail(email)) {
         skipped[email] = "internal";
       } else if (looksLikeJunk(email)) {
         skipped[email] = "junk";

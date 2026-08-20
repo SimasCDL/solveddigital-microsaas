@@ -62,7 +62,7 @@ export async function checkFreeTrialEligible(
   ipHash: string,
 ): Promise<FreeTrialDenial> {
   if (!supabaseConfigured()) {
-    console.error('[free] Supabase not configured — refusing free trials');
+    console.error('[free] Supabase not configured - refusing free trials');
     return { ok: false, reason: 'unavailable' };
   }
 
@@ -86,7 +86,7 @@ export async function checkFreeTrialEligible(
 
     return { ok: true };
   } catch (err) {
-    console.error('[free] eligibility check failed — denying (fail closed):', err);
+    console.error('[free] eligibility check failed - denying (fail closed):', err);
     return { ok: false, reason: 'unavailable' };
   }
 }

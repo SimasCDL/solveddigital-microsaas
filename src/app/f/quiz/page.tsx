@@ -7,7 +7,7 @@ import { QuizPage } from "@/components/quiz/QuizPage";
  * render the same component — there is no second copy to drift.
  */
 export const metadata: Metadata = {
-  title: "Free listing diagnostic — Tourly",
+  title: "Free listing diagnostic - Tourly",
   robots: { index: false, follow: true },
 };
 

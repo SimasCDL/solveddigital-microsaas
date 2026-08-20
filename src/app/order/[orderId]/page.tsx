@@ -179,7 +179,7 @@ export default function OrderPage() {
             </h1>
             <p className="mx-auto mt-3 max-w-md text-tink-soft">
               This page&apos;s links last 7 days. Your tour itself did not go
-              anywhere — open your library and it is still there.
+              anywhere - open your library and it is still there.
             </p>
             <a
               href="/library"
@@ -231,7 +231,7 @@ export default function OrderPage() {
               {!data.free && data.videoUrls.length > 1 && (
                 <div className="mt-8">
                   <p className="eyebrow mb-3 text-tink-soft">
-                    Vertical versions — for Reels & TikTok
+                    Vertical versions - for Reels & TikTok
                   </p>
                   <div className="grid gap-2 sm:grid-cols-2">
                     {[
@@ -302,7 +302,7 @@ export default function OrderPage() {
               Generation failed
             </h1>
             <p className="mx-auto mt-3 max-w-md text-tink-soft">
-              We&apos;ve been notified and we&apos;ll make it right — check your
+              We&apos;ve been notified and we&apos;ll make it right - check your
               email for details.
             </p>
           </div>
@@ -310,7 +310,7 @@ export default function OrderPage() {
           <div className="mx-auto w-full max-w-md text-center">
             {justPaid && (
               <div className="mx-auto mb-8 inline-block rounded-full border border-accent/25 bg-accent-soft px-5 py-2.5 text-sm font-medium text-accent">
-                ✓ Payment confirmed — filming your tour now
+                ✓ Payment confirmed - filming your tour now
               </div>
             )}
             <h1 className="font-display text-3xl text-tink sm:text-4xl">

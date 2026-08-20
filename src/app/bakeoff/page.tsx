@@ -47,7 +47,7 @@ export default function Bakeoff() {
       const res = await fetch('/api/bakeoff', { method: 'POST', body: formData, headers: { 'x-admin-key': key } });
       if (res.status === 401) {
         localStorage.removeItem('admin_key');
-        throw new Error('Wrong access key — try again.');
+        throw new Error('Wrong access key - try again.');
       }
       const reader = res.body!.getReader();
       const decoder = new TextDecoder();
@@ -65,7 +65,7 @@ export default function Bakeoff() {
           if (event.type === 'status') setStatusMsg(event.message);
           if (event.type === 'started') {
             setCandidates(event.candidates);
-            setStatusMsg('Generating with all models — a few minutes...');
+            setStatusMsg('Generating with all models - a few minutes...');
           }
           if (event.type === 'result') {
             setResults(prev => ({ ...prev, [event.key]: { url: event.url, error: event.error, ms: event.ms } }));
@@ -96,7 +96,7 @@ export default function Bakeoff() {
           Model bake-off
         </h1>
         <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 24, lineHeight: 1.5, maxWidth: 560 }}>
-          One photo, six models, same instructions. Watch the clips side by side and pick the smoothest — ~${TEST_COST} per run.
+          One photo, six models, same instructions. Watch the clips side by side and pick the smoothest - ~${TEST_COST} per run.
         </p>
 
         <div style={{ display: 'flex', gap: 12, alignItems: 'stretch', marginBottom: 32, flexWrap: 'wrap' }}>
@@ -113,7 +113,7 @@ export default function Bakeoff() {
             }
           </div>
           <button className="btn-primary" onClick={run} disabled={!file || running} style={{ alignSelf: 'center', minWidth: 200 }}>
-            {running ? 'Running...' : `Run bake-off — ~$${TEST_COST}`}
+            {running ? 'Running...' : `Run bake-off - ~$${TEST_COST}`}
           </button>
         </div>
 

@@ -18,7 +18,7 @@ import type { Answers } from "@/lib/quiz";
  * recipients' clients will actually show and it is the part that silently rots.
  */
 export const metadata: Metadata = {
-  title: "Nurture sequence — every email",
+  title: "Nurture sequence - every email",
   robots: { index: false, follow: false },
 };
 
@@ -137,7 +137,7 @@ export default async function EmailsPage({
             Internal review
           </p>
           <h1 className="mt-2 text-[30px] font-bold tracking-tight text-slate-900">
-            Nurture sequence — every email
+            Nurture sequence - every email
           </h1>
           <p className="mt-2.5 max-w-3xl text-[15px] leading-[1.55] text-slate-600">
             Eleven emails over 50 days, sent to anyone who leaves an address on

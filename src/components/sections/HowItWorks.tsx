@@ -2,13 +2,13 @@ const STEPS = [
   {
     n: 1,
     title: "Upload your photos",
-    body: "Drop in 10–30 listing photos and set the order — that's the only work you do.",
+    body: "Drop in 10–30 listing photos and set the order - that's the only work you do.",
     img: "/how/step-1-upload.png",
   },
   {
     n: 2,
     title: "Get your polished video instantly",
-    body: "No videographer, no editing — AI turns your photos into a ready-to-post tour for you.",
+    body: "No videographer, no editing - AI turns your photos into a ready-to-post tour for you.",
     img: "/how/step-2-edit.png",
   },
   {

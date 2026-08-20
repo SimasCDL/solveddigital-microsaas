@@ -85,11 +85,11 @@ export async function POST(req: NextRequest) {
 
     after(() =>
       sendTelegram(
-        `🚨 *Upload FAILED* — customer cannot submit photos\n` +
+        `🚨 *Upload FAILED* - customer cannot submit photos\n` +
           `📧 ${email || "(no email)"}\n` +
           `📸 ${fileCount} file(s)\n` +
           (providerLocked
-            ? `💳 *fal.ai balance exhausted* — top up at fal.ai/dashboard/billing\n`
+            ? `💳 *fal.ai balance exhausted* - top up at fal.ai/dashboard/billing\n`
             : "") +
           `⚠️ ${detail.slice(0, 300)}`,
       ).catch(() => {}),
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
         // work, and telling someone who has paid to keep clicking is how a
         // refund request turns into a chargeback. The page appends a /help link.
         error: providerLocked
-          ? "We couldn't process your photos — something on our side is down, and we've been alerted. Your purchase is safe and we'll get your tour to you."
+          ? "We couldn't process your photos - something on our side is down, and we've been alerted. Your purchase is safe and we'll get your tour to you."
           : "We couldn't upload your photos, and we've been alerted. If it happens again, let us know.",
       },
       { status: 500 },

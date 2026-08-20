@@ -61,7 +61,7 @@ const toImageBlock = (s: PhotoSource): any =>
 
 const PLAN_PROMPT = `All of these photos show ONE property (a real-estate / Airbnb listing). Plan the ideal walkthrough order for a continuous video tour, as if physically walking through the home: start outside if exterior shots exist, enter, then move room to room along the most plausible physical path, ending with outdoor/pool/garden areas if present.
 
-Use visual clues to infer the floor plan: matching floors and finishes, doorways and sight lines, rooms visible in the background of other photos. Consecutive photos in your order should be spatially adjacent or visually connected wherever possible — the video will morph from each photo directly into the next, so big spatial jumps look bad.
+Use visual clues to infer the floor plan: matching floors and finishes, doorways and sight lines, rooms visible in the background of other photos. Consecutive photos in your order should be spatially adjacent or visually connected wherever possible - the video will morph from each photo directly into the next, so big spatial jumps look bad.
 
 Also give each photo a short lowercase room label (e.g. exterior, entrance, living room, kitchen, bedroom, bathroom, pool).
 

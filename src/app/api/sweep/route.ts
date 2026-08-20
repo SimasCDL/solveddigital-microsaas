@@ -85,7 +85,7 @@ export async function GET(req: NextRequest) {
       // `failed` is what the page needs to offer them a way out.
       await updateOrder(o.id, {
         status: "failed",
-        errorMessage: `No progress for ${mins} minutes — marked failed by the sweep. The process was most likely restarted mid-generation.`,
+        errorMessage: `No progress for ${mins} minutes - marked failed by the sweep. The process was most likely restarted mid-generation.`,
       }).catch((err) => console.error("[sweep] could not mark failed:", err));
 
       // Deliberately no customer email here. A retry often fixes this in a few

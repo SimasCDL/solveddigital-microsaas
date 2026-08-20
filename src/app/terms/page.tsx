@@ -3,7 +3,7 @@ import { LegalShell } from "@/components/site/LegalShell";
 import { BRAND, LEGAL_ENTITY, CONTACT_EMAIL, GOVERNING_LAW } from "@/lib/legal";
 
 export const metadata: Metadata = {
-  title: `Terms of Service — ${BRAND}`,
+  title: `Terms of Service - ${BRAND}`,
   description: `The terms that govern your use of ${BRAND}.`,
   robots: { index: true, follow: true },
 };
@@ -81,7 +81,7 @@ export default function TermsPage() {
 
       <h2>5. AI-generated media and your responsibilities</h2>
       <p>
-        The Output is a stylized, AI-generated visualization — not a factual
+        The Output is a stylized, AI-generated visualization - not a factual
         photographic record of a property. You are solely responsible for how
         you use the Output, including ensuring that it:
       </p>
@@ -101,7 +101,7 @@ export default function TermsPage() {
         </li>
       </ul>
       <p>
-        You — not {BRAND} — are the advertiser and publisher of the Output and
+        You - not {BRAND} - are the advertiser and publisher of the Output and
         are responsible for its accuracy and compliance.
       </p>
 
@@ -199,8 +199,8 @@ export default function TermsPage() {
         We may suspend or terminate your access to the Service at any time, with
         or without notice, if we believe you have violated these Terms or to
         protect the Service. Sections that by their nature should survive
-        termination — including ownership, disclaimers, limitation of liability,
-        indemnification, and dispute resolution — will survive.
+        termination - including ownership, disclaimers, limitation of liability,
+        indemnification, and dispute resolution - will survive.
       </p>
 
       <h2>14. Changes to the Service and Terms</h2>

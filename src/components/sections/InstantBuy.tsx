@@ -146,7 +146,7 @@ export function InstantBuy({ funnel = MAIN_FUNNEL }: { funnel?: Funnel }) {
               30-day money-back guarantee
             </div>
             <div className="text-[12.5px] text-ink-soft">
-              Not obsessed with your video? Full refund — keep the files.
+              Not obsessed with your video? Full refund - keep the files.
             </div>
           </div>
         </div>

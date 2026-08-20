@@ -3,7 +3,7 @@ import { Container } from "@/components/site/Container";
 const FAQS = [
   {
     q: "What photos work best?",
-    a: "Bright, in-focus listing photos — the same ones you'd put on the MLS. Upload 10–30 and put them in the order you want the tour to flow.",
+    a: "Bright, in-focus listing photos - the same ones you'd put on the MLS. Upload 10–30 and put them in the order you want the tour to flow.",
   },
   {
     q: "How long does it take?",
@@ -11,7 +11,7 @@ const FAQS = [
   },
   {
     q: "Can I use the video commercially and on the MLS?",
-    a: "Yes — the tour is yours to post on the MLS, Instagram, TikTok, YouTube, Facebook, or anywhere else you market the listing.",
+    a: "Yes - the tour is yours to post on the MLS, Instagram, TikTok, YouTube, Facebook, or anywhere else you market the listing.",
   },
   {
     q: "What formats do I get?",
@@ -23,7 +23,7 @@ const FAQS = [
   },
   {
     q: "What if I don't like it?",
-    a: "Then you don't pay — request a refund from the checkout receipt and we return every cent. You keep the tour anyway.",
+    a: "Then you don't pay - request a refund from the checkout receipt and we return every cent. You keep the tour anyway.",
   },
 ];
 

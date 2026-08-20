@@ -14,7 +14,7 @@ export async function extractListingPhotos(listingUrl: string, max = 12): Promis
   }
 
   const res = await fetch(url, { headers: BROWSER_HEADERS });
-  if (!res.ok) throw new Error(`Airbnb returned ${res.status} — the listing may be private or temporarily blocked`);
+  if (!res.ok) throw new Error(`Airbnb returned ${res.status} - the listing may be private or temporarily blocked`);
   const html = (await res.text()).replace(/\\u002F/g, '/');
 
   const matches = html.match(/https:\/\/a0\.muscache\.com\/im\/pictures\/[^"'\\\s)]+/g) ?? [];

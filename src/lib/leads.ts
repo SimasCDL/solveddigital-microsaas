@@ -217,7 +217,7 @@ async function postLead(row: Partial<LeadRow>): Promise<LeadRow[]> {
   } catch (err) {
     if (!/42703|submissions/.test(String(err))) throw err;
     console.warn(
-      "[leads] no `submissions` column — run supabase/quiz_leads.sql. " +
+      "[leads] no `submissions` column - run supabase/quiz_leads.sql. " +
         "Saving the lead without the retake counter.",
     );
     const { submissions: _omit, ...rest } = row;

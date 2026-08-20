@@ -31,7 +31,7 @@ export function ValueStack({ funnel = MAIN_FUNNEL }: { funnel?: Funnel }) {
           A <span className="text-accent">studio-grade</span> tour, every time
         </h2>
         <p className="mx-auto mt-3 max-w-[22rem] text-[14.5px] leading-[1.5] text-ink-soft">
-          A videographer charges $300–$1,000 — we skip the scheduling, wait, and
+          A videographer charges $300–$1,000 - we skip the scheduling, wait, and
           invoice.
         </p>
       </div>

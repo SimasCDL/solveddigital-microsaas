@@ -502,34 +502,34 @@ const GOAL_PHRASE: Record<string, string> = {
 
 const SITUATION: Record<string, string> = {
   photos:
-    "It's going out as a photo gallery — the same format as every other listing in the market, so nothing about it interrupts a scroll. The property has to do all the work on its own.",
+    "It's going out as a photo gallery - the same format as every other listing in the market, so nothing about it interrupts a scroll. The property has to do all the work on its own.",
   phone:
     "You're already shooting something, which puts you ahead of most of the market. The gap is consistency and finish: a handheld clip sets a bar you then have to clear every time, and anything you skip looks neglected by comparison.",
-  pro: "You already know video works, because you're paying for it. The constraint isn't belief, it's economics — at that rate you can only justify it where the fee makes sense, and everything else goes out thinner.",
+  pro: "You already know video works, because you're paying for it. The constraint isn't belief, it's economics - at that rate you can only justify it where the fee makes sense, and everything else goes out thinner.",
   none: "There's no repeatable marketing step here right now. That makes every launch a decision instead of a routine, and the properties that need the push most are usually the ones that don't get it.",
 };
 
 const FIX_FIRST: Record<string, string> = {
   photos:
-    "Turn the gallery you already have into a tour. There's no new shoot — the photos already taken are enough to produce a moving walkthrough, so the fix applies to everything that's already been photographed.",
+    "Turn the gallery you already have into a tour. There's no new shoot - the photos already taken are enough to produce a moving walkthrough, so the fix applies to everything that's already been photographed.",
   phone:
     "Stop shooting and start converting. The gallery your photographer already delivered will produce a steadier, better-finished tour than handheld footage, and it takes the shoot out of the process entirely.",
-  pro: "Keep the videographer where the fee is justified and cover everything else automatically. The money isn't in replacing what you pay for — it's in covering what you currently can't justify paying for.",
+  pro: "Keep the videographer where the fee is justified and cover everything else automatically. The money isn't in replacing what you pay for - it's in covering what you currently can't justify paying for.",
   none: "Make it a default, not a decision. If a tour gets made the moment photos land, marketing stops competing for attention with everything else.",
 };
 
 const PLAN_MULTI = [
-  "Week 1 — Run your next listing's gallery through Tourly and post the vertical cut the day photos land.",
-  "Week 2 — Add the horizontal cut to the portal listing and send it to your seller. It's the easiest listing-presentation win you have.",
-  "Week 3 — Do it for every active listing, not just the new one. The back catalogue is where the quick wins are.",
-  'Week 4 — Put it in your pitch. "Every listing I take gets a cinematic tour" is a claim your competition can\'t match at this price.',
+  "Week 1 - Run your next listing's gallery through Tourly and post the vertical cut the day photos land.",
+  "Week 2 - Add the horizontal cut to the portal listing and send it to your seller. It's the easiest listing-presentation win you have.",
+  "Week 3 - Do it for every active listing, not just the new one. The back catalogue is where the quick wins are.",
+  'Week 4 - Put it in your pitch. "Every listing I take gets a cinematic tour" is a claim your competition can\'t match at this price.',
 ];
 
 const PLAN_SINGLE = [
-  "Week 1 — Run your gallery through Tourly and post the vertical cut to your own feed and local groups.",
-  "Week 2 — Send the horizontal cut to your agent for the portal listing. Most agents will use it — it costs them nothing and makes their listing look better.",
-  "Week 3 — Re-post the vertical cut with a different opening room. The same tour reaches a different slice of the feed.",
-  "Week 4 — If viewings have gone quiet, that's the signal the listing needs a fresh look before a price change, not after one.",
+  "Week 1 - Run your gallery through Tourly and post the vertical cut to your own feed and local groups.",
+  "Week 2 - Send the horizontal cut to your agent for the portal listing. Most agents will use it - it costs them nothing and makes their listing look better.",
+  "Week 3 - Re-post the vertical cut with a different opening room. The same tour reaches a different slice of the feed.",
+  "Week 4 - If viewings have gone quiet, that's the signal the listing needs a fresh look before a price change, not after one.",
 ];
 
 export function diagnose(a: Answers): Diagnosis {
@@ -558,6 +558,6 @@ export function diagnose(a: Answers): Diagnosis {
 /** The headline cost sentence, phrased for their situation. */
 export function costSentence(d: Diagnosis): string {
   return d.single
-    ? `is what a videographer would charge to film your property — before you've sold anything.`
+    ? `is what a videographer would charge to film your property - before you've sold anything.`
     : `is what covering your ${d.perYear} listings with a videographer would cost at market rate.`;
 }

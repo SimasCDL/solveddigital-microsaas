@@ -8,7 +8,7 @@ export function Guarantee() {
         Love your tour, or it’s free.
       </h2>
       <p className="mx-auto mt-3.5 max-w-[21rem] text-[15px] leading-[1.6] text-cream/70">
-        Make your first tour. If you don’t love it, you don’t pay — and you keep
+        Make your first tour. If you don’t love it, you don’t pay - and you keep
         it anyway. No forms, no hoops. Just email us and we refund every cent.
       </p>
     </section>

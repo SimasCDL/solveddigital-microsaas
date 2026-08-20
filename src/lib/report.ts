@@ -2,6 +2,7 @@ import { getStripe } from "./stripe";
 import { funnelCounts, type FunnelStage } from "./quizEvents";
 import { sendsInWindow } from "./nurtureSends";
 import { convertedInWindow, leadCounts } from "./leads";
+import { countsAsSale, isInternalEmail } from "./internal";
 
 /**
  * Daily report — pulls traffic/behavior from Microsoft Clarity and
@@ -75,7 +76,7 @@ async function fetchClarity(days: number): Promise<ClarityResult> {
     const body = (await res.text().catch(() => "")).slice(0, 100);
     return {
       ok: false,
-      reason: `Clarity API ${res.status}${body ? ` — ${body}` : ""}`,
+      reason: `Clarity API ${res.status}${body ? ` - ${body}` : ""}`,
     };
   }
   const data = (await res.json()) as ClarityRow[];
@@ -168,15 +169,24 @@ async function fetchSales(hours: number): Promise<SalesSnapshot | null> {
   });
   let purchases = 0;
   let revenue = 0;
+  let checkouts = 0;
   let currency = "usd";
   for (const s of sessions.data) {
-    if (s.payment_status === "paid") {
+    const email = s.customer_details?.email ?? s.customer_email;
+    // Our own testing runs through the real Stripe account, so it is in this
+    // list whether or not the matching row was ever deleted from Supabase.
+    // Filtering here is the only thing that cleans up the history as well as
+    // today, because every figure in this section is read back from Stripe.
+    if (isInternalEmail(email)) continue;
+    checkouts += 1;
+    const amount = (s.amount_total ?? 0) / 100;
+    if (s.payment_status === "paid" && countsAsSale(email, amount)) {
       purchases += 1;
-      revenue += (s.amount_total ?? 0) / 100;
+      revenue += amount;
       currency = s.currency ?? currency;
     }
   }
-  return { checkouts: sessions.data.length, purchases, revenue, currency };
+  return { checkouts, purchases, revenue, currency };
 }
 
 function fmtSec(s: number): string {
@@ -344,7 +354,7 @@ function quizSection(stages: FunnelStage[]): string[] {
   if (worst && worst.to.keptPct < 90) {
     const lost = worst.from.sessions - worst.to.sessions;
     L.push(
-      `🩸 Worst in-quiz drop: *${worst.from.label} → ${worst.to.label}* — lost ${lost} (${100 - worst.to.keptPct}%)`,
+      `🩸 Worst in-quiz drop: *${worst.from.label} → ${worst.to.label}* - lost ${lost} (${100 - worst.to.keptPct}%)`,
     );
   } else {
     // Nothing anomalous inside the quiz means the constraint has moved to a
@@ -416,7 +426,7 @@ export async function buildReport(): Promise<string> {
   const landingNote = day ? "" : " (quiz)";
   const checkouts = sales24?.checkouts ?? 0;
   const buys = sales24?.purchases ?? 0;
-  const rev = sales24 ? money(sales24.revenue, sales24.currency) : "—";
+  const rev = sales24 ? money(sales24.revenue, sales24.currency) : "-";
   const coPct = landing ? Math.round((checkouts / landing) * 100) : 0;
   L.push("*FUNNEL*");
   L.push(
@@ -479,12 +489,12 @@ export async function buildReport(): Promise<string> {
       );
     }
   } else if (clarity.ok) {
-    L.push("— no sessions in the last 24h");
+    L.push("- no sessions in the last 24h");
   } else {
     // The instrument is broken, not the traffic. Said plainly, because the
     // previous wording claimed a measurement nobody took, and it read as the
     // most alarming line in the report on a day the funnel was working.
-    L.push(`❓ Clarity not reporting — ${clarity.reason}`);
+    L.push(`❓ Clarity not reporting - ${clarity.reason}`);
     if (quizLanded) {
       L.push(`   (our own counters saw ${quizLanded} quiz landings)`);
     }
@@ -512,7 +522,7 @@ export async function buildReport(): Promise<string> {
   // Both instruments have to agree. Clarity reading zero on a day our own
   // counters logged landings means Clarity is wrong, not that nobody came.
   if (day && day.sessions === 0 && !quizLanded)
-    tips.push("💡 No traffic yet — waiting on ads");
+    tips.push("💡 No traffic yet - waiting on ads");
   if (tips.length) {
     L.push(...tips.slice(0, 3));
   }

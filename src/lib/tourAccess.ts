@@ -44,7 +44,7 @@ function sign(payload: string, key: string): string {
 export function createTourToken(email: string): string | null {
   const key = secret();
   if (!key) {
-    console.error("[tourAccess] no signing secret — refusing to mint a token");
+    console.error("[tourAccess] no signing secret - refusing to mint a token");
     return null;
   }
   const payload = b64url(

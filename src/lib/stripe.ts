@@ -150,7 +150,7 @@ export async function createCheckoutSession(params: {
           currency: "usd",
           unit_amount: priceForPhotoCount(params.photoCount),
           product_data: {
-            name: `Tourly video tour — ${params.photoCount} photo${params.photoCount === 1 ? "" : "s"}`,
+            name: `Tourly video tour - ${params.photoCount} photo${params.photoCount === 1 ? "" : "s"}`,
             description:
               "Cinematic AI video tour generated from your listing photos, delivered by email.",
           },

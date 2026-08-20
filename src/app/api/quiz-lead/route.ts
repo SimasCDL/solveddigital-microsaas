@@ -7,6 +7,7 @@ import { packCheckoutUrl } from "@/lib/pricing";
 import { diagnose, costSentence, usd, type Answers } from "@/lib/quiz";
 import { countRecentByIpHash, getLeadByEmail, upsertLead } from "@/lib/leads";
 import { startSequence } from "@/lib/sequence";
+import { isInternalEmail } from "@/lib/internal";
 import { sendMetaEventServerSide } from "@/lib/meta";
 
 /**
@@ -109,6 +110,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
+    // Our own address. Same 200 as every other skip path so the result screen
+    // still renders and the funnel can be walked end to end - it just leaves no
+    // lead row, starts no eleven-email sequence, and does not put a test in the
+    // channel next to real ones.
+    if (isInternalEmail(addr)) {
+      console.info(`[quiz-lead] internal address, not recorded: ${addr}`);
+      return NextResponse.json({ ok: true });
+    }
+
     const a = answers ?? {};
     const d = diagnose(a);
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
@@ -161,7 +171,7 @@ export async function POST(req: NextRequest) {
         // table ran for days: eleven emails owed to five real leads, and the
         // only trace was a Vercel log line.
         await sendTelegram(
-          `🚨 *Lead NOT persisted* — nurture sequence did not start\n` +
+          `🚨 *Lead NOT persisted* - nurture sequence did not start\n` +
             `📧 ${email}\n` +
             `⚠️ ${String(err).slice(0, 300)}`,
         ).catch(() => {});
@@ -209,8 +219,8 @@ export async function POST(req: NextRequest) {
           (visit > 1 ? ` · 🔁 *${ordinal(visit)} time*` : "") +
           "\n" +
           `📧 ${email}\n` +
-          `👤 ${a.who ?? "—"} · 📈 ${d.single ? "single property" : `${d.perYear} listings/yr`} · 🎥 today: ${a.today ?? "—"}\n` +
-          `😖 pain: ${a.pain ?? "—"}\n` +
+          `👤 ${a.who ?? "-"} · 📈 ${d.single ? "single property" : `${d.perYear} listings/yr`} · 🎥 today: ${a.today ?? "-"}\n` +
+          `😖 pain: ${a.pain ?? "-"}\n` +
           `💡 ${d.pack.name} (${d.pack.priceLabel}) · market rate ${usd(d.costLow)}–${usd(d.costHigh)}` +
           (appUrl ? `\n🔗 ${appUrl}/f/quiz` : ""),
       ).catch(() => {});

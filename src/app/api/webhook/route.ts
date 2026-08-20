@@ -4,6 +4,7 @@ import { getStripe, photosForSession } from "@/lib/stripe";
 import { getOrder, updateOrder } from "@/lib/orders";
 import { fulfillOrder } from "@/lib/fulfill";
 import { sendTelegram } from "@/lib/telegram";
+import { countsAsSale, isInternalEmail } from "@/lib/internal";
 import { sendUploadLinkEmail } from "@/lib/resend";
 import { stopSequence, sendRecovery } from "@/lib/sequence";
 import { sendMetaEventServerSide } from "@/lib/meta";
@@ -19,6 +20,22 @@ async function notifyPurchase(
     currency === "EUR" ? "€" : currency === "USD" ? "$" : currency + " ";
   const money = (n: number) => `${sym}${n % 1 ? n.toFixed(2) : n.toFixed(0)}`;
   const amount = (session.amount_total ?? 0) / 100;
+
+  /**
+   * Our own tests and zero-value checkouts are not sales.
+   *
+   * Only the alert and the running total are gated. Fulfilment is deliberately
+   * left alone above this point: a 100%-off coupon is still somebody owed a
+   * video, and a test still has to prove the pipeline works end to end. What
+   * must not happen is the channel reporting it as revenue.
+   */
+  const buyer = session.customer_details?.email ?? session.customer_email;
+  if (!countsAsSale(buyer, amount)) {
+    console.info(
+      `[webhook] not counted as a sale: ${buyer ?? "(no email)"} ${money(amount)}`,
+    );
+    return;
+  }
 
   // Start of today in Vilnius (DST-safe).
   const now = new Date();
@@ -48,7 +65,12 @@ async function notifyPurchase(
         s.payment_status !== "no_payment_required"
       )
         continue;
-      dayRevenue += (s.amount_total ?? 0) / 100;
+      const sAmount = (s.amount_total ?? 0) / 100;
+      const sEmail = s.customer_details?.email ?? s.customer_email;
+      // Same rule as above, or the day total silently re-adds what the alert
+      // just refused to announce.
+      if (!countsAsSale(sEmail, sAmount)) continue;
+      dayRevenue += sAmount;
       daySales += 1;
       if (s.id === session.id) included = true;
     }
@@ -106,7 +128,7 @@ export async function POST(req: NextRequest) {
     const s = event.data.object as Stripe.Checkout.Session;
     const abandonedEmail =
       s.customer_details?.email ?? s.customer_email ?? null;
-    if (abandonedEmail) {
+    if (abandonedEmail && !isInternalEmail(abandonedEmail)) {
       after(async () => {
         const sent = await sendRecovery(abandonedEmail);
         if (sent) {
@@ -218,7 +240,7 @@ export async function POST(req: NextRequest) {
         // Loud: this failing means somebody paid and has no way back in.
         console.error("[webhook] upload link email failed:", err);
         await sendTelegram(
-          `🚨 *Upload link email FAILED* — customer has paid and cannot reach the uploader\n` +
+          `🚨 *Upload link email FAILED* - customer has paid and cannot reach the uploader\n` +
             `📧 ${buyerEmail}\n💳 session \`${session.id}\`\n` +
             `🔗 ${process.env.NEXT_PUBLIC_APP_URL || ""}/upload?session_id=${session.id}\n` +
             `⚠️ ${String(err).slice(0, 300)}`,
@@ -274,7 +296,7 @@ export async function POST(req: NextRequest) {
     const cur = (session.currency ?? "usd").toUpperCase();
     after(() =>
       sendTelegram(
-        `⚠️ *PAID BUT NOT FULFILLED* — manual review\n` +
+        `⚠️ *PAID BUT NOT FULFILLED* - manual review\n` +
           `🆔 order \`${orderId}\`\n💳 session \`${session.id}\`\n` +
           `💵 ${amount} ${cur} · order status: ${order?.status ?? "NOT FOUND"}`,
       ).catch(() => {}),

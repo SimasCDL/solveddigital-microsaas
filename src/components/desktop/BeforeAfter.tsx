@@ -31,7 +31,7 @@ export function BeforeAfter() {
             <span className="text-[#34c4a8]">in about two minutes</span>
           </h2>
           <p className="mt-4 text-lg text-cream/60">
-            Drag to compare — the same listing, before and after.
+            Drag to compare - the same listing, before and after.
           </p>
         </div>
 

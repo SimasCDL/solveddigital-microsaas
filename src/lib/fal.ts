@@ -49,15 +49,15 @@ const REPLICATE_MODEL = 'bytedance/seedance-2.0';
 
 const SEEDANCE_PROMPT = `Create a premium luxury real estate cinematic video using the uploaded image as the exact first frame. Preserve the uploaded image with over 99% visual fidelity. The camera should move, not the architecture.
 
-THE MOST IMPORTANT RULE: every frame of the video must show only what is visible in the uploaded image. The camera must never travel, turn, or orbit far enough to reveal spaces outside the uploaded image — no new rooms, hallways, doorways, walls, windows, sides of the building, neighboring structures, or furniture may ever appear from beyond the edges of the original image. If a camera movement would reveal unseen space, keep the movement smaller instead. All camera motion stays within the boundaries of the original composition.
+THE MOST IMPORTANT RULE: every frame of the video must show only what is visible in the uploaded image. The camera must never travel, turn, or orbit far enough to reveal spaces outside the uploaded image - no new rooms, hallways, doorways, walls, windows, sides of the building, neighboring structures, or furniture may ever appear from beyond the edges of the original image. If a camera movement would reveal unseen space, keep the movement smaller instead. All camera motion stays within the boundaries of the original composition.
 
 Maintain the exact architecture, layout, proportions, furniture, windows, doors, flooring, walls, ceilings, landscaping, pool, driveway, trees, materials, textures, colors, lighting, and composition. Do not redesign, replace, add, remove, or alter any architectural or interior elements.
 
-Choose the SINGLE camera movement that best flatters this specific scene, filmed as if with a stabilized cinema camera or luxury real estate drone on a 24mm wide-angle lens: a slow cinematic forward dolly with subtle parallax when the image has strong depth or a clear vanishing point; a smooth lateral truck (the camera gliding sideways) when the scene is wide and extends horizontally, like a living room, kitchen or facade; or a gentle crane (rising or lowering) or very slight arc for large, open, high-ceilinged spaces. Let the composition motivate the move — do not default to a forward push every time. The movement must be small, refined, slow, stable and natural, and must never reveal space beyond the original image; if it would, make it smaller instead.
+Choose the SINGLE camera movement that best flatters this specific scene, filmed as if with a stabilized cinema camera or luxury real estate drone on a 24mm wide-angle lens: a slow cinematic forward dolly with subtle parallax when the image has strong depth or a clear vanishing point; a smooth lateral truck (the camera gliding sideways) when the scene is wide and extends horizontally, like a living room, kitchen or facade; or a gentle crane (rising or lowering) or very slight arc for large, open, high-ceilinged spaces. Let the composition motivate the move - do not default to a forward push every time. The movement must be small, refined, slow, stable and natural, and must never reveal space beyond the original image; if it would, make it smaller instead.
 
 Add only realistic environmental motion: gently moving tree leaves, subtle grass movement, soft cloud movement, realistic sunlight and shadow changes, slight reflections on glass, gentle pool water ripples if visible, and subtle curtain movement if visible. Keep all motion minimal and realistic. Doors and drawers stay closed; lights stay exactly as they are; nothing opens, turns on, turns off, or changes state.
 
-Lighting should remain bright, clean, natural daylight with HDR architectural photography quality and crisp details. Preserve the fine detail, sharpness, and texture of the original image throughout — no softening or loss of resolution.
+Lighting should remain bright, clean, natural daylight with HDR architectural photography quality and crisp details. Preserve the fine detail, sharpness, and texture of the original image throughout - no softening or loss of resolution.
 
 Do not change furniture, decorations, landscaping, room layout, pool, driveway, windows, doors, or any architectural details. No people, pets, vehicles, text, logos, watermarks, camera shake, flickering, warping, melting, object deformation, hallucinated objects, invented off-screen spaces, exaggerated motion, or unrealistic effects.
 
@@ -81,14 +81,14 @@ export function chunkPhotos<T>(items: T[], maxPerChunk = 5): T[][] {
 
 const REEL_PROMPT = `Create a premium luxury real estate video from the provided reference images, shown strictly IN ORDER: [Image1] first, then [Image2], and so on. Each reference image becomes its own shot with slow, smooth, perfectly stabilized cinematic camera movement, connected by clean professional cuts. Spend roughly equal time on each shot.
 
-VARY THE CAMERA MOVEMENT FROM SHOT TO SHOT so the video feels dynamic and professionally edited — do NOT use the same forward push on every shot. For each shot, choose the single movement that best flatters that specific scene:
+VARY THE CAMERA MOVEMENT FROM SHOT TO SHOT so the video feels dynamic and professionally edited - do NOT use the same forward push on every shot. For each shot, choose the single movement that best flatters that specific scene:
 - A slow forward dolly / push-in for shots with strong depth, a hallway, or a clear vanishing point leading the eye inward.
-- A smooth lateral truck (the camera gliding sideways, left-to-right or right-to-left) for wide scenes that extend horizontally — living rooms, kitchens, exteriors, wide facades.
+- A smooth lateral truck (the camera gliding sideways, left-to-right or right-to-left) for wide scenes that extend horizontally - living rooms, kitchens, exteriors, wide facades.
 - A gentle crane (rising or lowering) or a subtle slow arc for large, open, high-ceilinged spaces.
 - An occasional slow tilt to take in ceiling height or a tall window.
-Mix these across the shots — some forward, some sideways, some rising — like a real estate videographer choosing the best move for each room. Every movement stays slow, smooth and stabilized, like a heavy cinema camera on a dolly or gimbal.
+Mix these across the shots - some forward, some sideways, some rising - like a real estate videographer choosing the best move for each room. Every movement stays slow, smooth and stabilized, like a heavy cinema camera on a dolly or gimbal.
 
-THE MOST IMPORTANT RULE: every frame must show only what is visible in its reference image. Recreate each room or space EXACTLY as photographed: identical architecture, layout, proportions, furniture, windows, doors, flooring, walls, materials, textures, colors and lighting. Do not redesign, replace, add, remove or alter anything. No matter which movement is used — including lateral trucking and crane moves — NEVER move the camera far enough to reveal spaces beyond the edges of the reference image: no new rooms, hallways, doorways, walls, ceilings, sides of the building or furniture may ever appear from beyond the frame. If a movement would reveal unseen space, make that movement smaller and slower so it stays within the original composition.
+THE MOST IMPORTANT RULE: every frame must show only what is visible in its reference image. Recreate each room or space EXACTLY as photographed: identical architecture, layout, proportions, furniture, windows, doors, flooring, walls, materials, textures, colors and lighting. Do not redesign, replace, add, remove or alter anything. No matter which movement is used - including lateral trucking and crane moves - NEVER move the camera far enough to reveal spaces beyond the edges of the reference image: no new rooms, hallways, doorways, walls, ceilings, sides of the building or furniture may ever appear from beyond the frame. If a movement would reveal unseen space, make that movement smaller and slower so it stays within the original composition.
 
 The scene in every shot is completely frozen and still: no doors or drawers opening, no curtains moving, no lights changing, no objects moving or appearing, no people, no animals, no vehicles, no text, no watermarks. Only the camera moves. Add only minimal realistic environmental motion where already visible in the reference: gently moving leaves, soft clouds, subtle water ripples.
 
@@ -162,8 +162,8 @@ export async function generateReelSegment(
       }
       if (verdict.pass) return url;
 
-      console.warn(`[reel] QC rejected segment (${verdict.category}): ${verdict.reason} — regenerating`);
-      onProgress?.(`quality check failed (${verdict.category}) — regenerating...`);
+      console.warn(`[reel] QC rejected segment (${verdict.category}): ${verdict.reason} - regenerating`);
+      onProgress?.(`quality check failed (${verdict.category}) - regenerating...`);
       lastErr = new Error(`Quality check failed: ${verdict.reason}`);
       if (verdict.category !== 'hallucination') fallback = url;
     } catch (err) {
@@ -218,14 +218,14 @@ async function generateSeedanceClip(photoUrl: string, seed: number): Promise<str
   return url;
 }
 
-const PROMPT = 'Smooth cinematic camera movement through exactly the scene in the photo. The camera is free to move however best suits the scene — glide forward into the space, drift sideways, arc gently — as long as the motion is slow, buttery smooth and perfectly stabilized, like a heavy cinema camera on a dolly. THE ONE ABSOLUTE RULE: everything shown on screen must actually exist in the original photo. The camera must never travel far enough to reveal spaces outside the photo — no new rooms, hallways, doorways, walls, windows or furniture may ever appear from beyond the photo edges. The scene itself is completely frozen and still, like an empty staged home: nothing moves, changes, opens, or appears. No doors open. No drawers open. No curtains or blinds move. No lights turn on or off. No objects, people, or animals enter the frame. Every object, surface, and detail stays exactly as it is in the photo — do not add, change, or invent anything. Only the camera moves. Sharp and crisp, preserve every fine detail and texture of the original photo. Photorealistic. No people. No text.';
+const PROMPT = 'Smooth cinematic camera movement through exactly the scene in the photo. The camera is free to move however best suits the scene - glide forward into the space, drift sideways, arc gently - as long as the motion is slow, buttery smooth and perfectly stabilized, like a heavy cinema camera on a dolly. THE ONE ABSOLUTE RULE: everything shown on screen must actually exist in the original photo. The camera must never travel far enough to reveal spaces outside the photo - no new rooms, hallways, doorways, walls, windows or furniture may ever appear from beyond the photo edges. The scene itself is completely frozen and still, like an empty staged home: nothing moves, changes, opens, or appears. No doors open. No drawers open. No curtains or blinds move. No lights turn on or off. No objects, people, or animals enter the frame. Every object, surface, and detail stays exactly as it is in the photo - do not add, change, or invent anything. Only the camera moves. Sharp and crisp, preserve every fine detail and texture of the original photo. Photorealistic. No people. No text.';
 
 // Walking shots between rooms: Kling 3.0 Pro start+end frame. Veo's frame-to-frame
 // mode cross-dissolves when endpoints are spatially distant (verified on real output);
 // Kling 3.0 physically walks the camera between the anchor frames instead.
 const WALK_MODEL = 'fal-ai/kling-video/v3/pro/image-to-video';
 
-const WALKTHROUGH_PROMPT = 'Professional real estate walkthrough footage, one single continuous steadicam shot with no cuts. The camera begins exactly at the first frame, glides forward at a slow steady walking pace through the home, turning naturally where needed, and arrives exactly at the last frame. The camera moves ONLY through open space, visible doorways and openings — it NEVER passes through walls, windows, furniture, or any solid object, exactly like a real person walking. Buttery smooth stabilized gimbal motion, constant speed, eye-level height. Photorealistic interior, consistent architecture, flooring and furniture throughout — do not add, change, or invent anything not visible in the frames. Completely still scene: no people, no pets, no doors moving, no objects changing, no text. Only the camera moves.';
+const WALKTHROUGH_PROMPT = 'Professional real estate walkthrough footage, one single continuous steadicam shot with no cuts. The camera begins exactly at the first frame, glides forward at a slow steady walking pace through the home, turning naturally where needed, and arrives exactly at the last frame. The camera moves ONLY through open space, visible doorways and openings - it NEVER passes through walls, windows, furniture, or any solid object, exactly like a real person walking. Buttery smooth stabilized gimbal motion, constant speed, eye-level height. Photorealistic interior, consistent architecture, flooring and furniture throughout - do not add, change, or invent anything not visible in the frames. Completely still scene: no people, no pets, no doors moving, no objects changing, no text. Only the camera moves.';
 
 const NEGATIVE_PROMPT = 'passing through walls, clipping through objects, teleporting, doors opening, drawers opening, objects moving, curtains moving, people appearing, animals, lights changing, flickering, new objects appearing, morphing, changing scenery, cross dissolve, fade transition, cuts, camera shake, blur, distortion, watermark, text, people, artifacts, low quality';
 
@@ -328,8 +328,8 @@ export async function generateVideo(photoUrl: string, onProgress?: (msg: string)
 
       if (verdict.pass) return url;
 
-      console.warn(`[fal] QC rejected clip (${verdict.category}): ${verdict.reason} — regenerating`);
-      onProgress?.(`quality check failed (${verdict.category}) — regenerating...`);
+      console.warn(`[fal] QC rejected clip (${verdict.category}): ${verdict.reason} - regenerating`);
+      onProgress?.(`quality check failed (${verdict.category}) - regenerating...`);
       lastErr = new Error(`Quality check failed: ${verdict.reason}`);
       // a static/zoomy clip can serve as last resort; a hallucinating clip cannot
       if (verdict.category !== 'hallucination') fallback = url;

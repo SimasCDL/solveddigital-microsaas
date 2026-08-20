@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
         }
 
         if (mode === 'slides') {
-          push(controller, { type: 'status', message: `Animating ${photoUrls.length} photo(s) — this takes a few minutes...` });
+          push(controller, { type: 'status', message: `Animating ${photoUrls.length} photo(s) - this takes a few minutes...` });
         }
 
         const videoUrls: string[] = new Array(photoUrls.length);
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
             console.error('[generate] transition planning failed, using generic prompts:', err);
           }
 
-          push(controller, { type: 'status', message: `Filming ${n} room(s) and ${n - 1} doorway walk(s) — this takes a few minutes...` });
+          push(controller, { type: 'status', message: `Filming ${n} room(s) and ${n - 1} doorway walk(s) - this takes a few minutes...` });
 
           // Room pans all start immediately; each walk starts the moment its room pan is done.
           const roomPromises = photoUrls.map((url, i) => {
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
               })
               .catch(err => {
                 console.error(`[generate] room ${i + 1} failed:`, err);
-                push(controller, { type: 'progress', clip: 2 * i + 1, total, message: `Room ${i + 1} failed after all attempts — skipping` });
+                push(controller, { type: 'progress', clip: 2 * i + 1, total, message: `Room ${i + 1} failed after all attempts - skipping` });
                 return undefined;
               });
           });
@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
               return url;
             } catch (err) {
               console.error(`[generate] walk ${i + 1} failed:`, err);
-              push(controller, { type: 'progress', clip: 2 * i + 2, total, message: `Walk ${i + 1} failed — rooms will hard-cut here` });
+              push(controller, { type: 'progress', clip: 2 * i + 2, total, message: `Walk ${i + 1} failed - rooms will hard-cut here` });
               return undefined;
             }
           });
@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
           }
 
           if (!ordered.length) {
-            push(controller, { type: 'error', message: 'All clips failed to generate. This is usually temporary — please try again in a minute.' });
+            push(controller, { type: 'error', message: 'All clips failed to generate. This is usually temporary - please try again in a minute.' });
           } else {
             push(controller, { type: 'done', videoUrls: ordered, photoUrls });
           }
@@ -159,14 +159,14 @@ export async function POST(req: NextRequest) {
                 push(controller, { type: 'clip_ready', clip: i + 1, total, url });
               } catch (err) {
                 console.error(`[generate] segment ${i + 1} failed:`, err);
-                push(controller, { type: 'progress', clip: i + 1, total, message: `Segment ${i + 1} failed after all attempts — skipping` });
+                push(controller, { type: 'progress', clip: i + 1, total, message: `Segment ${i + 1} failed after all attempts - skipping` });
               }
             })
           );
 
           const okSegments = segmentUrls.filter(Boolean);
           if (!okSegments.length) {
-            push(controller, { type: 'error', message: 'All segments failed to generate. This is usually temporary — please try again in a minute.' });
+            push(controller, { type: 'error', message: 'All segments failed to generate. This is usually temporary - please try again in a minute.' });
           } else {
             push(controller, { type: 'done', videoUrls: okSegments, photoUrls });
           }
@@ -191,14 +191,14 @@ export async function POST(req: NextRequest) {
               push(controller, { type: 'clip_ready', clip: i + 1, total: photoUrls.length, url });
             } catch (err) {
               console.error(`[generate] clip ${i + 1} failed:`, err);
-              push(controller, { type: 'progress', clip: i + 1, total: photoUrls.length, message: `Photo ${i + 1} failed after all attempts — skipping` });
+              push(controller, { type: 'progress', clip: i + 1, total: photoUrls.length, message: `Photo ${i + 1} failed after all attempts - skipping` });
             }
           })
         );
 
         const successful = videoUrls.filter(Boolean);
         if (!successful.length) {
-          push(controller, { type: 'error', message: 'All clips failed to generate. This is usually temporary — please try again in a minute.' });
+          push(controller, { type: 'error', message: 'All clips failed to generate. This is usually temporary - please try again in a minute.' });
         } else {
           push(controller, { type: 'done', videoUrls: successful, photoUrls });
         }

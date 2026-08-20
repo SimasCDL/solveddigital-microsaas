@@ -23,9 +23,9 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://renoa.ai";
-const TITLE = "Tourly — AI video tours for your listings, in minutes";
+const TITLE = "Tourly - AI video tours for your listings, in minutes";
 const DESCRIPTION =
-  "Turn your listing photos into a scroll-stopping video tour ready for the MLS, Reels & TikTok — without hiring a videographer or editing a thing.";
+  "Turn your listing photos into a scroll-stopping video tour ready for the MLS, Reels & TikTok - without hiring a videographer or editing a thing.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

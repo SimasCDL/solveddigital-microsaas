@@ -3,7 +3,7 @@ import { LegalShell } from "@/components/site/LegalShell";
 import { BRAND, LEGAL_ENTITY, CONTACT_EMAIL } from "@/lib/legal";
 
 export const metadata: Metadata = {
-  title: `Privacy Policy — ${BRAND}`,
+  title: `Privacy Policy - ${BRAND}`,
   description: `How ${BRAND} collects, uses, and protects your information.`,
   robots: { index: true, follow: true },
 };
@@ -102,8 +102,8 @@ export default function PrivacyPage() {
         export, or delete your personal data, to object to or restrict certain
         processing, and to withdraw consent. This includes rights under the
         EU/UK GDPR and the California Consumer Privacy Act (CCPA/CPRA). To
-        exercise any of these rights — including requesting a copy or deletion
-        of your data — contact us at{" "}
+        exercise any of these rights - including requesting a copy or deletion
+        of your data - contact us at{" "}
         <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. We will respond
         within the timeframe required by applicable law and will not
         discriminate against you for exercising your rights.

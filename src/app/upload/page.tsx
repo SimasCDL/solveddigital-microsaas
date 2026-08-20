@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { trackPurchaseOnce } from "@/components/MetaPixel";
+import Link from "next/link";
 
 const MAX_PHOTOS = 40;
 
@@ -124,7 +125,7 @@ export default function UploadPage() {
       if (!uploadRes.ok) {
         const body = await uploadRes.json().catch(() => null);
         setShowHelp(true);
-        throw new Error(body?.error || "Upload failed — please try again.");
+        throw new Error(body?.error || "Upload failed - please try again.");
       }
       const { orderId } = await uploadRes.json();
       setStep("redirecting");
@@ -143,7 +144,7 @@ export default function UploadPage() {
         if (!res.ok) {
           const body = await res.json().catch(() => null);
           throw new Error(
-            body?.error || "Could not start your tour — please try again.",
+            body?.error || "Could not start your tour - please try again.",
           );
         }
         window.location.href = `/order/${orderId}`;
@@ -156,7 +157,7 @@ export default function UploadPage() {
         body: JSON.stringify({ orderId }),
       });
       if (!checkoutRes.ok)
-        throw new Error("Could not open checkout — please try again.");
+        throw new Error("Could not open checkout - please try again.");
       const { url } = await checkoutRes.json();
       window.location.href = url;
     } catch (err) {
@@ -192,17 +193,17 @@ export default function UploadPage() {
             No active purchase found
           </h1>
           <p className="mx-auto mt-2 max-w-md text-sm text-tink-soft">
-            Grab a pack first — you&apos;ll land right back here to upload your
+            Grab a pack first - you&apos;ll land right back here to upload your
             photos.
           </p>
         </div>
-        <a
+        <Link
           href="/#pricing"
           className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] px-7 text-[0.95rem] font-semibold tracking-tight text-white shadow-[0_14px_34px_-10px_rgba(15,125,107,0.65)]"
         >
           See pricing
           <Arrow className="h-4 w-4" />
-        </a>
+        </Link>
       </div>
     );
   }
@@ -231,7 +232,7 @@ export default function UploadPage() {
               Upload your listing photos
             </h1>
             <p className="mx-auto mt-1.5 max-w-md text-sm text-tink-soft">
-              Drop in up to {maxPhotos} photos — your cinematic tour lands in
+              Drop in up to {maxPhotos} photos - your cinematic tour lands in
               your inbox.
             </p>
           </div>
@@ -287,7 +288,7 @@ export default function UploadPage() {
                     Drop your photos here
                   </p>
                   <p className="mt-0.5 text-sm text-tink-soft">
-                    or click to browse — JPG or PNG, up to {maxPhotos}
+                    or click to browse - JPG or PNG, up to {maxPhotos}
                   </p>
                 </>
               ) : (

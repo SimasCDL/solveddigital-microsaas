@@ -1,20 +1,19 @@
 import { writeFile, readFile, mkdir } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
+import { supabaseConfigured } from '@/lib/supabase';
 
 const USE_BLOB = !!process.env.BLOB_READ_WRITE_TOKEN;
 // /tmp — the only writable path on serverless (Vercel). Supabase is primary; this
 // is a last-resort fallback so a video is never lost to a read-only FS crash.
 const LOCAL_DIR = join(tmpdir(), 'tourly-videos');
 
-const useSupabase = () =>
-  !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 /** Persist a stitched video. Returns a URL the browser can play/download.
  *  If Supabase is unreachable (paused project, DNS, outage), falls back to
  *  local storage so a finished (paid) video is never lost. */
 export async function saveVideo(id: string, data: Buffer): Promise<string> {
-  if (useSupabase()) {
+  if (supabaseConfigured()) {
     try {
       const res = await fetch(`${process.env.SUPABASE_URL}/storage/v1/object/videos/${id}.mp4`, {
         method: 'POST',

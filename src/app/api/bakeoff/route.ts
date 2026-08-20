@@ -9,12 +9,12 @@ fal.config({ credentials: process.env.FAL_KEY! });
 // alongside a plan upgrade.
 export const maxDuration = 300;
 
-const SLIDER_PROMPT = 'Smooth horizontal camera slide from left to right (or right to left). The camera physically moves sideways across the scene — even if the scene appears flat or simple, the camera must still visibly travel laterally so elements shift and scroll across the frame. Do NOT zoom in. Do NOT push forward. Do NOT stay static. The camera slides sideways the entire duration. Visible lateral parallax motion throughout. Like a camera on a long slider rail. ABSOLUTE RULE: scene content must be exactly what is in the photo — do not add, change, or invent any object, light, material, person, or detail. Only the camera moves sideways. Photorealistic. No people. No text.';
+const SLIDER_PROMPT = 'Smooth horizontal camera slide from left to right (or right to left). The camera physically moves sideways across the scene - even if the scene appears flat or simple, the camera must still visibly travel laterally so elements shift and scroll across the frame. Do NOT zoom in. Do NOT push forward. Do NOT stay static. The camera slides sideways the entire duration. Visible lateral parallax motion throughout. Like a camera on a long slider rail. ABSOLUTE RULE: scene content must be exactly what is in the photo - do not add, change, or invent any object, light, material, person, or detail. Only the camera moves sideways. Photorealistic. No people. No text.';
 
 const NEG = 'zoom in, zoom out, push in, dolly in, static shot, no movement, camera shake, blur, distortion, watermark, text, people, artifacts, low quality';
 
 // Hailuo takes literal director commands in square brackets
-const HAILUO_PROMPT = '[Truck left] Professional real estate walkthrough shot. The camera slides slowly and perfectly smoothly sideways across the scene, constant speed, stabilized like a slider rail. The scene must contain exactly what is in the photo — do not add, remove, or change any object, light, or detail. Photorealistic. No people. No text.';
+const HAILUO_PROMPT = '[Truck left] Professional real estate walkthrough shot. The camera slides slowly and perfectly smoothly sideways across the scene, constant speed, stabilized like a slider rail. The scene must contain exactly what is in the photo - do not add, remove, or change any object, light, or detail. Photorealistic. No people. No text.';
 
 interface Candidate {
   key: string;
@@ -68,7 +68,7 @@ const CANDIDATES: Candidate[] = [
   },
   {
     key: 'seedance2',
-    label: 'Seedance 2.0 (1080p) — stability favorite',
+    label: 'Seedance 2.0 (1080p) - stability favorite',
     price: 3.4,
     seconds: 5,
     model: 'bytedance/seedance-2.0/image-to-video',

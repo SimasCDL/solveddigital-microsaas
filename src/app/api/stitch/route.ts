@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "No clips to merge — every clip failed to generate. Please try again.",
+            "No clips to merge - every clip failed to generate. Please try again.",
         },
         { status: 400 },
       );

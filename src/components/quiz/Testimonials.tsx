@@ -56,7 +56,7 @@ const VIDEO = {
   // turns your photos into a walkthrough video / look like we hired a film crew
   // / two weeks later, sold. Unlike the two written cards, this one is real.
   quote:
-    "It sat on Zillow six weeks with barely any showings and everyone kept telling me the market was slow. Turns out the listings that sell all have video tours. Ran my photos through this — looked like we'd hired a film crew. Sold two weeks later.",
+    "It sat on Zillow six weeks with barely any showings and everyone kept telling me the market was slow. Turns out the listings that sell all have video tours. Ran my photos through this - looked like we'd hired a film crew. Sold two weeks later.",
 };
 
 /** Solid badge, not an outline — at 17px an outlined tick reads as a smudge. */

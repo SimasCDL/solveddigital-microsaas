@@ -1,5 +1,6 @@
 import { readdir, readFile, writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
+import { supabaseConfigured } from '@/lib/supabase';
 
 export interface HistoryEntry {
   id: string;
@@ -13,8 +14,6 @@ export interface HistoryEntry {
 
 const LOCAL_DIR = join(process.cwd(), '.orders', 'history');
 
-const useSupabase = () =>
-  !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 async function sbFetch(path: string, init?: RequestInit & { headers?: Record<string, string> }) {
   const res = await fetch(`${process.env.SUPABASE_URL}/rest/v1${path}`, {
@@ -31,7 +30,7 @@ async function sbFetch(path: string, init?: RequestInit & { headers?: Record<str
 }
 
 export async function saveHistoryEntry(entry: HistoryEntry): Promise<void> {
-  if (useSupabase()) {
+  if (supabaseConfigured()) {
     try {
       await sbFetch('/generations', {
         method: 'POST',
@@ -56,7 +55,7 @@ export async function saveHistoryEntry(entry: HistoryEntry): Promise<void> {
 }
 
 export async function listHistory(limit = 30): Promise<HistoryEntry[]> {
-  if (useSupabase()) {
+  if (supabaseConfigured()) {
     try {
       const res = await sbFetch(`/generations?select=*&order=created_at.desc&limit=${limit}`);
       const rows: Array<{

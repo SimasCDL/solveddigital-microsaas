@@ -78,7 +78,7 @@ export default function Generate() {
       });
       if (res.status === 401) {
         localStorage.removeItem("admin_key");
-        throw new Error("Wrong access key — try again.");
+        throw new Error("Wrong access key - try again.");
       }
       const body = await res.json().catch(() => null);
       if (!res.ok)
@@ -309,7 +309,7 @@ export default function Generate() {
       });
       if (res.status === 401) {
         localStorage.removeItem("admin_key");
-        throw new Error("Wrong access key — try again.");
+        throw new Error("Wrong access key - try again.");
       }
       const reader = res.body!.getReader();
       const decoder = new TextDecoder();
@@ -482,7 +482,7 @@ export default function Generate() {
                   onKeyDown={(e) =>
                     e.key === "Enter" && !ingesting && fetchListing()
                   }
-                  placeholder="Paste an Airbnb listing link — photos load automatically"
+                  placeholder="Paste an Airbnb listing link - photos load automatically"
                   style={{
                     flex: 1,
                     padding: "10px 12px",
@@ -624,7 +624,7 @@ export default function Generate() {
                         Drop photos here
                       </p>
                       <p style={{ fontSize: 12, color: "var(--muted2)" }}>
-                        jpg, png, webp — up to 40
+                        jpg, png, webp - up to 40
                       </p>
                     </>
                   ) : (
@@ -883,7 +883,7 @@ export default function Generate() {
                           textDecoration: "underline",
                         }}
                       >
-                        Clip {i + 1} — save now
+                        Clip {i + 1} - save now
                       </a>
                     ))}
                   </div>
@@ -918,7 +918,7 @@ export default function Generate() {
                 onClick={generate}
                 style={{ width: "100%" }}
               >
-                {`Generate video — ${sorted.length} clip${sorted.length > 1 ? "s" : ""}`}
+                {`Generate video - ${sorted.length} clip${sorted.length > 1 ? "s" : ""}`}
               </button>
             )}
             {state === "done" && (
@@ -1081,7 +1081,7 @@ export default function Generate() {
 
             {history.length === 0 && (
               <p style={{ fontSize: 13, color: "var(--muted)" }}>
-                No generations yet — your finished videos will show up here.
+                No generations yet - your finished videos will show up here.
               </p>
             )}
 
@@ -1110,7 +1110,7 @@ export default function Generate() {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}{" "}
-                      — {entry.clipUrls.length} clip
+                      - {entry.clipUrls.length} clip
                       {entry.clipUrls.length > 1 ? "s" : ""}
                     </span>
                     {entry.videoUrl ? (

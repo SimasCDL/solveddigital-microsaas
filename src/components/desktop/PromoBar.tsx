@@ -36,11 +36,11 @@ export function PromoBar() {
     <div className="w-full bg-ink text-cream">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-2 gap-y-1 px-4 py-2.5 text-center text-sm">
         <span className="font-medium">
-          This week only — 35% off your first tour.
+          This week only - 35% off your first tour.
         </span>
         <span className="text-cream/55">Ends in</span>
         <span className="font-semibold tabular-nums tracking-wide text-[#34c4a8]">
-          {remaining === null ? "—" : format(remaining)}
+          {remaining === null ? "-" : format(remaining)}
         </span>
       </div>
     </div>

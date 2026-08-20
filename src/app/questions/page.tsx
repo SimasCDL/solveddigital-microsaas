@@ -10,7 +10,7 @@ import { visibleSteps } from "@/lib/quiz";
  * check a path without restarting the whole quiz.
  */
 export const metadata: Metadata = {
-  title: "Quiz funnel — every screen",
+  title: "Quiz funnel - every screen",
   robots: { index: false, follow: false },
 };
 
@@ -63,7 +63,7 @@ export default function QuestionsPage() {
             Internal review
           </p>
           <h1 className="mt-2 text-[30px] font-bold tracking-tight text-slate-900">
-            Quiz funnel — every screen
+            Quiz funnel - every screen
           </h1>
           <p className="mt-2.5 max-w-2xl text-[15px] leading-[1.55] text-slate-600">
             The live{" "}
@@ -74,7 +74,7 @@ export default function QuestionsPage() {
               /f/quiz
             </a>{" "}
             funnel, mounted one screen per frame. These are real components, not
-            mockups — every frame is interactive, so you can tap through a path
+            mockups - every frame is interactive, so you can tap through a path
             in place. Sample run: agent, 4–8 listings a month, photos only,
             15–25 photo galleries.
           </p>
@@ -91,7 +91,7 @@ export default function QuestionsPage() {
           {STEPS.map((s, i) => (
             <Frame
               key={s.id}
-              label={`${i + 2} · Step ${i + 1} — ${
+              label={`${i + 2} · Step ${i + 1} - ${
                 s.kind === "lesson" ? "interstitial" : "question"
               }`}
               note={
@@ -108,7 +108,7 @@ export default function QuestionsPage() {
 
           <Frame
             label={`${STEPS.length + 2} · Email gate`}
-            note="Arrives at maximum sunk cost — seven answers in. Framed as a copy for your inbox, not a toll."
+            note="Arrives at maximum sunk cost - seven answers in. Framed as a copy for your inbox, not a toll."
           >
             <QuizFunnel initial={{ phase: "email", answers: SAMPLE }} />
           </Frame>
@@ -159,7 +159,7 @@ export default function QuestionsPage() {
             </li>
             <li>
               <strong className="text-slate-900">No chrome.</strong> No nav,
-              promo bar or footer — once the quiz starts, every link that
+              promo bar or footer - once the quiz starts, every link that
               isn&apos;t the next step is a way out.
             </li>
           </ul>
