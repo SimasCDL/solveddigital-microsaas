@@ -216,6 +216,58 @@ teaches every future lead to wait for one.
   concessions across the sequence is what trains people to wait for the next
   one.
 
+## Our own traffic is not data
+
+Every funnel is tested through the real endpoints and the real Stripe account,
+so the team's own runs land in the same tables as the customers'. Before this
+was enforced, **13 of 22 order rows were ours**, and a "New sale" alert fired in
+the channel on every test.
+
+`src/lib/internal.ts` is the single list. Anything that counts, alerts on, or
+mails a person asks it first:
+
+- `isInternalEmail()` - the team's addresses. Applied in the Stripe webhook
+  (sale alert, day total, abandoned-checkout recovery), `fetchSales` in the
+  daily report, `/api/quiz-lead` (no row, no sequence, no alert) and
+  `backfill-leads`.
+- `countsAsSale()` - also rejects a zero-value checkout. Stripe reports a
+  100%-off coupon as `no_payment_required` with a zero total, and the webhook
+  treats that as complete because for *fulfilment* it is: somebody is owed a
+  video. For *counting* it is not.
+
+Two things this deliberately does NOT do: it never blocks fulfilment (a test
+must still prove the pipeline end to end), and it never returns an error to the
+caller (the quiz still renders its result for an internal address, it just
+leaves no trace).
+
+The daily report's sales figures are read back from **Stripe, not our tables**,
+so deleting rows in Supabase does nothing to the history. The email filter in
+`fetchSales` is what cleans up past numbers as well as today's.
+
+Historic internal rows were deleted on 21 Aug 2026 (1 lead, 13 orders, 3 free
+trials, 5 nurture sends).
+
+## The result screen closes three times
+
+Order after the diagnosis: offer card, rail, testimonials, **two-listing
+comparison**, pack picker, the argument (`ResultDeepDive.tsx`), the offer card
+again, ambassador + chat proof, final picker.
+
+- **No invented proof, ever.** `AMBASSADOR` and `CHATS` render nothing while
+  their constant is empty; that is the guard, not an oversight. A portrait with
+  a name under it is read as a customer endorsement, so anything in there is a
+  claim about a real person.
+- **`proof.ts` or nothing.** The "403% more inquiries" figure circulating as
+  NAR's traces to a video vendor. It is left out on purpose - an agent who
+  checks it stops believing the two honest NAR numbers beside it.
+- **The comparison clips are different properties.** The copy says "two
+  formats", never "the same house": the address is legible in the portal
+  capture, so that claim is disprovable on screen.
+- **One clock, not two.** The price-hold card at the bottom reads the same
+  `useOfferCountdown` as the card at the top, and at zero both say the pricing
+  still applies, because it does.
+- No em dashes in any user-facing string. House style is a plain hyphen.
+
 ## Deploying (renoa.ai runs on a Hostinger VPS, not Vercel)
 
 `git push` is not a deploy. DNS moved to the VPS and the Vercel crons were
