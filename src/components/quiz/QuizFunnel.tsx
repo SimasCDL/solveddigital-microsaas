@@ -10,6 +10,7 @@ import { ProofNote } from "@/components/quiz/ProofNote";
 import { IntroTestimonials } from "@/components/quiz/IntroTestimonials";
 import { BeforeAfterRail } from "@/components/sections/BeforeAfterRail";
 import { Testimonials } from "@/components/quiz/Testimonials";
+import { ResultDeepDive, VersusDemo } from "@/components/quiz/ResultDeepDive";
 import {
   packCheckoutUrl,
   discountPct,
@@ -864,9 +865,16 @@ function useCountDown(
 function PackPicker({
   recommended,
   email,
+  heading = "Or pick the size that fits",
+  sub,
+  /** Show the price-hold card under the button. The last close only. */
+  hold = false,
 }: {
   recommended: PackId;
   email: string;
+  heading?: string;
+  sub?: string;
+  hold?: boolean;
 }) {
   const [selected, setSelected] = useState<PackId>(recommended);
   const pack = packById(selected);
@@ -880,12 +888,13 @@ function PackPicker({
   return (
     <div className="mt-10">
       <h3 className="font-display text-center text-[21px] font-bold leading-[1.2] text-ink">
-        Or pick the size that fits
+        {heading}
       </h3>
-      <p className="mx-auto mt-2 max-w-[19rem] text-center text-[13.5px] leading-[1.45] text-ink-soft">
-        Same tour either way. The only difference is how many photos you hand
-        over.
-      </p>
+      {sub && (
+        <p className="mx-auto mt-2 max-w-[19rem] text-center text-[13.5px] leading-[1.45] text-ink-soft">
+          {sub}
+        </p>
+      )}
 
       <div className="mt-5 flex flex-col gap-2.5">
         {PACKS.map((p) => {
@@ -945,9 +954,43 @@ function PackPicker({
         <Shield className="h-4 w-4 shrink-0 text-accent" />
         One-time · 30-day money-back guarantee
       </p>
-      <p className="mt-2 text-center text-[12px] text-ink-soft">
-        Save {discountPct(pack)}% on launch pricing
-      </p>
+      {hold && <PriceHold />}
+    </div>
+  );
+}
+
+/**
+ * The last thing on the page: how long this price is held.
+ *
+ * Red outline because it is the only element below the fold that is not
+ * reassurance, and it has to read differently from the guarantee line directly
+ * above it.
+ *
+ * It shows the SAME clock as the offer card at the top - one hold per visit,
+ * not a second deadline invented for the bottom of the page. And it keeps the
+ * rule the top card already keeps: at zero it says the pricing still applies,
+ * because it does. A countdown that claims a discount died, on a page that will
+ * sell at the same price a minute later, is the one lie an agent can disprove
+ * by reloading.
+ */
+function PriceHold() {
+  const { label, expired } = useOfferCountdown(true);
+  return (
+    <div className="mt-3 rounded-2xl border-2 border-[#e5484d] bg-[#fdeceb]/50 px-4 py-3 text-center">
+      {expired ? (
+        <p className="text-[13px] font-bold leading-[1.35] text-[#b42318]">
+          Launch pricing still applies today
+        </p>
+      ) : (
+        <>
+          <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#b42318]">
+            Launch price held for
+          </p>
+          <p className="font-display mt-1 text-[27px] font-bold leading-none tabular-nums text-[#b42318]">
+            {label}
+          </p>
+        </>
+      )}
     </div>
   );
 }
@@ -1039,7 +1082,43 @@ function Result({
 
       <Testimonials />
 
+      {/* The comparison sits between the proof and the price. It is the only
+          block on the page that asks a question instead of making a claim, and
+          a reader who has just answered it for themselves is a better person to
+          show a price to than one who has just been told something. */}
+      <VersusDemo />
+
       <PackPicker recommended={d.pack.id} email={email} />
+
+      {/*
+       * Below the second close: no more pitch, only the case.
+       *
+       * Somebody who has scrolled past two buy buttons is not holding a
+       * question about price, they are holding "why a video at all". This
+       * answers that, and then closes a third time - because a page that
+       * educates and then makes you scroll back up to act has spent the
+       * attention it just earned.
+       */}
+      <ResultDeepDive
+        offerSlot={
+          <div className="mt-12">
+            <Offer
+              d={d}
+              checkoutUrl={checkoutUrl}
+              label={label}
+              expired={expired}
+            />
+          </div>
+        }
+      />
+
+      <PackPicker
+        recommended={d.pack.id}
+        email={email}
+        heading="Ready when you are"
+        sub="Pick a size, hand over the photos, and the tour is back the same day."
+        hold
+      />
 
       {/* The written diagnosis and 30-day plan used to sit here. They are still
           generated and still go out in the emailed copy — they were just reading

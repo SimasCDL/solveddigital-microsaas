@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useVideoAutoplay } from "@/components/site/useVideoAutoplay";
 
 /**
@@ -224,6 +224,91 @@ function VideoTestimonial() {
   );
 }
 
+/**
+ * The two written cards swipe sideways instead of stacking.
+ *
+ * Each card is a quote plus a 4:5 photo, so three of them stacked ran about
+ * three phone screens of testimonial between the offer and everything below it.
+ * The video keeps its full-width slot because it is the strongest proof here;
+ * the other two cost a swipe instead of a scroll.
+ *
+ * Cards sit at 86% width so the next one is always visibly cut off at the edge.
+ * That peek is the only thing telling a reader there is more, and without it a
+ * carousel reads as a single card.
+ *
+ * It nudges itself once, the first time it comes into view, and only once.
+ * A static row of cards does not read as swipeable on a phone no matter how it
+ * is cut, and a single movement answers that where an arrow or a dot row would
+ * just be more furniture. It is deliberately not a loop: something that keeps
+ * moving on its own steals attention from the section being read, and it takes
+ * the card out from under a thumb that was already reaching for it.
+ *
+ * `lg:contents` dissolves the wrapper on desktop, handing the cards straight
+ * back to the grid as the columns they used to be.
+ */
+function WrittenCards() {
+  const rail = useRef<HTMLDivElement>(null);
+  const nudged = useRef(false);
+
+  useEffect(() => {
+    const el = rail.current;
+    if (!el) return;
+    // Desktop renders this as grid columns, and horizontal scroll there is a
+    // no-op that would just look like a twitch.
+    if (window.matchMedia("(min-width: 1024px)").matches) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting || nudged.current) continue;
+          nudged.current = true;
+          // Far enough to expose the second card, then back, so the row ends
+          // where it started and nobody loses their place.
+          const to = Math.min(el.scrollWidth - el.clientWidth, el.clientWidth * 0.55);
+          window.setTimeout(() => {
+            el.scrollTo({ left: to, behavior: "smooth" });
+            window.setTimeout(
+              () => el.scrollTo({ left: 0, behavior: "smooth" }),
+              1100,
+            );
+          }, 450);
+        }
+      },
+      { threshold: 0.45 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={rail}
+      className="-mx-5 mt-3.5 flex snap-x snap-mandatory gap-3.5 overflow-x-auto px-5 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] sm:-mx-8 sm:px-8 lg:contents [&::-webkit-scrollbar]:hidden"
+    >
+      {CARDS.map((c) => (
+        <div
+          key={c.name}
+          className="w-[86%] shrink-0 snap-start sm:w-[70%] lg:w-auto"
+        >
+          <Shell>
+            <Head name={c.name} avatar={c.avatar} />
+            <Quote>{c.quote}</Quote>
+            <div className="mt-auto overflow-hidden rounded-[14px] bg-line/40 pt-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={c.photo}
+                alt=""
+                className="aspect-[4/5] w-full object-cover"
+              />
+            </div>
+          </Shell>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function Testimonials() {
   const ref = useRef<HTMLDivElement>(null);
   useVideoAutoplay(ref);
@@ -245,7 +330,7 @@ export function Testimonials() {
         Word on the street
       </p>
 
-      <div className="mt-4 grid gap-3.5 lg:grid-cols-3">
+      <div className="mt-4 lg:grid lg:grid-cols-3 lg:gap-3.5">
         {/* The video goes first, and it is the only one of the three that is a
             real customer. Burying the strongest and most verifiable proof in
             position three meant most readers never reached it: on mobile the
@@ -256,20 +341,7 @@ export function Testimonials() {
           <VideoTestimonial />
         </Shell>
 
-        {CARDS.map((c) => (
-          <Shell key={c.name}>
-            <Head name={c.name} avatar={c.avatar} />
-            <Quote>{c.quote}</Quote>
-            <div className="mt-auto overflow-hidden rounded-[14px] bg-line/40 pt-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={c.photo}
-                alt=""
-                className="aspect-[4/5] w-full object-cover"
-              />
-            </div>
-          </Shell>
-        ))}
+        <WrittenCards />
       </div>
     </div>
   );
