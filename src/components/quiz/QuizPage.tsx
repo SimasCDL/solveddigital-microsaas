@@ -18,7 +18,11 @@ export function QuizPage() {
        otherwise escaping and pushing this whole element down, exposing the dark
        admin `body` background as a bar across the top), and it lets the card
        centre itself with `my-auto`. */
-    <div className="tourly relative flex min-h-screen flex-col bg-cream text-ink">
+    /* `min-h-dvh`, not `min-h-screen`. `100vh` on iOS Safari is the viewport with
+       the browser chrome hidden, which is taller than what is actually on screen,
+       so the last band of every long screen sat underneath the address bar. The
+       dynamic unit is the one that tracks the chrome. */
+    <div className="tourly relative flex min-h-dvh flex-col bg-cream text-ink">
       {/* Desktop-only wash. A layer rather than a background utility so the
           mobile rendering is provably untouched. */}
       <div

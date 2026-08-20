@@ -10,7 +10,13 @@ import { ProofNote } from "@/components/quiz/ProofNote";
 import { IntroTestimonials } from "@/components/quiz/IntroTestimonials";
 import { BeforeAfterRail } from "@/components/sections/BeforeAfterRail";
 import { Testimonials } from "@/components/quiz/Testimonials";
-import { packCheckoutUrl, discountPct } from "@/lib/pricing";
+import {
+  packCheckoutUrl,
+  discountPct,
+  packById,
+  PACKS,
+  type PackId,
+} from "@/lib/pricing";
 import { track, sessionId } from "@/lib/track";
 import { trackCompleteRegistrationOnce } from "@/components/MetaPixel";
 import {
@@ -287,7 +293,7 @@ export function QuizFunnel({ initial }: { initial?: QuizInitialState } = {}) {
 
   // --- Question / lesson steps -------------------------------------------
   return (
-    <Shell ref={topRef}>
+    <Shell ref={topRef} flushBottom={step.kind === "lesson"}>
       {/*
        * Progress is stated as work banked, never as work remaining.
        *
@@ -381,14 +387,30 @@ export function QuizFunnel({ initial }: { initial?: QuizInitialState } = {}) {
             </div>
           )}
 
-          <button
-            type="button"
-            onClick={advance}
-            className="mt-7 flex h-14 w-full items-center justify-center gap-2.5 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-base font-bold text-white shadow-[0_16px_34px_-12px_rgba(15,125,107,0.6)] transition-all hover:brightness-[1.06] active:scale-[0.99]"
-          >
-            Continue
-            <Arrow className="h-[18px] w-[18px]" />
-          </button>
+          {/*
+           * Sticky, because this button kept falling off the bottom.
+           *
+           * A lesson screen is a title, a paragraph, a diagram and a takeaway,
+           * and on a phone that is taller than the viewport — so the only
+           * control on the screen was below the fold, on the one screen type
+           * that has no other way forward. A visitor who does not scroll does
+           * not see a way to continue, and there is nothing on screen telling
+           * them one exists.
+           *
+           * The fade is what stops the last line of the takeaway from being
+           * cut in half by a hard edge; content passes under it and stays
+           * readable on the way.
+           */}
+          <div className="sticky bottom-0 z-20 -mx-5 mt-7 bg-gradient-to-t from-cream from-60% to-transparent px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-6 sm:-mx-8 sm:px-8">
+            <button
+              type="button"
+              onClick={advance}
+              className="flex h-14 w-full items-center justify-center gap-2.5 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-base font-bold text-white shadow-[0_16px_34px_-12px_rgba(15,125,107,0.6)] transition-all hover:brightness-[1.06] active:scale-[0.99]"
+            >
+              Continue
+              <Arrow className="h-[18px] w-[18px]" />
+            </button>
+          </div>
         </>
       )}
     </Shell>
@@ -411,10 +433,14 @@ export function QuizFunnel({ initial }: { initial?: QuizInitialState } = {}) {
 const Shell = function Shell({
   children,
   wide = false,
+  /** Drop the bottom padding for a screen that ends in its own sticky bar,
+   *  which supplies the spacing itself and would otherwise float above a gap. */
+  flushBottom = false,
   ref,
 }: {
   children: React.ReactNode;
   wide?: boolean;
+  flushBottom?: boolean;
   ref?: React.Ref<HTMLDivElement>;
 }) {
   return (
@@ -426,7 +452,14 @@ const Shell = function Shell({
          the container also widens the media column, and a 16:9 player gets
          taller as it gets wider. Keyed on width alone it would overflow a
          1280x720 laptop, which is exactly the screen that can least afford it. */
-      className={`mx-auto w-full max-w-[440px] px-5 pb-16 pt-6 sm:px-8 sm:pb-20 sm:pt-10 lg:my-auto lg:pb-14 lg:pt-10 ${
+      className={`mx-auto w-full max-w-[440px] px-5 pt-6 sm:px-8 sm:pt-10 lg:my-auto lg:pt-10 ${
+        // env() resolves to 0 anywhere without a notch, so this is the same
+        // padding as before on every desktop and a home-indicator's worth more
+        // on the phones that were being clipped by it.
+        flushBottom
+          ? ""
+          : "pb-[calc(4rem+env(safe-area-inset-bottom))] sm:pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-14"
+      } ${
         wide
           ? "sm:max-w-[620px] lg:max-w-[1120px] [@media(min-width:1450px)_and_(min-height:860px)]:max-w-[1380px]"
           : "sm:max-w-[620px] [@media(min-width:1450px)_and_(min-height:860px)]:max-w-[760px]"
@@ -814,6 +847,111 @@ function useCountDown(
   return { value, settled: value === null };
 }
 
+
+/**
+ * The offer again, at the bottom, with all three packs open.
+ *
+ * The card at the top recommends one pack and links straight to it, which is
+ * right for the visitor who accepts the recommendation. It leaves nothing at
+ * all for the one who wants the cheaper option, or who knows their gallery runs
+ * to forty photos — and by the time they have read the rail and the
+ * testimonials, the only buy button is several screens back up.
+ *
+ * One CTA, not three. Three buttons side by side is three decisions; a
+ * selection plus a single action is one, and the price on the button always
+ * names what is about to be charged.
+ */
+function PackPicker({
+  recommended,
+  email,
+}: {
+  recommended: PackId;
+  email: string;
+}) {
+  const [selected, setSelected] = useState<PackId>(recommended);
+  const pack = packById(selected);
+
+  const href = useMemo(() => {
+    const base = packCheckoutUrl(pack);
+    const sep = base.includes("?") ? "&" : "?";
+    return `${base}${sep}prefilled_email=${encodeURIComponent(email)}`;
+  }, [pack, email]);
+
+  return (
+    <div className="mt-10">
+      <h3 className="font-display text-center text-[21px] font-bold leading-[1.2] text-ink">
+        Or pick the size that fits
+      </h3>
+      <p className="mx-auto mt-2 max-w-[19rem] text-center text-[13.5px] leading-[1.45] text-ink-soft">
+        Same tour either way. The only difference is how many photos you hand
+        over.
+      </p>
+
+      <div className="mt-5 flex flex-col gap-2.5">
+        {PACKS.map((p) => {
+          const on = p.id === selected;
+          return (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => setSelected(p.id)}
+              aria-pressed={on}
+              className={`flex items-center gap-3.5 rounded-2xl border p-4 text-left transition-all duration-200 ${
+                on
+                  ? "border-accent bg-accent-soft/40 shadow-[0_10px_26px_-18px_rgba(15,125,107,0.7)]"
+                  : "border-line bg-paper hover:border-accent/40"
+              }`}
+            >
+              <span
+                className={`flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border-2 transition-colors duration-200 ${
+                  on ? "border-accent bg-accent text-white" : "border-line"
+                }`}
+              >
+                {on && <Check className="h-[12px] w-[12px]" />}
+              </span>
+
+              <span className="min-w-0 flex-1">
+                <span className="block text-[15px] font-bold leading-[1.3] text-ink">
+                  {p.name}
+                </span>
+                <span className="mt-0.5 block text-[12.5px] leading-[1.3] text-ink-soft">
+                  {p.id === recommended ? "Matches your answers" : p.blurbShort}
+                </span>
+              </span>
+
+              <span className="shrink-0 text-right">
+                <span className="block font-display text-[19px] font-bold leading-none text-ink">
+                  {p.priceLabel}
+                </span>
+                <span className="mt-1 block text-[12px] font-semibold leading-none text-ink-soft line-through decoration-ink-soft/40 decoration-[1px]">
+                  {p.wasLabel}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <a
+        href={href}
+        onClick={() => track("checkout_click")}
+        className="mt-4 flex h-[58px] items-center justify-center gap-2.5 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-[17px] font-bold text-white shadow-[0_16px_34px_-12px_rgba(15,125,107,0.6)] transition-all hover:brightness-[1.06] active:scale-[0.99]"
+      >
+        Get it for {pack.priceLabel}
+        <Arrow className="h-[18px] w-[18px]" />
+      </a>
+
+      <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-[12.5px] text-ink-soft">
+        <Shield className="h-4 w-4 shrink-0 text-accent" />
+        One-time · 30-day money-back guarantee
+      </p>
+      <p className="mt-2 text-center text-[12px] text-ink-soft">
+        Save {discountPct(pack)}% on launch pricing
+      </p>
+    </div>
+  );
+}
+
 function Result({
   answers,
   email,
@@ -900,6 +1038,8 @@ function Result({
       </div>
 
       <Testimonials />
+
+      <PackPicker recommended={d.pack.id} email={email} />
 
       {/* The written diagnosis and 30-day plan used to sit here. They are still
           generated and still go out in the emailed copy — they were just reading
