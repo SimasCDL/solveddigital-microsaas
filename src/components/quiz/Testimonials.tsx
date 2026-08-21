@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useVideoAutoplay } from "@/components/site/useVideoAutoplay";
 
 /**
@@ -224,133 +224,72 @@ function VideoTestimonial() {
   );
 }
 
-/**
- * The two written cards drift left on their own, forever and slowly.
- *
- * Each card is a quote plus a 4:5 photo, so three of them stacked ran about
- * three phone screens of testimonial between the offer and everything below it.
- * The video keeps its full-width slot as the strongest proof; the other two
- * became a rail.
- *
- * Two problems solved at once, which is why this is rAF over `scrollLeft`
- * rather than a CSS marquee:
- *
- *   - **Seamless loop with only two cards.** The set is rendered twice and the
- *     scroll position wraps by exactly half the content width. Because the
- *     second copy is identical to the first, the wrap lands on a pixel that
- *     already looks the same and there is nothing to see.
- *   - **It stays swipeable.** A `translateX` marquee would take the rail out of
- *     the scroll container, so a reader who wants to look properly could not
- *     grab it. Driving the real scroll position keeps native dragging, and
- *     touching it pauses the drift instead of fighting it.
- *
- * Snap is deliberately off: mandatory snap points pull against a continuous
- * scroll every frame and the result stutters.
- *
- * `lg:contents` dissolves the wrapper on desktop, handing the cards back to the
- * grid as the columns they used to be - and the duplicate set is `lg:hidden`,
- * or the three-column grid would get four items.
- */
-function WrittenCards() {
-  const rail = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = rail.current;
-    if (!el) return;
-    // Desktop renders these as grid columns; there is nothing to scroll.
-    if (window.matchMedia("(min-width: 1024px)").matches) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    /** Pixels per second. Slow enough to read a quote while it moves. */
-    const SPEED = 16;
-    let raf = 0;
-    let last = performance.now();
-    let paused = false;
-
-    const tick = (now: number) => {
-      const dt = (now - last) / 1000;
-      last = now;
-      if (!paused) {
-        const half = el.scrollWidth / 2;
-        let next = el.scrollLeft + SPEED * dt;
-        if (half > 0 && next >= half) next -= half;
-        el.scrollLeft = next;
-      }
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-
-    const pause = () => {
-      paused = true;
-    };
-    const resume = () => {
-      last = performance.now();
-      paused = false;
-    };
-
-    el.addEventListener("pointerdown", pause);
-    el.addEventListener("pointerenter", pause);
-    el.addEventListener("pointerleave", resume);
-    window.addEventListener("pointerup", resume);
-
-    return () => {
-      cancelAnimationFrame(raf);
-      el.removeEventListener("pointerdown", pause);
-      el.removeEventListener("pointerenter", pause);
-      el.removeEventListener("pointerleave", resume);
-      window.removeEventListener("pointerup", resume);
-    };
-  }, []);
-
+/** One written card. Fixed width, so the marquee track has a stable length. */
+function WrittenCard({ c }: { c: Card }) {
   return (
-    <div
-      ref={rail}
-      className="-mx-5 mt-3.5 flex gap-3.5 overflow-x-auto px-5 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] sm:-mx-8 sm:px-8 lg:contents [&::-webkit-scrollbar]:hidden"
-    >
-      {/* Rendered twice: the second set is what the wrap lands on. Hidden from
-          desktop and from screen readers, which must not hear two Erins. */}
-      {[0, 1].map((copy) =>
-        CARDS.map((c) => (
-          <div
-            key={`${c.name}-${copy}`}
-            aria-hidden={copy === 1 || undefined}
-            className={`w-[86%] shrink-0 sm:w-[70%] lg:w-auto ${
-              copy === 1 ? "lg:hidden" : ""
-            }`}
-          >
-            <Shell>
-              <Head name={c.name} avatar={c.avatar} />
-              <Quote>{c.quote}</Quote>
-              <div className="mt-auto overflow-hidden rounded-[14px] bg-line/40 pt-0">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={c.photo}
-                  alt=""
-                  className="aspect-[4/5] w-full object-cover"
-                />
-              </div>
-            </Shell>
-          </div>
-        )),
-      )}
+    <div className="w-[290px] shrink-0 sm:w-[320px]">
+      <Shell>
+        <Head name={c.name} avatar={c.avatar} />
+        <Quote>{c.quote}</Quote>
+        <div className="mt-auto overflow-hidden rounded-[14px] bg-line/40 pt-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={c.photo}
+            alt=""
+            className="aspect-[4/5] w-full object-cover"
+          />
+        </div>
+      </Shell>
     </div>
   );
 }
+
+/**
+ * The video card, plus a still-only twin for the duplicated half of the track.
+ *
+ * A seamless marquee needs the same cards twice, but a second `<video>` would
+ * fetch the clip again and leave two elements competing for autoplay. The
+ * duplicate renders the poster instead: identical footprint, no second
+ * download, and the copy a reader can actually tap is always the live one.
+ */
+function VideoCard({ still }: { still?: boolean }) {
+  return (
+    <div className="w-[290px] shrink-0 sm:w-[320px]">
+      <Shell>
+        <Head name={VIDEO.name} avatar={VIDEO.avatar} />
+        <Quote>{VIDEO.quote}</Quote>
+        {still ? (
+          <div className="mt-auto overflow-hidden rounded-[14px] bg-night">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={VIDEO.poster}
+              alt=""
+              className="aspect-[4/5] w-full object-cover"
+            />
+          </div>
+        ) : (
+          <VideoTestimonial />
+        )}
+      </Shell>
+    </div>
+  );
+}
+
+/**
+ * SUPERSEDED — kept only as the reasoning for what replaced it.
+ *
+ * This was a rAF scroller below 1024px and a static three-column grid above it.
+ * Two behaviours, and at the widths between them the grid clipped its own cards.
+ * It is now the same CSS marquee the intro rail uses, so there is one animation
+ * in the codebase and one thing to reason about.
+ */
 
 export function Testimonials() {
   const ref = useRef<HTMLDivElement>(null);
   useVideoAutoplay(ref);
 
   return (
-    /* Breaks out of the result's 620px reading column. Three cards inside that
-       width come out ~176px each, which is too narrow for a quote and a photo —
-       the grid needs room the rest of the page doesn't. `left-1/2` plus a
-       negative half-translate on a `w-screen` element re-centres it against the
-       viewport rather than the parent. */
-    <div
-      ref={ref}
-      className="mt-9 lg:relative lg:left-1/2 lg:w-screen lg:max-w-[1120px] lg:-translate-x-1/2 lg:px-8"
-    >
+    <div ref={ref} className="mt-9">
       {/* "What agents say" is a section label. "Word on the street" is how the
           job actually talks about reputation, and it frames the block as
           something overheard rather than something we collected and arranged. */}
@@ -358,18 +297,37 @@ export function Testimonials() {
         Word on the street
       </p>
 
-      <div className="mt-4 lg:grid lg:grid-cols-3 lg:gap-3.5">
-        {/* The video goes first, and it is the only one of the three that is a
-            real customer. Burying the strongest and most verifiable proof in
-            position three meant most readers never reached it: on mobile the
-            cards stack, so third is roughly two screens below the button. */}
-        <Shell>
-          <Head name={VIDEO.name} avatar={VIDEO.avatar} />
-          <Quote>{VIDEO.quote}</Quote>
-          <VideoTestimonial />
-        </Shell>
+      {/* The intro rail, reused deliberately. One marquee in globals.css means
+          one behaviour to reason about, one hover-pause, and one
+          prefers-reduced-motion rule — and a reader who watched quotes drift
+          past on the way in recognises the pattern on the way out.
 
-        <WrittenCards />
+          `-mx-5` breaks it out of the reading column so the strip runs to both
+          edges: a carousel that stops short of the screen edge reads as a stuck
+          widget rather than something moving. */}
+      <div className="marquee-row marquee-mask -mx-5 mt-4 overflow-hidden sm:-mx-8">
+        {/* Rendered twice and translated by exactly -50%, so at the end of a
+            cycle the second copy sits precisely where the first began and the
+            loop is invisible. `w-max` stops flex compressing the cards to fit.
+            aria-hidden on the duplicate — a screen reader must not be read the
+            same three quotes twice. */}
+        <div
+          className="animate-marquee-left flex w-max items-stretch gap-3.5 px-5 sm:px-8"
+          style={{ animationDuration: "64s" }}
+        >
+          {/* The video leads: it is the strongest and most verifiable proof of
+              the three, and it should be the first thing that drifts in. */}
+          <VideoCard />
+          {CARDS.map((c) => (
+            <WrittenCard key={c.name} c={c} />
+          ))}
+          <span className="contents" aria-hidden="true">
+            <VideoCard still />
+            {CARDS.map((c) => (
+              <WrittenCard key={`${c.name}-dup`} c={c} />
+            ))}
+          </span>
+        </div>
       </div>
     </div>
   );
