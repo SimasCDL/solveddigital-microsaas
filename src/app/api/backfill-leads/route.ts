@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { sbFetch, supabaseConfigured } from "@/lib/supabase";
 import { getLeadByEmail, normalizeEmail, upsertLead } from "@/lib/leads";
 import { startSequence } from "@/lib/sequence";
-import { isInternalEmail } from "@/lib/internal";
+import { isTestAddress } from "@/lib/internal";
 import { diagnose } from "@/lib/quiz";
 
 export const dynamic = "force-dynamic";
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
     for (const email of candidates) {
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
         skipped[email] = "invalid";
-      } else if (isInternalEmail(email)) {
+      } else if (isTestAddress(email)) {
         skipped[email] = "internal";
       } else if (looksLikeJunk(email)) {
         skipped[email] = "junk";

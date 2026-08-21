@@ -4,7 +4,7 @@ import { getStripe, photosForSession } from "@/lib/stripe";
 import { getOrder, updateOrder } from "@/lib/orders";
 import { fulfillOrder } from "@/lib/fulfill";
 import { sendTelegram } from "@/lib/telegram";
-import { countsAsSale, isInternalEmail } from "@/lib/internal";
+import { countsAsSale, isTestAddress } from "@/lib/internal";
 import { sendUploadLinkEmail } from "@/lib/resend";
 import { stopSequence, sendRecovery } from "@/lib/sequence";
 import { sendMetaEventServerSide } from "@/lib/meta";
@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
     const s = event.data.object as Stripe.Checkout.Session;
     const abandonedEmail =
       s.customer_details?.email ?? s.customer_email ?? null;
-    if (abandonedEmail && !isInternalEmail(abandonedEmail)) {
+    if (abandonedEmail && !isTestAddress(abandonedEmail)) {
       after(async () => {
         const sent = await sendRecovery(abandonedEmail);
         if (sent) {

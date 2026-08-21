@@ -2,7 +2,7 @@ import { getStripe } from "./stripe";
 import { funnelCounts, type FunnelStage } from "./quizEvents";
 import { sendsInWindow } from "./nurtureSends";
 import { convertedInWindow, leadCounts } from "./leads";
-import { countsAsSale, isInternalEmail } from "./internal";
+import { countsAsSale, isTestAddress } from "./internal";
 
 /**
  * Daily report — pulls traffic/behavior from Microsoft Clarity and
@@ -177,7 +177,7 @@ async function fetchSales(hours: number): Promise<SalesSnapshot | null> {
     // list whether or not the matching row was ever deleted from Supabase.
     // Filtering here is the only thing that cleans up the history as well as
     // today, because every figure in this section is read back from Stripe.
-    if (isInternalEmail(email)) continue;
+    if (isTestAddress(email)) continue;
     checkouts += 1;
     const amount = (s.amount_total ?? 0) / 100;
     if (s.payment_status === "paid" && countsAsSale(email, amount)) {

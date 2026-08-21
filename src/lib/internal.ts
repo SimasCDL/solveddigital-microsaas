@@ -17,6 +17,7 @@
 const INTERNAL_EMAILS = new Set([
   "mr.redwolf01@gmail.com",
   "a@gmail.com",
+  "s@gmail.com",
   "jona.jonas@gmail.com",
   "ignataras.skucas@gmail.com",
   "razmarinas1@gmail.com",
@@ -24,10 +25,34 @@ const INTERNAL_EMAILS = new Set([
   "simonasberesnevicius@gmail.com",
 ]);
 
-/** True for our own addresses. Case and whitespace insensitive. */
-export function isInternalEmail(email?: string | null): boolean {
+/**
+ * An address that cannot exist, so nobody is behind it.
+ *
+ * Gmail requires a username of 6 to 30 characters. `a@gmail.com` and
+ * `s@gmail.com` are therefore not addresses somebody merely failed to check -
+ * they cannot be registered at all, which makes anything shorter than six
+ * characters a throwaway typed into a form by us.
+ *
+ * Structural, not a list, because listing them one at a time is how
+ * `s@gmail.com` reached the channel after `a@gmail.com` was already excluded.
+ * The next single letter is covered without anyone having to notice it.
+ */
+function isImpossibleGmail(email: string): boolean {
+  const [local = "", domain = ""] = email.split("@");
+  if (domain !== "gmail.com" && domain !== "googlemail.com") return false;
+  // Gmail ignores dots, so `a.b@gmail.com` is a 2-character username.
+  return local.replace(/\./g, "").length < 6;
+}
+
+/**
+ * Not a customer: our own address, or one that could never have been real.
+ *
+ * Case and whitespace insensitive.
+ */
+export function isTestAddress(email?: string | null): boolean {
   if (!email) return false;
-  return INTERNAL_EMAILS.has(email.trim().toLowerCase());
+  const addr = email.trim().toLowerCase();
+  return INTERNAL_EMAILS.has(addr) || isImpossibleGmail(addr);
 }
 
 /**
@@ -48,5 +73,5 @@ export function countsAsSale(
   email: string | null | undefined,
   amountMajorUnits: number,
 ): boolean {
-  return !isInternalEmail(email) && !isFreeCheckout(amountMajorUnits);
+  return !isTestAddress(email) && !isFreeCheckout(amountMajorUnits);
 }

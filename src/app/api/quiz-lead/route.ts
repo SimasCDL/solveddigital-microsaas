@@ -7,7 +7,7 @@ import { packCheckoutUrl } from "@/lib/pricing";
 import { diagnose, costSentence, usd, type Answers } from "@/lib/quiz";
 import { countRecentByIpHash, getLeadByEmail, upsertLead } from "@/lib/leads";
 import { startSequence } from "@/lib/sequence";
-import { isInternalEmail } from "@/lib/internal";
+import { isTestAddress } from "@/lib/internal";
 import { sendMetaEventServerSide } from "@/lib/meta";
 
 /**
@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
     // still renders and the funnel can be walked end to end - it just leaves no
     // lead row, starts no eleven-email sequence, and does not put a test in the
     // channel next to real ones.
-    if (isInternalEmail(addr)) {
+    if (isTestAddress(addr)) {
       console.info(`[quiz-lead] internal address, not recorded: ${addr}`);
       return NextResponse.json({ ok: true });
     }
