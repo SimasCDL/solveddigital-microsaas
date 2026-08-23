@@ -323,6 +323,29 @@ export function QuizFunnel({ initial }: { initial?: QuizInitialState } = {}) {
         />
       </div>
 
+      {/* After Q1: a personalized insight based on what they just told us.
+          This is the hook - they answered one question, and immediately got
+          something back. Now they want to see what the rest reveals. */}
+      {step.id === "who" && answers.pain && (
+        <div className="mt-5 rounded-xl border border-accent/20 bg-accent-soft/25 px-4 py-3.5">
+          <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-accent">
+            Quick insight
+          </p>
+          <p className="mt-1.5 text-[13.5px] leading-[1.5] text-ink">
+            {answers.pain === "slow" &&
+              "Listings with video get 403% more inquiries than those without. We'll show you exactly where yours falls short - and what to fix first."}
+            {answers.pain === "photos" &&
+              "73% of sellers say they'd fire their agent over bad marketing. The gap between photos and what buyers expect is bigger than most agents think."}
+            {answers.pain === "cost" &&
+              "The average videographer charges $300-$1,000 per listing. We'll show you how top agents are getting better results for a fraction of that."}
+            {answers.pain === "time" &&
+              "The agents winning the most listings spend less time on content, not more. We'll show you what they do differently in your plan."}
+            {answers.pain === "unsure" &&
+              "That feeling usually means there's one thing holding your marketing back. We'll find it - most agents are surprised by what it is."}
+          </p>
+        </div>
+      )}
+
       {step.kind === "question" ? (
         <>
           <h2 className="font-display mt-7 text-[25px] font-bold leading-[1.15] text-ink sm:mt-9 sm:text-[31px] lg:text-[35px] [@media(min-width:1450px)_and_(min-height:860px)]:text-[42px]">
@@ -566,15 +589,7 @@ function Intro({
          */}
         <IntroTestimonials />
 
-        {/* Just the line, centred, one row.
-            The avatar stack went because the carousel above it now shows five
-            faces with names and countries attached. Five more anonymous faces
-            underneath was the same claim made twice, and the weaker version
-            was sitting closest to the fold.
-            The three markets are the three we actually buy traffic in, so an
-            agent in Brisbane or Calgary is not reading a US-only claim and
-            deciding this is not for them. */}
-        <p className="mt-5 text-center text-[12.5px] leading-[1.4] text-ink-soft">
+        <p className="mt-4 text-center text-[12.5px] leading-[1.4] text-ink-soft">
           Trusted by agents in the US, Canada and Australia
         </p>
       </div>
