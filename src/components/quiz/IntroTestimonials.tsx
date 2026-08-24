@@ -91,27 +91,27 @@ function Verified({ className = "" }: { className?: string }) {
 
 function Quote({ c }: { c: Card }) {
   return (
-    <figure className="flex w-[300px] shrink-0 flex-col rounded-2xl border border-line/60 bg-paper p-5 text-left shadow-[0_4px_20px_-6px_rgba(0,0,0,0.08)] sm:w-[340px]">
+    <figure className="flex w-[300px] shrink-0 flex-col rounded-2xl border border-line/60 bg-paper px-4 py-4 [@media(max-height:780px)]:py-2.5 text-left shadow-[0_6px_24px_-8px_rgba(0,0,0,0.1)] sm:w-[330px] sm:px-5 sm:py-[18px]">
       <div className="flex items-center gap-3">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={c.avatar}
           alt=""
-          className="h-11 w-11 shrink-0 rounded-full object-cover ring-2 ring-line/40"
+          className="h-11 w-11 [@media(max-height:780px)]:h-9 [@media(max-height:780px)]:w-9 shrink-0 rounded-full object-cover ring-2 ring-line/40"
         />
         <div className="min-w-0 flex-1">
-          <span className="flex items-center gap-1.5">
-            <span className="text-[15px] font-bold leading-tight text-ink">
+          <span className="flex items-center gap-1">
+            <span className="text-[14.5px] font-bold leading-tight text-ink">
               {c.name}
             </span>
-            <Verified className="h-[15px] w-[15px] shrink-0 text-accent" />
+            <Verified className="h-[14px] w-[14px] shrink-0 text-accent" />
           </span>
-          <span className="block text-[12.5px] leading-tight text-ink-soft">
+          <span className="block text-[12px] leading-tight text-ink-soft">
             {c.title}
           </span>
         </div>
       </div>
-      <blockquote className="mt-4 text-[14.5px] leading-[1.55] text-ink">
+      <blockquote className="mt-3 [@media(max-height:780px)]:mt-2 line-clamp-4 [@media(max-height:780px)]:line-clamp-3 text-[13.5px] leading-[1.5] text-ink">
         &ldquo;{c.quote}&rdquo;
       </blockquote>
     </figure>
@@ -144,7 +144,7 @@ function LiveActivity() {
         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#16a34a] opacity-70" />
         <span className="relative inline-flex h-2 w-2 rounded-full bg-[#16a34a]" />
       </span>
-      <span className="text-[13px] font-semibold text-[#15803d]">
+      <span className="text-[12.5px] font-semibold text-[#15803d]">
         {n} agents are building their listing plan right now
       </span>
     </div>
@@ -153,9 +153,9 @@ function LiveActivity() {
 
 export function IntroTestimonials() {
   return (
-    <div className="mt-9">
+    <div className="mt-0">
       <LiveActivity />
-      <div className="marquee-row marquee-mask -mx-5 mt-3 overflow-hidden sm:-mx-8">
+      <div className="marquee-row marquee-mask -mx-5 mt-3 [@media(max-height:780px)]:mt-2 overflow-hidden sm:-mx-8">
         <div
           className="animate-marquee-left flex w-max items-start gap-3.5 px-5 sm:px-8"
           style={{ animationDuration: "82s" }}

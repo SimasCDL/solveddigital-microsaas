@@ -168,7 +168,16 @@ export function QuizFunnel({ initial }: { initial?: QuizInitialState } = {}) {
 
   const advance = () => {
     if (index + 1 < total) setIndex(index + 1);
-    else setPhase("email");
+    else {
+      setPhase("analyzing");
+      const sid = sessionId();
+      if (!isPreview) trackCompleteRegistrationOnce(sid);
+      fetch("/api/quiz-lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, answers, sessionId: sid }),
+      }).catch(() => {});
+    }
   };
 
   const answer = (id: string) => {
@@ -183,34 +192,26 @@ export function QuizFunnel({ initial }: { initial?: QuizInitialState } = {}) {
     advance();
   };
 
-  const submitEmail = async () => {
+  const submitEmail = () => {
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-      return setError("Add a valid email so we can send your copy.");
+      return setError("Enter a valid email so we can send your plan.");
     }
-    if (!consent) return setError("Please accept so we can send your copy.");
+    if (!consent) return setError("Please accept so we can send your plan.");
     setError("");
-    setPhase("analyzing");
+    setPhase("steps");
 
-    // The one mid-funnel conversion Meta can attribute per ad. Purchases are
-    // too sparse to rank creative on, so this is what makes an angle test
-    // readable in days instead of weeks. Keyed on the visit id so the browser
-    // pixel and the server-side copy de-dupe into one conversion.
-    const sid = sessionId();
-    if (!isPreview) trackCompleteRegistrationOnce(sid);
-
-    // Fire and forget — a failed lead ping must never block the result the
-    // visitor just spent two minutes earning.
+    // Early capture: persist the email now so a drop-off mid-quiz still lands
+    // in quiz_leads and starts the nurture sequence. The second call after the
+    // last question upserts with full answers and a real diagnosis.
     fetch("/api/quiz-lead", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, answers, sessionId: sid }),
+      body: JSON.stringify({ email, answers: {}, sessionId: sessionId() }),
     }).catch(() => {});
-    // The analysing screen owns the hand-off. Its length is the length of the
-    // read-out, and a duplicate timer here would race it to the result.
   };
 
   if (phase === "intro")
-    return <Intro onStart={() => setPhase("steps")} ref={topRef} />;
+    return <Intro onStart={() => setPhase("email")} ref={topRef} />;
 
   if (phase === "analyzing")
     return (
@@ -232,23 +233,13 @@ export function QuizFunnel({ initial }: { initial?: QuizInitialState } = {}) {
   if (phase === "email")
     return (
       <Shell ref={topRef}>
-        {/*
-         * "Your listing plan is ready" implied a deliverable was already built,
-         * which invites the reader to wonder what it is and whether they are
-         * about to be sold it. The honest and quieter version is that the thing
-         * they just did has finished: their answers are scored, and the result
-         * is on the other side of this field.
-         *
-         * Nothing here mentions a video. They have not been told that is the
-         * answer yet, and finding out at the email gate would read as a bait
-         * switch at the exact moment we ask them to trust us with an address.
-         */}
         <h2 className="font-display text-center text-[27px] font-bold leading-tight text-ink">
-          Your diagnostic is done.
+          Where should we send your plan?
         </h2>
-        <p className="mx-auto mt-2.5 max-w-[21rem] text-center text-[15px] leading-[1.5] text-ink-soft">
-          See your score and what to fix first. We&apos;ll email you a copy so
-          you still have it after you close this.
+        <p className="mx-auto mt-2.5 max-w-[22rem] text-center text-[15px] leading-[1.5] text-ink-soft">
+          After six quick questions we&apos;ll build your personalized listing
+          marketing plan and email it to you - your score, the gaps, and
+          exactly what to fix first.
         </p>
 
         <input
@@ -264,7 +255,7 @@ export function QuizFunnel({ initial }: { initial?: QuizInitialState } = {}) {
           onClick={submitEmail}
           className="mt-3 flex h-14 w-full items-center justify-center gap-2.5 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-base font-bold text-white shadow-[0_16px_34px_-12px_rgba(15,125,107,0.6)] transition-all hover:brightness-[1.06] active:scale-[0.99]"
         >
-          Show me my result
+          Start my diagnostic
           <Arrow className="h-[18px] w-[18px]" />
         </button>
 
@@ -276,7 +267,7 @@ export function QuizFunnel({ initial }: { initial?: QuizInitialState } = {}) {
             className="mt-[3px] h-4 w-4 shrink-0 accent-[#0f7d6b]"
           />
           <span>
-            Email me my result and marketing plan. I&apos;ve read the{" "}
+            Email me my marketing plan and result. I&apos;ve read the{" "}
             <a href="/privacy" className="underline decoration-ink-soft/40">
               privacy policy
             </a>
@@ -476,7 +467,7 @@ const Shell = function Shell({
          the container also widens the media column, and a 16:9 player gets
          taller as it gets wider. Keyed on width alone it would overflow a
          1280x720 laptop, which is exactly the screen that can least afford it. */
-      className={`mx-auto w-full max-w-[440px] px-5 pt-6 sm:px-8 sm:pt-10 lg:my-auto lg:pt-10 ${
+      className={`mx-auto w-full max-w-[440px] my-auto px-5 pt-5 sm:px-8 sm:pt-8 lg:pt-8 [@media(max-height:780px)]:pt-3 ${
         // env() resolves to 0 anywhere without a notch, so this is the same
         // padding as before on every desktop and a home-indicator's worth more
         // on the phones that were being clipped by it.
@@ -490,7 +481,7 @@ const Shell = function Shell({
       }`}
     >
       <div ref={ref} />
-      <div className="mb-7 flex items-center justify-center gap-[11px] sm:mb-9 [@media(min-width:1450px)_and_(min-height:860px)]:mb-11 [@media(min-width:1450px)_and_(min-height:860px)]:gap-3.5">
+      <div className="mb-5 flex items-center justify-center gap-[11px] [@media(max-height:780px)]:mb-2 sm:mb-7 [@media(min-width:1450px)_and_(min-height:860px)]:mb-9 [@media(min-width:1450px)_and_(min-height:860px)]:gap-3.5">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/tourly-mark.png"
@@ -531,6 +522,34 @@ const Shell = function Shell({
  * it is reassurance collected on the way past, in the position where somebody
  * who has already decided glances for a reason not to.
  */
+function SellerChat() {
+  return (
+    <div className="mx-auto mt-4 max-w-[310px] rounded-xl border border-line/60 bg-paper px-3 py-2.5 shadow-[0_4px_20px_-6px_rgba(0,0,0,0.08)] [@media(max-height:780px)]:mt-2 [@media(max-height:780px)]:py-1.5 [@media(min-width:1450px)_and_(min-height:860px)]:mt-6 [@media(min-width:1450px)_and_(min-height:860px)]:max-w-[380px] [@media(min-width:1450px)_and_(min-height:860px)]:px-5 [@media(min-width:1450px)_and_(min-height:860px)]:py-4">
+      <div className="flex items-center gap-2 pb-2 [@media(max-height:780px)]:pb-1.5">
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#e8e8ed] text-[10px] font-bold text-[#636366]">
+          KM
+        </span>
+        <div className="text-left">
+          <span className="block text-[11.5px] font-semibold leading-tight text-ink">Karen M.</span>
+          <span className="block text-[10px] leading-tight text-ink-soft">Seller</span>
+        </div>
+        <span className="ml-auto text-[10px] text-ink-soft/70">iMessage</span>
+      </div>
+      <div className="flex flex-col gap-1.5 border-t border-line/40 pt-2 [@media(max-height:780px)]:gap-1 [@media(max-height:780px)]:pt-1.5">
+        <div className="max-w-[88%] self-start rounded-2xl rounded-bl-md bg-[#e8e8ed] px-3 py-1.5 text-left text-[12.5px] leading-[1.35] [@media(max-height:780px)]:py-1 [@media(max-height:780px)]:text-[12px] text-[#1c1c1e]">
+          4 showings this week?? We never got this on our last place
+        </div>
+        <div className="max-w-[88%] self-end rounded-2xl rounded-br-md bg-[#007aff] px-3 py-1.5 text-left text-[12.5px] leading-[1.35] [@media(max-height:780px)]:py-1 [@media(max-height:780px)]:text-[12px] text-white">
+          The marketing made the difference this time!
+        </div>
+        <div className="max-w-[88%] self-start rounded-2xl rounded-bl-md bg-[#e8e8ed] px-3 py-1.5 text-left text-[12.5px] leading-[1.35] [@media(max-height:780px)]:py-1 [@media(max-height:780px)]:text-[12px] text-[#1c1c1e]">
+          First time selling where I didn&apos;t stress about it sitting there. Whatever you changed, keep doing it
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Intro({
   onStart,
   ref,
@@ -539,57 +558,36 @@ function Intro({
   ref?: React.Ref<HTMLDivElement>;
 }) {
   return (
-    <Shell ref={ref}>
-      <div className="text-center">
-        <span className="inline-block rounded-full bg-accent-soft px-4 py-2 text-[11px] font-bold uppercase tracking-[0.1em] text-accent [@media(min-width:1450px)_and_(min-height:860px)]:px-5 [@media(min-width:1450px)_and_(min-height:860px)]:py-2.5 [@media(min-width:1450px)_and_(min-height:860px)]:text-[12.5px]">
+    <Shell ref={ref} flushBottom>
+      <div className="text-center pb-[calc(1.25rem+env(safe-area-inset-bottom))] [@media(max-height:780px)]:pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
+        <span className="inline-block rounded-full bg-accent-soft px-3.5 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.1em] text-accent [@media(min-width:1450px)_and_(min-height:860px)]:px-5 [@media(min-width:1450px)_and_(min-height:860px)]:py-2.5 [@media(min-width:1450px)_and_(min-height:860px)]:text-[12.5px]">
           Free listing diagnostic
         </span>
 
-        {/* The old headline asked what a listing video costs, which answers the
-            question of what we sell before asking whether they want it. This one
-            makes a promise about their job instead of ours. Kept to three short
-            lines so the button clears the fold on a 375px in-app browser. */}
-        <h1 className="font-display mt-4 text-[32px] font-bold leading-[1.08] tracking-[-0.02em] text-ink text-balance sm:text-[38px] lg:text-[44px] [@media(min-width:1450px)_and_(min-height:860px)]:mt-6 [@media(min-width:1450px)_and_(min-height:860px)]:text-[56px]">
+        <h1 className="font-display mt-3 text-[28px] [@media(max-height:780px)]:mt-2 [@media(max-height:780px)]:text-[23px] font-bold leading-[1.08] tracking-[-0.02em] text-ink text-balance sm:text-[34px] lg:text-[40px] [@media(min-width:1450px)_and_(min-height:860px)]:mt-5 [@media(min-width:1450px)_and_(min-height:860px)]:text-[56px]">
           How to market your listings in today&apos;s market
         </h1>
 
-        <p className="mx-auto mt-4 max-w-[30rem] text-[15px] leading-[1.55] text-ink-soft text-balance sm:text-[16.5px] lg:text-[17.5px] [@media(min-width:1450px)_and_(min-height:860px)]:mt-6 [@media(min-width:1450px)_and_(min-height:860px)]:max-w-[38rem] [@media(min-width:1450px)_and_(min-height:860px)]:text-[20px]">
-          Six questions, and you get your listing marketing score, the one gap
-          costing you the most right now, and what the agents winning listings
-          are doing differently.
-        </p>
+        <SellerChat />
 
         <button
           type="button"
           onClick={onStart}
-          className="mt-7 flex h-14 w-full items-center justify-center gap-2.5 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-base font-bold text-white shadow-[0_16px_34px_-12px_rgba(15,125,107,0.6)] transition-all hover:brightness-[1.06] active:scale-[0.99] lg:h-[60px] lg:text-[17px] [@media(min-width:1450px)_and_(min-height:860px)]:mt-9 [@media(min-width:1450px)_and_(min-height:860px)]:h-[70px] [@media(min-width:1450px)_and_(min-height:860px)]:text-[19px]"
+          className="mt-5 [@media(max-height:780px)]:mt-3 h-[52px] [@media(max-height:780px)]:h-[46px] flex w-full items-center justify-center gap-2.5 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-[15px] font-bold text-white shadow-[0_16px_34px_-12px_rgba(15,125,107,0.6)] transition-all hover:brightness-[1.06] active:scale-[0.99] lg:h-14 lg:text-base [@media(min-width:1450px)_and_(min-height:860px)]:mt-7 [@media(min-width:1450px)_and_(min-height:860px)]:h-[64px] [@media(min-width:1450px)_and_(min-height:860px)]:text-[18px]"
         >
           Start the diagnostic
-          <Arrow className="h-[18px] w-[18px] [@media(min-width:1450px)_and_(min-height:860px)]:h-5 [@media(min-width:1450px)_and_(min-height:860px)]:w-5" />
+          <Arrow className="h-[17px] w-[17px]" />
         </button>
 
-        <p className="mt-3 text-[13px] text-ink-soft [@media(min-width:1450px)_and_(min-height:860px)]:mt-4 [@media(min-width:1450px)_and_(min-height:860px)]:text-[14.5px]">
-          Takes about 2 minutes · No card needed
+        <p className="mt-2.5 [@media(max-height:780px)]:mt-1.5 text-[12.5px] leading-[1.4] text-ink-soft text-balance sm:text-[13px]">
+          Six questions, your score, and what top agents do differently. Takes 2 min.
         </p>
 
-        {/*
-         * Flipped: the quote leads, the rating supports it, and the delivery
-         * count is gone.
-         *
-         * "1,564 tours delivered" was the single worst line on the entry
-         * screen under the new positioning. It answers a question nobody has
-         * asked, using a unit the visitor has not been introduced to. Somebody
-         * who arrived to learn how to market a listing reads "tours" and either
-         * skips it as noise or works out they are on a sales page, which is
-         * exactly the realisation the rest of this screen is built to delay.
-         *
-         * What replaces it has to be about the outcome, not the format. The
-         * quote never mentions filming, a video or a tour, because at this
-         * point neither do we.
-         */}
-        <IntroTestimonials />
+        <div className="mt-5 [@media(max-height:780px)]:mt-2.5">
+          <IntroTestimonials />
+        </div>
 
-        <p className="mt-4 text-center text-[12.5px] leading-[1.4] text-ink-soft">
+        <p className="mt-3 [@media(max-height:780px)]:mt-1.5 text-center text-[11.5px] leading-[1.3] text-ink-soft">
           Trusted by agents in the US, Canada and Australia
         </p>
       </div>
