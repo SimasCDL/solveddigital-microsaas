@@ -2,20 +2,22 @@ import type { Metadata } from "next";
 import { QuizPage } from "@/components/quiz/QuizPage";
 
 /**
- * The front door is now the diagnostic funnel.
+ * The front door is the direct-buy funnel: intro -> packs -> Stripe.
  *
- * It used to be the marketing landing (`FunnelPage` + `FUNNELS.main`), which is
- * still built and still served at /f/direct and /f/quick — nothing was deleted,
- * so reverting is a one-line change back to `<FunnelPage funnel={FUNNELS.main} />`.
+ * It was the diagnostic quiz until the questions, the email gate and the score
+ * were taken out of the path. Those screens still exist in `QuizFunnel` and are
+ * still reviewable at /questions - putting them back is a one-line change to
+ * the intro's `onStart`. Before that it was the marketing landing (`FunnelPage`
+ * + `FUNNELS.main`), still served at /f/direct and /f/quick.
  *
  * This page is the indexable one. `/tour` renders the same funnel and stays
  * noindex, so the two cannot compete for the same keywords: ads keep pointing at
  * /tour by link, search lands here.
  */
 export const metadata: Metadata = {
-  title: "How to market your listings in today's market - Tourly",
+  title: "Listing video tours from your photos - Tourly",
   description:
-    "A free 2-minute diagnostic for agents: your listing marketing score, the one gap costing you the most, and what the agents winning listings are doing differently.",
+    "Send the photos you already have and get a listing video tour back the same day: a vertical cut for Reels and TikTok, a horizontal one for the MLS, licensed music on both.",
   alternates: { canonical: "/" },
 };
 

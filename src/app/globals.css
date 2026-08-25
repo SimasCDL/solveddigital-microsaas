@@ -26,20 +26,13 @@
   --slot: #1a1a1a;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0b0b0b;
-    --bg2: #0d0d0d;
-    --card: #161616;
-    --ink: #ededed;
-    --muted: #9a9a9a;
-    --muted2: #777777;
-    --border: #2a2a2a;
-    --field: #1a1a1a;
-    --hover: #444444;
-    --slot: #1a1a1a;
-  }
-}
+/* No `prefers-color-scheme: dark` override here, deliberately.
+   Every customer-facing page is painted in the Tourly tokens (cream, paper,
+   tink) which have no dark variants, so auto-switching only ever flipped the
+   things underneath them: `body { background: var(--bg) }` went #0b0b0b while
+   the page div stayed cream. On a dark-mode phone that black body is what
+   shows through behind Safari's status bar and toolbar, framing the funnel in
+   two black bands. The `.dark` class above is kept for explicit opt-in. */
 
 @theme inline {
   --font-sans: var(--font-ibm);
@@ -90,7 +83,12 @@ html {
 }
 
 body {
-  background: var(--bg);
+  /* Cream, not var(--bg)'s white: every customer page is bg-cream, and this is
+     the surface that shows through behind iOS Safari's chrome and during
+     rubber-band overscroll. White here left a faint seam at both edges.
+     The admin pages (/generate, /bakeoff) paint their own var(--bg) on a
+     full-height div, so they are unaffected. */
+  background: var(--color-cream);
   color: var(--ink);
   font-family: 'IBM Plex Sans', system-ui, sans-serif;
   font-size: 13px;

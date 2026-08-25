@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Geist, IBM_Plex_Sans, Plus_Jakarta_Sans } from "next/font/google";
 import { MetaPixel } from "@/components/MetaPixel";
@@ -26,6 +26,23 @@ const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://renoa.ai";
 const TITLE = "Tourly - AI video tours for your listings, in minutes";
 const DESCRIPTION =
   "Turn your listing photos into a scroll-stopping video tour ready for the MLS, Reels & TikTok - without hiring a videographer or editing a thing.";
+
+/**
+ * Paints iOS Safari's status bar and toolbar to match the page.
+ *
+ * Without a theme-color the browser tints its own chrome from the system
+ * appearance, so a dark-mode phone framed the funnel in two black bands. The
+ * value is `cream` - the background every customer page is painted in - and a
+ * single unconditional colour rather than a light/dark pair, because there is
+ * no dark rendering of these pages for a dark chrome to sit against.
+ *
+ * `colorScheme: light` says the same thing to the rest of the UA: render form
+ * controls, scrollbars and the like light, whatever the phone is set to.
+ */
+export const viewport: Viewport = {
+  themeColor: "#faf8f3",
+  colorScheme: "light",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

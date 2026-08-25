@@ -91,7 +91,7 @@ function Verified({ className = "" }: { className?: string }) {
 
 function Quote({ c }: { c: Card }) {
   return (
-    <figure className="flex w-[300px] shrink-0 flex-col rounded-2xl border border-line/60 bg-paper px-4 py-4 [@media(max-height:780px)]:py-2.5 text-left shadow-[0_6px_24px_-8px_rgba(0,0,0,0.1)] sm:w-[330px] sm:px-5 sm:py-[18px]">
+    <figure className="flex w-[300px] shrink-0 flex-col rounded-2xl border border-line/60 bg-paper px-4 py-4 [@media(max-height:780px)]:py-2.5 text-left shadow-[0_6px_24px_-8px_rgba(0,0,0,0.1)] sm:w-[330px] sm:px-5 sm:py-[18px] [@media(min-width:640px)_and_(max-height:860px)]:py-2.5">
       <div className="flex items-center gap-3">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img

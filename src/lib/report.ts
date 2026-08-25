@@ -296,11 +296,19 @@ async function fetchDeadClicks(
 }
 
 /**
- * The quiz funnel as two lines: three rates, then the single worst drop.
+ * The funnel as one line: two rates, and which of them is the constraint.
  *
  * The point is to name the leak, not to print the funnel. Nothing here lists
  * the stages, because a reader who has to find the leak themselves in a row of
  * counts will not, and the section then costs attention without spending it.
+ *
+ * It reported three rates when the path was intro → six questions → email gate
+ * → result. That path is gone: the live funnel is intro → packs → Stripe, so
+ * `step_*`, `gate_view` and `lead` are no longer emitted by anything. They were
+ * removed rather than left in place because a stage that can only ever be zero
+ * prints a confident `Gate 0%` every morning, which is indistinguishable from a
+ * gate that is genuinely failing - the exact way `Start 0% · Gate 0% · Buy 0%`
+ * shipped once and went unnoticed for weeks against real traffic.
  */
 function quizSection(stages: FunnelStage[]): string[] {
   if (stages.length < 2) return [];
@@ -314,58 +322,39 @@ function quizSection(stages: FunnelStage[]): string[] {
   // say something under a wall of figures. The rates and the worst drop are the
   // whole point of the section; the raw counts live in `quiz_events` for
   // anyone who wants to interrogate them.
-  const L: string[] = ["*QUIZ FUNNEL* (24h)"];
+  const L: string[] = ["*FUNNEL* (24h)"];
 
-  // The three rates that mean different things and have different fixes:
-  // whether the ad matched the page, whether the gate is worth the address,
-  // and whether the offer lands.
+  // Two rates that mean different things and have different fixes: whether the
+  // ad matched the page, and whether the offer lands once they ask to see it.
   //
   // These keys are the event names `funnelCounts` emits, and nothing else will
   // do: a lookup that misses returns 0, so a wrong key prints a confident
   // "0%" rather than failing, and the report goes on lying every morning until
-  // somebody checks it against the raw events.
+  // somebody checks it against the raw events. `result_view` is the offer
+  // screen - the funnel reuses that key for it, so this rate stays continuous
+  // with the history the quiz wrote.
   const landed = at("quiz_start");
-  const started = stages.find((s) => s.step.startsWith("step_"))?.sessions ?? 0;
-  L.push(
-    `▶️ Start ${pct(started, landed)}% · ✉️ Gate ${pct(at("lead"), at("gate_view"))}% · 🛒 Buy ${pct(at("checkout_click"), at("result_view"))}%`,
-  );
+  const offer = at("result_view");
+  const bought = at("checkout_click");
+  const reach = pct(offer, landed);
+  const buy = pct(bought, offer);
+  L.push(`▶️ Offer ${reach}% · 🛒 Buy ${buy}% (${landed} landed, ${bought} to Stripe)`);
 
-  /**
-   * The worst drop, looking only at the quiz body.
-   *
-   * The gates are excluded deliberately. Result → checkout is the largest drop
-   * in any funnel that has a price on it, so naming it every day is a fact
-   * about arithmetic rather than a finding, and it would bury the drop that
-   * actually moved. Between two questions there is no reason to lose anyone, so
-   * that is where a number worth acting on shows up.
-   */
-  const body = (s: FunnelStage) =>
-    s.step === "quiz_start" ||
-    s.step.startsWith("step_") ||
-    s.step === "gate_view";
-  let worst: { from: FunnelStage; to: FunnelStage } | null = null;
-  for (let i = 1; i < stages.length; i++) {
-    if (!body(stages[i]) || !body(stages[i - 1])) continue;
-    if (!worst || stages[i].keptPct < worst.to.keptPct) {
-      worst = { from: stages[i - 1], to: stages[i] };
-    }
-  }
-
-  if (worst && worst.to.keptPct < 90) {
-    const lost = worst.from.sessions - worst.to.sessions;
+  // Which half to work on. With two stages the arithmetic is small enough to
+  // state outright rather than hint at, and saying nothing on a quiet day is
+  // worse than saying the funnel is holding.
+  if (!landed) {
+    L.push("👉 No landings recorded. Check the page tag before reading this.");
+  } else if (reach < 40) {
     L.push(
-      `🩸 Worst in-quiz drop: *${worst.from.label} → ${worst.to.label}* - lost ${lost} (${100 - worst.to.keptPct}%)`,
+      `👉 The intro is the constraint: ${100 - reach}% leave without asking to see pricing.`,
+    );
+  } else if (buy < 15) {
+    L.push(
+      "👉 The intro is doing its job. The offer screen is where they stop.",
     );
   } else {
-    // Nothing anomalous inside the quiz means the constraint has moved to a
-    // gate, and the report should say which one rather than go quiet.
-    const gate = pct(at("lead"), at("gate_view"));
-    const buy = pct(at("checkout_click"), at("result_view"));
-    L.push(
-      buy < gate
-        ? "👉 Quiz body is clean. The offer is the constraint, not the questions."
-        : "👉 Quiz body is clean. The email gate is the constraint.",
-    );
+    L.push("👉 Both halves holding.");
   }
   return L;
 }

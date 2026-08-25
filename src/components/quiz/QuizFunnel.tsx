@@ -31,7 +31,16 @@ import {
   type Diagnosis,
 } from "@/lib/quiz";
 
-type Phase = "intro" | "steps" | "email" | "analyzing" | "result";
+/**
+ * `checkout` is the live path: intro -> packs -> Stripe.
+ *
+ * The diagnostic phases (`steps`, `email`, `analyzing`, `result`) are no longer
+ * reachable from the intro. They are kept, not deleted, for two reasons: the
+ * `/questions` review page mounts each one as its own frame, and putting the
+ * quiz back is a one-line change to the intro's `onStart`. Nothing else in the
+ * app routes into them.
+ */
+type Phase = "intro" | "steps" | "email" | "analyzing" | "result" | "checkout";
 
 /**
  * How long the post-diagnostic price holds, per visitor.
@@ -163,7 +172,13 @@ export function QuizFunnel({ initial }: { initial?: QuizInitialState } = {}) {
     } else if (phase === "intro") track("quiz_start");
     else if (phase === "email") track("gate_view");
     else if (phase === "analyzing") track("lead");
-    else if (phase === "result") track("result_view");
+    // `result_view` is the "saw the offer" stage, and the checkout screen is
+    // now what that means - it replaced the result screen as the thing a
+    // visitor sees before they can buy. Reusing the key rather than minting a
+    // `checkout_view` keeps `Buy = checkout_click / result_view` correct in the
+    // daily report, keeps the whitelist in /api/quiz-event unchanged, and keeps
+    // the rate continuous with the history already in `quiz_events`.
+    else if (phase === "result" || phase === "checkout") track("result_view");
   }, [phase, index, step?.id, isPreview]);
 
   const advance = () => {
@@ -211,7 +226,9 @@ export function QuizFunnel({ initial }: { initial?: QuizInitialState } = {}) {
   };
 
   if (phase === "intro")
-    return <Intro onStart={() => setPhase("email")} ref={topRef} />;
+    return <Intro onStart={() => setPhase("checkout")} ref={topRef} />;
+
+  if (phase === "checkout") return <Checkout ref={topRef} />;
 
   if (phase === "analyzing")
     return (
@@ -561,11 +578,11 @@ function Intro({
     <Shell ref={ref} flushBottom>
       <div className="text-center pb-[calc(1.25rem+env(safe-area-inset-bottom))] [@media(max-height:780px)]:pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
         <span className="inline-block rounded-full bg-accent-soft px-3.5 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.1em] text-accent [@media(min-width:1450px)_and_(min-height:860px)]:px-5 [@media(min-width:1450px)_and_(min-height:860px)]:py-2.5 [@media(min-width:1450px)_and_(min-height:860px)]:text-[12.5px]">
-          Free listing diagnostic
+          Launch pricing
         </span>
 
-        <h1 className="font-display mt-3 text-[28px] [@media(max-height:780px)]:mt-2 [@media(max-height:780px)]:text-[23px] font-bold leading-[1.08] tracking-[-0.02em] text-ink text-balance sm:text-[34px] lg:text-[40px] [@media(min-width:1450px)_and_(min-height:860px)]:mt-5 [@media(min-width:1450px)_and_(min-height:860px)]:text-[56px]">
-          How to market your listings in today&apos;s market
+        <h1 className="font-display mt-3 text-[28px] [@media(max-height:780px)]:mt-2 [@media(max-height:780px)]:text-[23px] font-bold leading-[1.08] tracking-[-0.02em] text-ink text-balance sm:text-[34px] lg:text-[40px] [@media(min-width:640px)_and_(max-height:860px)]:text-[30px] [@media(min-width:1450px)_and_(min-height:860px)]:mt-5 [@media(min-width:1450px)_and_(min-height:860px)]:text-[56px]">
+          Turn your listing photos into a video tour
         </h1>
 
         <SellerChat />
@@ -575,15 +592,15 @@ function Intro({
           onClick={onStart}
           className="mt-5 [@media(max-height:780px)]:mt-3 h-[52px] [@media(max-height:780px)]:h-[46px] flex w-full items-center justify-center gap-2.5 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-[15px] font-bold text-white shadow-[0_16px_34px_-12px_rgba(15,125,107,0.6)] transition-all hover:brightness-[1.06] active:scale-[0.99] lg:h-14 lg:text-base [@media(min-width:1450px)_and_(min-height:860px)]:mt-7 [@media(min-width:1450px)_and_(min-height:860px)]:h-[64px] [@media(min-width:1450px)_and_(min-height:860px)]:text-[18px]"
         >
-          Start the diagnostic
+          Get my listing tour
           <Arrow className="h-[17px] w-[17px]" />
         </button>
 
         <p className="mt-2.5 [@media(max-height:780px)]:mt-1.5 text-[12.5px] leading-[1.4] text-ink-soft text-balance sm:text-[13px]">
-          Six questions, your score, and what top agents do differently. Takes 2 min.
+          One upload, back the same day. Vertical for Reels, horizontal for the MLS.
         </p>
 
-        <div className="mt-5 [@media(max-height:780px)]:mt-2.5">
+        <div className="mt-5 [@media(max-height:780px)]:mt-2.5 [@media(min-width:640px)_and_(max-height:860px)]:mt-3">
           <IntroTestimonials />
         </div>
 
@@ -591,6 +608,71 @@ function Intro({
           Trusted by agents in the US, Canada and Australia
         </p>
       </div>
+    </Shell>
+  );
+}
+
+/**
+ * The offer screen, and the only thing between the intro and Stripe.
+ *
+ * What it is NOT: the old result screen. That one closed three times because it
+ * had spent six questions earning the right to, and every block on it referred
+ * back to an answer the visitor had given. None of that exists here, so the
+ * argument is carried by the product instead - what arrives, how fast, and what
+ * happens if they hate it.
+ *
+ * No countdown and no price-hold card. Both were honest on the diagnostic,
+ * where the clock started when the result was generated for that visitor. On a
+ * page anyone can reload straight into, a deadline is the one claim an agent
+ * can disprove in a second, and it would be the first thing they see.
+ */
+function Checkout({ ref }: { ref?: React.Ref<HTMLDivElement> }) {
+  return (
+    <Shell ref={ref}>
+      <div className="text-center">
+        <h2 className="font-display text-[27px] font-bold leading-[1.12] tracking-[-0.02em] text-ink text-balance sm:text-[32px]">
+          Your listing tour, back the same day
+        </h2>
+
+        <p className="mx-auto mt-2.5 max-w-[23rem] text-[14px] leading-[1.5] text-ink-soft text-balance">
+          Send the photos you already have. You get a vertical cut for Reels and
+          TikTok, a horizontal one for the MLS, and licensed music on both.
+        </p>
+
+        <div className="mt-4 flex items-center justify-center gap-2.5">
+          <ReviewAvatars size={32} />
+          <span className="text-left text-[12.5px] font-semibold leading-[1.25] text-ink">
+            1,564 tours delivered
+            <span className="block font-normal text-ink-soft">
+              for agents in the US, Canada and Australia
+            </span>
+          </span>
+        </div>
+      </div>
+
+      <BeforeAfterRail height={200} cardWidth={260} className="mt-7" />
+
+      <PackPicker
+        recommended="p25"
+        heading="Choose your pack"
+        sub="Priced by how many photos you send. Most listings fit the 25."
+      />
+
+      <div className="mt-4 flex items-center gap-3 rounded-2xl border border-line bg-accent-soft/40 px-4 py-3.5">
+        <Shield className="h-[26px] w-[26px] shrink-0 text-accent" />
+        <div>
+          <div className="text-[13.5px] font-bold text-ink">
+            30-day money-back guarantee
+          </div>
+          <div className="text-[12.5px] leading-[1.4] text-ink-soft">
+            Not obsessed with your video? Full refund, and you keep the files.
+          </div>
+        </div>
+      </div>
+
+      <PaymentLogos />
+
+      <Testimonials />
     </Shell>
   );
 }
@@ -877,16 +959,23 @@ function useCountDown(
  */
 function PackPicker({
   recommended,
-  email,
+  /** Prefills the Stripe email field. Empty on the direct path, where we never
+   *  asked for one - Stripe then collects it itself at checkout. */
+  email = "",
   heading = "Or pick the size that fits",
   sub,
+  /** Label under the recommended pack. The diagnostic earned "Matches your
+   *  answers"; the direct path has no answers to match, so it says nothing
+   *  and each pack keeps its own blurb. */
+  recommendedNote,
   /** Show the price-hold card under the button. The last close only. */
   hold = false,
 }: {
   recommended: PackId;
-  email: string;
+  email?: string;
   heading?: string;
   sub?: string;
+  recommendedNote?: string;
   hold?: boolean;
 }) {
   const [selected, setSelected] = useState<PackId>(recommended);
@@ -894,6 +983,7 @@ function PackPicker({
 
   const href = useMemo(() => {
     const base = packCheckoutUrl(pack);
+    if (!email) return base;
     const sep = base.includes("?") ? "&" : "?";
     return `${base}${sep}prefilled_email=${encodeURIComponent(email)}`;
   }, [pack, email]);
@@ -937,7 +1027,9 @@ function PackPicker({
                   {p.name}
                 </span>
                 <span className="mt-0.5 block text-[12.5px] leading-[1.3] text-ink-soft">
-                  {p.id === recommended ? "Matches your answers" : p.blurbShort}
+                  {p.id === recommended && recommendedNote
+                    ? recommendedNote
+                    : p.blurbShort}
                 </span>
               </span>
 
@@ -1101,7 +1193,11 @@ function Result({
           show a price to than one who has just been told something. */}
       <VersusDemo />
 
-      <PackPicker recommended={d.pack.id} email={email} />
+      <PackPicker
+        recommended={d.pack.id}
+        email={email}
+        recommendedNote="Matches your answers"
+      />
 
       {/*
        * Below the second close: no more pitch, only the case.
@@ -1128,6 +1224,7 @@ function Result({
       <PackPicker
         recommended={d.pack.id}
         email={email}
+        recommendedNote="Matches your answers"
         heading="Ready when you are"
         sub="Pick a size, hand over the photos, and the tour is back the same day."
         hold

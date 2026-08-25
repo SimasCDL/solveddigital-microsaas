@@ -39,39 +39,47 @@ a delivery failure to the customer instead of showing a false success, because
 a swallowed refund request becomes a chargeback. **Never write "just reply to
 this email" anywhere in customer copy** — nothing reads those replies.
 
-## Funnel positioning: they are not buying a video
+## The funnel is two screens: intro -> packs -> Stripe
 
-`/tour` sells **how to market a listing**, not a video tour. The visitor does
-not know a video is the answer until the result screen, and that is deliberate:
-cold traffic that knows it is being sold a listing video prices the product
-before it has valued the problem.
+`/` (and `/tour`, `/f/quiz`, which render the same component) is a **direct-buy
+page**. The intro sells the product, the CTA goes straight to the pack picker,
+and the pack picker goes straight to a Stripe Payment Link. There is no quiz, no
+score, no email gate.
 
-The rules this imposes, in the order they break if you edit carelessly:
-
-- **No price anywhere before the result.** A price mid-quiz turns the whole
-  thing into an ad and the visitor re-reads every earlier screen as one. This is
-  why the old question-3 cost chart is gone and the interstitial there now shows
-  a demand/supply gap with no figure of ours on it.
-- **The product is never named in a question.** "If every listing went out with
-  a tour" pre-supposes the answer three screens early. Questions ask about the
-  marketing being handled well.
-- **The interstitials must pay out.** Each one carries a `takeaway`: one thing
-  the reader can act on tonight without buying anything. The landing page
-  promises they will learn something, and if every screen only softens them up,
-  the result screen is where they notice the promise was bait.
+- **Nothing is collected before Stripe.** `PackPicker`'s `email` prop is empty
+  on this path, so no `prefilled_email` is appended and Stripe collects the
+  address itself. That is the whole lead capture: a non-buyer leaves no trace,
+  which was the accepted trade when the quiz came out.
+- **No countdown and no price-hold card on the offer screen.** Both were honest
+  on the diagnostic, where the clock started when the result was generated for
+  that visitor. Anyone can reload straight into this page, so a deadline here is
+  the one claim an agent can disprove in a second.
+- **The intro copy may not promise a diagnostic.** The badge, the h1, the button
+  and the line under it were all quiz promises ("Free listing diagnostic", "Six
+  questions, your score...") and were rewritten when the path changed. If you
+  put the quiz back, they have to change back with it.
 - **Third-party figures live in `src/lib/proof.ts`, never inline.** Every claim
   carries its own attribution and a `confidence` field. The two NAR figures in
   use are marked `cited`, meaning consistently attributed to NAR across the
   industry but read by us in secondary sources; swap in the primary when we have
   it. Standing rule unchanged: nothing invented, ever.
-- **The result screen compares one number to one number**, per property:
-  `VIDEOGRAPHER_TYPICAL` ($500, conservative inside the quoted $300-$1,000
-  range) against the recommended pack price. Not a range against an annual sum.
 
-`src/components/quiz/Showcase.tsx` and `tourlyCost()` in `quiz.ts` are now
-**orphaned** by this change. Kept rather than deleted because they are the
-intro's previous media block and the old cost chart's maths, and reverting the
-positioning would need both.
+### The diagnostic is unreachable, not deleted
+
+Every quiz screen still exists in `QuizFunnel.tsx` - the `steps`, `email`,
+`analyzing` and `result` phases, `diagnose()`, the interstitials, the deep dive.
+Nothing routes into them: `Intro`'s `onStart` sets `checkout` instead of
+`email`, and that one line is the whole switch. `/questions` still mounts each
+phase as its own frame, so they stay reviewable.
+
+Also orphaned, from earlier passes: `src/components/quiz/Showcase.tsx` and
+`tourlyCost()` in `quiz.ts`.
+
+The rules the quiz was built on are recorded here because putting it back means
+honouring them again: no price anywhere before the result; the product never
+named in a question; every interstitial carries a `takeaway` the reader can act
+on without buying; the result compares one number to one number
+(`VIDEOGRAPHER_TYPICAL`, $500) against the recommended pack price.
 
 ## Quiz funnel instrumentation
 
@@ -96,6 +104,17 @@ A key that misses returns 0, so a wrong one prints a confident `0%` instead of
 failing — which is exactly how `Start 0% · Gate 0% · Buy 0%` shipped and went
 unnoticed for weeks against real traffic. Change a key in one file, change it
 in both.
+
+⚠️ The direct funnel emits **only `quiz_start` and `result_view`**, plus
+`checkout_click`. `step_N`, `gate_view` and `lead` are dead — nothing calls
+them. **`result_view` now means "saw the offer screen"**, and the checkout
+screen fires it: reusing the key rather than minting a `checkout_view` is what
+keeps `Buy = checkout_click / result_view` correct, keeps the whitelist in
+`/api/quiz-event` unchanged, and keeps the rate continuous with the history the
+quiz already wrote. The report was cut to two rates to match (`Offer`, `Buy`);
+the three-rate line and the worst-in-quiz-drop line were **removed, not left**,
+because a stage that can only ever be zero is indistinguishable from one that is
+genuinely failing.
 
 Clarity is the only report input that can vanish on its own, so its absence is
 now **stated, never rendered as a zero**. `fetchClarity` returns
@@ -174,6 +193,19 @@ abandoning teaches people to abandon.
 
 ## Quiz nurture email sequence
 
+⚠️ **Dormant: nothing enrols new leads any more.** The quiz was the only thing
+that ever called `/api/quiz-lead`, and the direct funnel does not ask for an
+address, so `quiz_leads` stops growing. This is deliberate, not a regression —
+the trade accepted when the quiz came off the live path was that a non-buyer
+leaves no trace. Everything below still runs: the daily `/api/nurture` cron
+keeps stepping **leads already in the table** through to day 49, and unsubscribe
+and purchase-stop still work. Do not delete any of it; enrolment is one
+`upsertLead` call away from coming back.
+
+The only address a non-buyer still leaves is the one Stripe collects on an
+abandoned checkout, which is why **abandoned-checkout recovery is now the whole
+non-buyer follow-up** rather than a backstop.
+
 Eleven emails over 49 days to anyone who leaves an address on the quiz. Review
 every screen at **`/emails`** (`?p=homeowner` for the single-property branch) —
 those frames are the real rendered output, not mockups.
@@ -248,6 +280,12 @@ Historic internal rows were deleted on 21 Aug 2026 (1 lead, 13 orders, 3 free
 trials, 5 nurture sends).
 
 ## The result screen closes three times
+
+⚠️ The result screen is part of the **diagnostic, which is no longer on the live
+path** — see "The funnel is two screens". The live offer screen is `Checkout` in
+`QuizFunnel.tsx`, which closes **once**: it never earned a second and third
+close, because it has not spent six questions building to one. Every rule below
+still binds both screens, because the proof components are shared.
 
 Order after the diagnosis: offer card, rail, testimonials, **two-listing
 comparison**, pack picker, the argument (`ResultDeepDive.tsx`), the offer card
