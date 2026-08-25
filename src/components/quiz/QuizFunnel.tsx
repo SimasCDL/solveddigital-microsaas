@@ -1433,12 +1433,12 @@ function Offer({
         {/* Pack on the left, price on the right — the product and what it costs
             read as one line item rather than a stacked poster, which is what a
             checkout is supposed to look like. */}
-        <div className="mt-3 flex items-center gap-4">
+        <div className="mt-3 flex items-center gap-3 sm:gap-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/pack-box.jpg"
             alt="The Listing Tour pack"
-            className="w-[40%] max-w-[210px] shrink-0 mix-blend-multiply"
+            className="w-[36%] max-w-[200px] shrink-0 mix-blend-multiply"
           />
 
           <div className="min-w-0 flex-1">
@@ -1448,7 +1448,7 @@ function Offer({
                   verbatim rather than a reconstruction, because that string is
                   the one place the currency is spelled out and Stripe's
                   Adaptive Pricing makes a bare "$" a real problem. */}
-              <span className="font-display text-[40px] font-bold leading-none text-ink tabular-nums sm:text-[46px]">
+              <span className="font-display whitespace-nowrap text-[31px] font-bold leading-none text-ink tabular-nums min-[390px]:text-[36px] min-[430px]:text-[40px] sm:text-[46px]">
                 {settled ? pack.priceLabel : `$${shownPrice} USD`}
               </span>
               {/* The old price was struck at full weight in the same colour as
@@ -1457,7 +1457,7 @@ function Offer({
                   lighter than the text, and the figure itself carries more
                   weight than it did so it survives being crossed out. */}
               <span
-                className={`pb-1 text-[19px] font-semibold text-ink-soft line-through decoration-ink-soft/40 decoration-[1.5px] transition-opacity duration-500 ${
+                className={`pb-1 text-[17px] font-semibold text-ink-soft line-through decoration-ink-soft/40 decoration-[1.5px] transition-opacity duration-500 ${
                   settled ? "opacity-100" : "opacity-0"
                 }`}
               >
