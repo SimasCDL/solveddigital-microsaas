@@ -1353,7 +1353,7 @@ function LiveCount() {
         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#16a34a] opacity-70" />
         <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#16a34a]" />
       </span>
-      <span className="text-[13.5px] font-semibold text-[#15803d]">
+      <span className="text-[12px] font-semibold text-[#15803d] min-[390px]:text-[13.5px]">
         {n} people are making their tour right now
       </span>
     </div>
@@ -1438,17 +1438,17 @@ function Offer({
           <img
             src="/pack-box.jpg"
             alt="The Listing Tour pack"
-            className="w-[36%] max-w-[200px] shrink-0 mix-blend-multiply"
+            className="w-[29%] max-w-[180px] shrink-0 mix-blend-multiply sm:w-[36%] sm:max-w-[200px]"
           />
 
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-end gap-x-2.5 gap-y-1">
+            <div className="flex flex-wrap items-end gap-x-2 gap-y-1 min-[390px]:gap-x-2.5">
               {/* `tabular-nums` so the digits don't jitter the layout while the
                   number is counting. The settled state prints `priceLabel`
                   verbatim rather than a reconstruction, because that string is
                   the one place the currency is spelled out and Stripe's
                   Adaptive Pricing makes a bare "$" a real problem. */}
-              <span className="font-display whitespace-nowrap text-[31px] font-bold leading-none text-ink tabular-nums min-[390px]:text-[36px] min-[430px]:text-[40px] sm:text-[46px]">
+              <span className="font-display whitespace-nowrap text-[26px] font-bold leading-none text-ink tabular-nums min-[360px]:text-[30px] min-[390px]:text-[34px] min-[430px]:text-[40px] sm:text-[46px]">
                 {settled ? pack.priceLabel : `$${shownPrice} USD`}
               </span>
               {/* The old price was struck at full weight in the same colour as
@@ -1457,7 +1457,7 @@ function Offer({
                   lighter than the text, and the figure itself carries more
                   weight than it did so it survives being crossed out. */}
               <span
-                className={`pb-1 text-[17px] font-semibold text-ink-soft line-through decoration-ink-soft/40 decoration-[1.5px] transition-opacity duration-500 ${
+                className={`whitespace-nowrap pb-1 text-[15px] font-semibold text-ink-soft line-through min-[390px]:text-[17px] decoration-ink-soft/40 decoration-[1.5px] transition-opacity duration-500 ${
                   settled ? "opacity-100" : "opacity-0"
                 }`}
               >
