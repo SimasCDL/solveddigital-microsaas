@@ -10,12 +10,21 @@ import { ProofNote } from "@/components/quiz/ProofNote";
 import { IntroTestimonials } from "@/components/quiz/IntroTestimonials";
 import { BeforeAfterRail } from "@/components/sections/BeforeAfterRail";
 import { Testimonials } from "@/components/quiz/Testimonials";
-import { ResultDeepDive, VersusDemo } from "@/components/quiz/ResultDeepDive";
+import {
+  ResultDeepDive,
+  VersusDemo,
+  VideoGapStats,
+  WhyVideo,
+  WorkLessEarnMore,
+  AmbassadorNote,
+  ChatProof,
+} from "@/components/quiz/ResultDeepDive";
 import {
   packCheckoutUrl,
   discountPct,
   packById,
   PACKS,
+  type Pack,
   type PackId,
 } from "@/lib/pricing";
 import { track, sessionId } from "@/lib/track";
@@ -133,7 +142,8 @@ export interface QuizInitialState {
 }
 
 export function QuizFunnel({ initial }: { initial?: QuizInitialState } = {}) {
-  const [phase, setPhase] = useState<Phase>(initial?.phase ?? "intro");
+  // The offer IS the landing page. Nothing precedes it: no intro, no click.
+  const [phase, setPhase] = useState<Phase>(initial?.phase ?? "checkout");
   const [index, setIndex] = useState(initial?.index ?? 0);
   const [answers, setAnswers] = useState<Answers>(initial?.answers ?? {});
   const [email, setEmail] = useState(initial?.email ?? "");
@@ -172,13 +182,13 @@ export function QuizFunnel({ initial }: { initial?: QuizInitialState } = {}) {
     } else if (phase === "intro") track("quiz_start");
     else if (phase === "email") track("gate_view");
     else if (phase === "analyzing") track("lead");
-    // `result_view` is the "saw the offer" stage, and the checkout screen is
-    // now what that means - it replaced the result screen as the thing a
-    // visitor sees before they can buy. Reusing the key rather than minting a
-    // `checkout_view` keeps `Buy = checkout_click / result_view` correct in the
-    // daily report, keeps the whitelist in /api/quiz-event unchanged, and keeps
-    // the rate continuous with the history already in `quiz_events`.
-    else if (phase === "result" || phase === "checkout") track("result_view");
+    else if (phase === "result") track("result_view");
+    // One screen, so landing on it and seeing the offer are the same event.
+    // It fires `quiz_start` because that is the key the report divides by, and
+    // NOT `result_view` as well: two keys for one moment would report a 100%
+    // offer rate every morning, which looks like a finding and is arithmetic.
+    // The only rate left that means anything is checkout_click / quiz_start.
+    else if (phase === "checkout") track("quiz_start");
   }, [phase, index, step?.id, isPreview]);
 
   const advance = () => {
@@ -613,66 +623,121 @@ function Intro({
 }
 
 /**
- * The offer screen, and the only thing between the intro and Stripe.
+ * The offer screen: the result screen exactly, minus the diagnosis.
  *
- * What it is NOT: the old result screen. That one closed three times because it
- * had spent six questions earning the right to, and every block on it referred
- * back to an answer the visitor had given. None of that exists here, so the
- * argument is carried by the product instead - what arrives, how fast, and what
- * happens if they hate it.
+ * Same blocks in the same order as `Result` - comparison, offer card, rail,
+ * testimonials, versus, picker, deep dive, offer again, final picker - because
+ * that sequence is the one that has been selling, and rebuilding a lighter
+ * version of it threw away three closes to save a scroll.
  *
- * No countdown and no price-hold card. Both were honest on the diagnostic,
- * where the clock started when the result was generated for that visitor. On a
- * page anyone can reload straight into, a deadline is the one claim an agent
- * can disprove in a second, and it would be the first thing they see.
+ * Two things are gone, both of which asserted something about a visitor who has
+ * now told us nothing: the score ring with its archetype, and the `TierLadder`
+ * that placed them on a rung ("Steady marketer"). A ladder that marks a stranger
+ * as a photo-only lister is not a diagnosis, it is a guess printed as a verdict.
+ *
+ * Everything else reads `d.pack`, and `diagnose({})` resolves every field
+ * through its own fallbacks - landing on the 25-photo pack, since it assumes 22
+ * photos, which is the pack marked "most popular" anyway. So the card, the two
+ * pickers and the price countdown are all correct without anybody answering
+ * anything, and none of them claim otherwise.
  */
 function Checkout({ ref }: { ref?: React.Ref<HTMLDivElement> }) {
+  const d = useMemo(() => diagnose({}), []);
+  const { label, expired } = useOfferCountdown(true);
+
+  /**
+   * One selection for the whole page.
+   *
+   * Four independent selectors is four different prices on one screen, and a
+   * visitor who picks 40 photos at the top and scrolls to a button quoting $84
+   * has caught the page contradicting itself at the moment they were deciding.
+   */
+  const [selected, setSelected] = useState<PackId>(d.pack.id);
+  const pack = packById(selected);
+
+  // No prefilled_email: nothing was collected on this path, so Stripe asks.
+  const checkoutUrl = useMemo(() => packCheckoutUrl(pack), [pack]);
+
+  const offer = (
+    <Offer
+      d={d}
+      pack={pack}
+      onSelectPack={setSelected}
+      checkoutUrl={checkoutUrl}
+      label={label}
+      expired={expired}
+    />
+  );
+
   return (
     <Shell ref={ref}>
+      {/* What the product IS, before anything argues for it.
+          Somebody who has just landed does not yet know whether this is a
+          service they brief, a tool they learn, or a crew they book. Until
+          that is answered every claim underneath is being read by someone
+          still working out what they would be buying. Three facts, in the
+          order the question arrives: it uses the photos they already have, no
+          one touches it, and it comes back the same session. */}
       <div className="text-center">
-        <h2 className="font-display text-[27px] font-bold leading-[1.12] tracking-[-0.02em] text-ink text-balance sm:text-[32px]">
-          Your listing tour, back the same day
+        <h2 className="font-display text-[27px] font-bold leading-[1.1] tracking-[-0.025em] text-ink text-balance sm:text-[35px]">
+          Turn the listing photos you already have into a finished video tour in
+          minutes, fully automated.
         </h2>
-
-        <p className="mx-auto mt-2.5 max-w-[23rem] text-[14px] leading-[1.5] text-ink-soft text-balance">
-          Send the photos you already have. You get a vertical cut for Reels and
-          TikTok, a horizontal one for the MLS, and licensed music on both.
-        </p>
-
-        <div className="mt-4 flex items-center justify-center gap-2.5">
-          <ReviewAvatars size={32} />
-          <span className="text-left text-[12.5px] font-semibold leading-[1.25] text-ink">
-            1,564 tours delivered
-            <span className="block font-normal text-ink-soft">
-              for agents in the US, Canada and Australia
-            </span>
-          </span>
-        </div>
       </div>
 
-      <BeforeAfterRail height={200} cardWidth={260} className="mt-7" />
+      {offer}
 
-      <PackPicker
-        recommended="p25"
-        heading="Choose your pack"
-        sub="Priced by how many photos you send. Most listings fit the 25."
-      />
+      {/* The comparison runs first, directly under the price.
+          It is the only block that asks a question instead of making a claim,
+          and someone who has just answered "which of these gets the call" for
+          themselves is a better person to show the rest to than one who has
+          just been shown a staging rail. */}
+      <VersusDemo />
 
-      <div className="mt-4 flex items-center gap-3 rounded-2xl border border-line bg-accent-soft/40 px-4 py-3.5">
-        <Shield className="h-[26px] w-[26px] shrink-0 text-accent" />
-        <div>
-          <div className="text-[13.5px] font-bold text-ink">
-            30-day money-back guarantee
-          </div>
-          <div className="text-[12.5px] leading-[1.4] text-ink-soft">
-            Not obsessed with your video? Full refund, and you keep the files.
-          </div>
-        </div>
-      </div>
-
-      <PaymentLogos />
+      {/* `showStats={false}`: the two figures now close the page instead, and
+          this is the one place they would otherwise appear twice. */}
+      <WhyVideo showStats={false} />
 
       <Testimonials />
+
+      <WorkLessEarnMore />
+
+      <div className="-mx-5 mt-8 sm:-mx-9">
+        <p className="mb-2.5 px-5 text-center text-[11px] font-bold uppercase tracking-[0.12em] text-ink-soft sm:px-9">
+          Photo in, tour out
+        </p>
+        <BeforeAfterRail height={200} cardWidth={260} />
+      </div>
+
+      <PackPicker
+        recommended={d.pack.id}
+        value={selected}
+        onChange={setSelected}
+      />
+
+      {/* The offer card appears ONCE, at the top. It used to close a second
+          time here, which put two identical red price-hold cards on one page
+          running the same clock - the repeat read as a template that had been
+          pasted twice rather than as a second chance to buy. The two pickers
+          below still carry the same price and the same button. */}
+
+      <AmbassadorNote />
+      <ChatProof />
+
+      <PackPicker
+        recommended={d.pack.id}
+        value={selected}
+        onChange={setSelected}
+        heading="Ready when you are"
+        sub="Pick a size, hand over the photos, and the tour is back the same day."
+        hold
+      />
+
+      {/* The very last thing on the page, below the final button.
+          It is not a close and it is not asking for anything - it is the market
+          fact the whole page has been describing, left with anyone who scrolled
+          past the last picker without buying. */}
+      <VideoGapStats className="mt-12" />
     </Shell>
   );
 }
@@ -970,6 +1035,8 @@ function PackPicker({
   recommendedNote,
   /** Show the price-hold card under the button. The last close only. */
   hold = false,
+  value,
+  onChange,
 }: {
   recommended: PackId;
   email?: string;
@@ -977,8 +1044,14 @@ function PackPicker({
   sub?: string;
   recommendedNote?: string;
   hold?: boolean;
+  /** Controlled selection. Supplied on the direct path so the two pickers and
+   *  both offer cards are one choice rather than four that disagree. */
+  value?: PackId;
+  onChange?: (id: PackId) => void;
 }) {
-  const [selected, setSelected] = useState<PackId>(recommended);
+  const [own, setOwn] = useState<PackId>(recommended);
+  const selected = value ?? own;
+  const setSelected = onChange ?? setOwn;
   const pack = packById(selected);
 
   const href = useMemo(() => {
@@ -1296,13 +1369,24 @@ function Offer({
   checkoutUrl,
   label,
   expired,
+  /** The pack the card is quoting. Defaults to the diagnosed one. */
+  pack = d.pack,
+  /**
+   * Supplied only on the direct path, where nothing was diagnosed and the
+   * visitor picks the size themselves. Its presence is what renders the size
+   * row inside the card: on the quiz path the count came from their own answer,
+   * and re-asking there would reopen a question they already closed.
+   */
+  onSelectPack,
 }: {
   d: Diagnosis;
   checkoutUrl: string;
   label: string;
   expired: boolean;
+  pack?: Pack;
+  onSelectPack?: (id: PackId) => void;
 }) {
-  const { value: shownPrice, settled } = useCountDown(d.pack.was, d.pack.price);
+  const { value: shownPrice, settled } = useCountDown(pack.was, pack.price);
 
   return (
     <>
@@ -1354,7 +1438,7 @@ function Offer({
           <img
             src="/pack-box.jpg"
             alt="The Listing Tour pack"
-            className="w-[46%] max-w-[240px] shrink-0 mix-blend-multiply"
+            className="w-[40%] max-w-[210px] shrink-0 mix-blend-multiply"
           />
 
           <div className="min-w-0 flex-1">
@@ -1365,7 +1449,7 @@ function Offer({
                   the one place the currency is spelled out and Stripe's
                   Adaptive Pricing makes a bare "$" a real problem. */}
               <span className="font-display text-[40px] font-bold leading-none text-ink tabular-nums sm:text-[46px]">
-                {settled ? d.pack.priceLabel : `$${shownPrice} USD`}
+                {settled ? pack.priceLabel : `$${shownPrice} USD`}
               </span>
               {/* The old price was struck at full weight in the same colour as
                   the digits, which buried the number the discount is measured
@@ -1377,7 +1461,7 @@ function Offer({
                   settled ? "opacity-100" : "opacity-0"
                 }`}
               >
-                {d.pack.wasLabel}
+                {pack.wasLabel}
               </span>
             </div>
             <span
@@ -1385,7 +1469,7 @@ function Offer({
                 settled ? "scale-100 opacity-100" : "scale-90 opacity-0"
               }`}
             >
-              Save {discountPct(d.pack)}%
+              Save {discountPct(pack)}%
             </span>
             {/* The pack size is gone. "Up to 40 photos" reads as a limit being
                 imposed at the exact moment the price is being accepted, and the
@@ -1397,6 +1481,45 @@ function Offer({
             </p>
           </div>
         </div>
+
+        {/* All three sizes, inside the held-price card on purpose.
+            The banner says the price is held; if only one figure sits under it,
+            the other two look like they are not covered. Here every price the
+            visitor can pick is inside the same red ring, so the hold plainly
+            applies to all of them - which is true, they are all launch prices
+            and none of them move when the clock runs out. */}
+        {onSelectPack && (
+          <div className="mt-3">
+            <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-ink-soft">
+              How many photos do you have?
+            </p>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {PACKS.map((p) => {
+                const on = p.id === pack.id;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => onSelectPack(p.id)}
+                    aria-pressed={on}
+                    className={`rounded-xl border-2 px-1.5 py-1.5 text-center transition-colors ${
+                      on
+                        ? "border-accent bg-accent-soft"
+                        : "border-line bg-paper hover:border-accent/40"
+                    }`}
+                  >
+                    <span className="block text-[12px] font-semibold leading-tight text-ink-soft">
+                      Up to {p.photos}
+                    </span>
+                    <span className="font-display mt-0.5 block text-[16px] font-bold leading-none text-ink">
+                      ${p.price}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <LiveCount />
 
@@ -1411,7 +1534,7 @@ function Offer({
           onClick={() => track("checkout_click")}
           className="mt-3 flex h-[58px] items-center justify-center gap-2.5 rounded-full bg-gradient-to-b from-[#13a48c] to-[#0e7d6b] text-[17px] font-bold text-white shadow-[0_16px_34px_-12px_rgba(15,125,107,0.6)] transition-all hover:brightness-[1.06] active:scale-[0.99]"
         >
-          Lock in {d.pack.priceLabel}
+          Lock in {pack.priceLabel}
           <Arrow className="h-[18px] w-[18px]" />
         </a>
 

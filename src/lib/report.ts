@@ -324,37 +324,29 @@ function quizSection(stages: FunnelStage[]): string[] {
   // anyone who wants to interrogate them.
   const L: string[] = ["*FUNNEL* (24h)"];
 
-  // Two rates that mean different things and have different fixes: whether the
-  // ad matched the page, and whether the offer lands once they ask to see it.
+  // One rate, because the funnel is one screen. The offer is the landing page,
+  // so there is no step between arriving and seeing the price to measure.
   //
   // These keys are the event names `funnelCounts` emits, and nothing else will
   // do: a lookup that misses returns 0, so a wrong key prints a confident
   // "0%" rather than failing, and the report goes on lying every morning until
-  // somebody checks it against the raw events. `result_view` is the offer
-  // screen - the funnel reuses that key for it, so this rate stays continuous
-  // with the history the quiz wrote.
+  // somebody checks it against the raw events. `quiz_start` is the landing -
+  // the offer screen fires it, which keeps this rate continuous with the
+  // history the quiz wrote rather than restarting the series at zero.
   const landed = at("quiz_start");
-  const offer = at("result_view");
   const bought = at("checkout_click");
-  const reach = pct(offer, landed);
-  const buy = pct(bought, offer);
-  L.push(`▶️ Offer ${reach}% · 🛒 Buy ${buy}% (${landed} landed, ${bought} to Stripe)`);
+  const buy = pct(bought, landed);
+  L.push(`🛒 Buy ${buy}% (${landed} landed, ${bought} to Stripe)`);
 
-  // Which half to work on. With two stages the arithmetic is small enough to
-  // state outright rather than hint at, and saying nothing on a quiet day is
-  // worse than saying the funnel is holding.
+  // Saying nothing on a quiet day is worse than saying the funnel is holding.
   if (!landed) {
     L.push("👉 No landings recorded. Check the page tag before reading this.");
-  } else if (reach < 40) {
-    L.push(
-      `👉 The intro is the constraint: ${100 - reach}% leave without asking to see pricing.`,
-    );
-  } else if (buy < 15) {
-    L.push(
-      "👉 The intro is doing its job. The offer screen is where they stop.",
-    );
+  } else if (!bought) {
+    L.push(`👉 ${landed} landed and nobody reached Stripe.`);
+  } else if (buy < 3) {
+    L.push("👉 The page is the constraint. There is nothing else left to blame.");
   } else {
-    L.push("👉 Both halves holding.");
+    L.push("👉 Holding.");
   }
   return L;
 }

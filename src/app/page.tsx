@@ -17,7 +17,7 @@ import { QuizPage } from "@/components/quiz/QuizPage";
 export const metadata: Metadata = {
   title: "Listing video tours from your photos - Tourly",
   description:
-    "Send the photos you already have and get a listing video tour back the same day: a vertical cut for Reels and TikTok, a horizontal one for the MLS, licensed music on both.",
+    "Upload the photo gallery you already have and get a listing video tour back in minutes, fully automated: a vertical cut for Reels and TikTok, a horizontal one for the MLS, licensed music on both.",
   alternates: { canonical: "/" },
 };
 

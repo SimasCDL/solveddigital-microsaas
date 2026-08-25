@@ -76,7 +76,60 @@ function Payoff({ children }: { children: ReactNode }) {
  * deliberate: a number met twice reads as a fact about the market, whereas two
  * different numbers making the same point read as a search for one that works.
  */
-function WhyVideo() {
+/**
+ * The two figures that make the gap, as one card.
+ *
+ * Extracted from `WhyVideo` so the direct-buy screen can open on it. Both
+ * numbers come from `proof.ts` with their own attribution - the pair only works
+ * because they are the same source disagreeing with itself: sellers want it,
+ * almost nobody supplies it. Printing either one alone loses the argument.
+ */
+export function VideoGapStats({ className = "" }: { className?: string }) {
+  return (
+    <div
+      className={`rounded-[22px] border border-line bg-paper p-4 sm:p-5 ${className}`}
+    >
+      <div className="flex items-baseline justify-between gap-3">
+        {/* Written out rather than patched from `claim`, which begins "of
+            sellers…" because it is built to sit after the figure. Rewriting
+            it in place produced "Sellers sellers say they are…". */}
+        <span className="text-[14px] font-semibold leading-[1.3] text-ink">
+          Sellers more likely to hire an agent who markets with video
+        </span>
+        <span className="font-display shrink-0 text-[23px] font-bold leading-none text-accent">
+          {SELLERS_EXPECT.stat}
+        </span>
+      </div>
+
+      <div className="mt-3 h-px bg-line" />
+
+      <div className="mt-3 flex items-baseline justify-between gap-3">
+        <span className="text-[14px] font-semibold leading-[1.3] text-ink">
+          Agents who actually put video on their listings
+        </span>
+        <span className="font-display shrink-0 text-[23px] font-bold leading-none text-ink">
+          {AGENT_ADOPTION.stat}
+        </span>
+      </div>
+
+      {/* The mark sits INSIDE the paragraph rather than above it. Floated
+          into the text it costs no vertical space at all, which is the whole
+          constraint on this screen - a logo row would push the payoff line
+          and the next section down for no added credibility. */}
+      <p className="mt-3 text-[12.5px] leading-[1.45] text-ink-soft">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={SELLERS_EXPECT.logo}
+          alt={SELLERS_EXPECT.logoAlt ?? "REALTOR®"}
+          className="mr-2 inline-block h-[22px] w-auto -translate-y-[1px] align-middle"
+        />
+        Source: {SELLERS_EXPECT.source}. {AGENT_ADOPTION.source}.
+      </p>
+    </div>
+  );
+}
+
+function WhyVideo({ showStats }: { showStats: boolean }) {
   return (
     <section className="mt-12">
       <SectionHeading
@@ -92,44 +145,7 @@ function WhyVideo() {
         }
       />
 
-      <div className="mt-6 rounded-[22px] border border-line bg-paper p-5">
-        <div className="flex items-baseline justify-between gap-3">
-          {/* Written out rather than patched from `claim`, which begins "of
-              sellers…" because it is built to sit after the figure. Rewriting
-              it in place produced "Sellers sellers say they are…". */}
-          <span className="text-[14px] font-semibold leading-[1.3] text-ink">
-            Sellers more likely to hire an agent who markets with video
-          </span>
-          <span className="font-display shrink-0 text-[26px] font-bold leading-none text-accent">
-            {SELLERS_EXPECT.stat}
-          </span>
-        </div>
-
-        <div className="mt-4 h-px bg-line" />
-
-        <div className="mt-4 flex items-baseline justify-between gap-3">
-          <span className="text-[14px] font-semibold leading-[1.3] text-ink">
-            Agents who actually put video on their listings
-          </span>
-          <span className="font-display shrink-0 text-[26px] font-bold leading-none text-ink">
-            {AGENT_ADOPTION.stat}
-          </span>
-        </div>
-
-        {/* The mark sits INSIDE the paragraph rather than above it. Floated
-            into the text it costs no vertical space at all, which is the whole
-            constraint on this screen - a logo row would push the payoff line
-            and the next section down for no added credibility. */}
-        <p className="mt-4 text-[13px] leading-[1.5] text-ink-soft">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={SELLERS_EXPECT.logo}
-            alt={SELLERS_EXPECT.logoAlt ?? "REALTOR®"}
-            className="mr-2 inline-block h-[26px] w-auto -translate-y-[1px] align-middle"
-          />
-          Source: {SELLERS_EXPECT.source}. {AGENT_ADOPTION.source}.
-        </p>
-      </div>
+      {showStats && <VideoGapStats className="mt-6" />}
 
       {/* One sentence per line, forced. Left to wrap it broke mid-clause and
           the two halves stopped reading as a pair. */}
@@ -442,7 +458,12 @@ function ChatProof() {
  * asks the reader a question rather than telling them something, and a question
  * answered is a better thing to hit a price with than an argument finished.
  */
-export { VersusDemo };
+/**
+ * Exported individually so the direct-buy screen can interleave them with its
+ * own blocks. `ResultDeepDive` below still renders them as one unit for the
+ * quiz result, where the running order was settled and should not drift.
+ */
+export { VersusDemo, WhyVideo, WorkLessEarnMore, AmbassadorNote, ChatProof };
 
 /**
  * The argument, after the second close.
@@ -452,10 +473,17 @@ export { VersusDemo };
  * putting the whole card there - not a link back up - is what stops the
  * education from being where the page ends.
  */
-export function ResultDeepDive({ offerSlot }: { offerSlot?: ReactNode }) {
+export function ResultDeepDive({
+  offerSlot,
+  /** False on the direct path, where `VideoGapStats` already opens the page. */
+  showStats = true,
+}: {
+  offerSlot?: ReactNode;
+  showStats?: boolean;
+}) {
   return (
     <>
-      <WhyVideo />
+      <WhyVideo showStats={showStats} />
       <WorkLessEarnMore />
       {offerSlot}
       <AmbassadorNote />

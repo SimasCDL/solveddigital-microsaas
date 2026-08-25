@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useVideoAutoplay } from "@/components/site/useVideoAutoplay";
 
 /**
@@ -288,6 +288,47 @@ export function Testimonials() {
   const ref = useRef<HTMLDivElement>(null);
   useVideoAutoplay(ref);
 
+  /**
+   * The rail does not move until it has been scrolled to.
+   *
+   * `VideoCard` is deliberately first in the track because it is the strongest
+   * proof here, but a marquee that starts on page load has been drifting for
+   * however long the reader spent above it - and on this page that is several
+   * thousand pixels, so the video had always gone by before anyone arrived.
+   * Held at frame 0 until it intersects, the card it leads with is the card
+   * you meet. Once started it is never re-held: a rail that rewinds every time
+   * it scrolls off reads as broken.
+   */
+  const rowRef = useRef<HTMLDivElement>(null);
+  const [started, setStarted] = useState(false);
+
+  useEffect(() => {
+    const el = rowRef.current;
+    if (!el || started) return;
+
+    // Measured on scroll rather than with an IntersectionObserver. The rail is
+    // the only thing on the page whose *start* is user-visible, so it is worth
+    // the listener: a rect read cannot silently no-op the way an observer can
+    // if one never fires, and this releases the hold on the frame it is seen.
+    const check = () => {
+      const r = el.getBoundingClientRect();
+      const seen = r.top < window.innerHeight * 0.85 && r.bottom > 0;
+      if (seen) {
+        setStarted(true);
+        window.removeEventListener("scroll", check);
+        window.removeEventListener("resize", check);
+      }
+    };
+
+    check();
+    window.addEventListener("scroll", check, { passive: true });
+    window.addEventListener("resize", check);
+    return () => {
+      window.removeEventListener("scroll", check);
+      window.removeEventListener("resize", check);
+    };
+  }, [started]);
+
   return (
     <div ref={ref} className="mt-9">
       {/* "What agents say" is a section label. "Word on the street" is how the
@@ -305,7 +346,12 @@ export function Testimonials() {
           `-mx-5` breaks it out of the reading column so the strip runs to both
           edges: a carousel that stops short of the screen edge reads as a stuck
           widget rather than something moving. */}
-      <div className="marquee-row marquee-mask -mx-5 mt-4 overflow-hidden sm:-mx-8">
+      <div
+        ref={rowRef}
+        className={`marquee-row marquee-mask -mx-5 mt-4 overflow-hidden sm:-mx-8 ${
+          started ? "" : "marquee-wait"
+        }`}
+      >
         {/* Rendered twice and translated by exactly -50%, so at the end of a
             cycle the second copy sits precisely where the first began and the
             loop is invisible. `w-max` stops flex compressing the cards to fit.

@@ -272,6 +272,12 @@ body {
 .animate-marquee-right { animation: marquee-right 48s linear infinite; }
 .marquee-row:hover .animate-marquee-left,
 .marquee-row:hover .animate-marquee-right { animation-play-state: paused; }
+/* Held at frame 0 until the row is scrolled to, so a rail that leads with its
+   strongest card is still showing that card when somebody arrives at it. A
+   marquee started on page load has drifted for however long the reader spent
+   above it, which on a long page means the lead card is never seen. */
+.marquee-wait .animate-marquee-left,
+.marquee-wait .animate-marquee-right { animation-play-state: paused; }
 .marquee-mask {
   -webkit-mask-image: linear-gradient(to right, transparent, #000 7%, #000 93%, transparent);
   mask-image: linear-gradient(to right, transparent, #000 7%, #000 93%, transparent);
